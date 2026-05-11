@@ -1,5 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -13,6 +14,13 @@ const MENU_ITEMS = [
 
 export default function ProfilePage() {
   const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -46,7 +54,9 @@ export default function ProfilePage() {
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
           </div>
         ))}
-        <div onClick={() => router.push('/login')} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+
+        {/* ログアウト */}
+        <div onClick={handleLogout} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
           <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', fontSize: 14 }}>🚪</div>
           <div style={{ fontSize: 13, color: '#c05050' }}>ログアウト</div>
           <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
