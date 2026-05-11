@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/layout/BottomNav'
@@ -12,9 +13,40 @@ const MENU_ITEMS = [
   { icon: '⚙️', label: '設定・通知', path: '/settings' },
 ]
 
+interface Profile {
+  nickname: string
+  handicap: number
+  best_score: number | null
+  area_id: string | null
+  plan: string
+  created_at: string
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+
+      setEmail(user.email ?? '')
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (data) setProfile(data)
+      setLoading(false)
+    }
+    fetchProfile()
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -22,30 +54,63 @@ export default function ProfilePage() {
     router.refresh()
   }
 
+  // 会員歴を計算
+  const getMemberDuration = (createdAt: string) => {
+    const months = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+    if (months < 1) return '今月入会'
+    return `会員歴 ${months}ヶ月`
+  }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'var(--g1)', padding: '48px 20px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Logo variant="screen" />
-          <span style={{ background: 'var(--lime)', color: 'var(--g1)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700 }}>プレミアム会員</span>
+          <span style={{
+            background: profile?.plan === 'premium' ? 'var(--lime)' : profile?.plan === 'standard' ? 'rgba(168,224,99,.3)' : 'rgba(255,255,255,.15)',
+            color: profile?.plan === 'premium' ? 'var(--g1)' : 'rgba(255,255,255,.8)',
+            padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700
+          }}>
+            {profile?.plan === 'premium' ? 'プレミアム会員' : profile?.plan === 'standard' ? 'スタンダード会員' : '無料会員'}
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--lime)', border: '2px solid rgba(168,224,99,.3)', flexShrink: 0 }}>田</div>
+          <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--lime)', border: '2px solid rgba(168,224,99,.3)', flexShrink: 0 }}>
+            {profile?.nickname?.[0] ?? '?'}
+          </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>田中 太郎</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>広島市 · 会員歴 8ヶ月</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{profile?.nickname ?? 'ゴルファー'}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>
+              {email} · {profile?.created_at ? getMemberDuration(profile.created_at) : ''}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* 統計 */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        {[{ v: '18', k: 'Hdcp' }, { v: '92', k: 'ベスト' }, { v: '24', k: 'ラウンド' }].map((s) => (
+        {[
+          { v: profile?.handicap?.toString() ?? '-', k: 'Hdcp' },
+          { v: profile?.best_score?.toString() ?? '-', k: 'ベスト' },
+          { v: '0', k: 'ラウンド' },
+        ].map((s) => (
           <div key={s.k} style={{ flex: 1, background: 'white', borderRadius: 10, border: '1px solid var(--line)', padding: 11, textAlign: 'center', boxShadow: '0 1px 6px rgba(0,0,0,.04)' }}>
             <div style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 700, color: 'var(--g2)' }}>{s.v}</div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{s.k}</div>
           </div>
         ))}
       </div>
+
       <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 12px', borderRadius: 1 }} />
+
       <div style={{ flex: 1, paddingBottom: 90 }}>
         {MENU_ITEMS.map((item) => (
           <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
@@ -54,8 +119,6 @@ export default function ProfilePage() {
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
           </div>
         ))}
-
-        {/* ログアウト */}
         <div onClick={handleLogout} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
           <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', fontSize: 14 }}>🚪</div>
           <div style={{ fontSize: 13, color: '#c05050' }}>ログアウト</div>
