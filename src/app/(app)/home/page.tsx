@@ -1,31 +1,30 @@
 'use client'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
 export default function HomePage() {
   const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) router.push('/login')
+    }
+    checkAuth()
+  }, [])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', paddingBottom: 90 }}>
 
-      {/* グリーンヘッダー - 他ページと統一 */}
-      <div style={{
-        background: 'var(--g1)',
-        padding: '52px 20px 14px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
+      {/* グリーンヘッダー */}
+      <div style={{ background: 'var(--g1)', padding: '52px 20px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <div onClick={() => router.push('/profile')} style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: 'var(--lime)',
-            cursor: 'pointer', border: '1px solid rgba(255,255,255,0.2)',
-          }}>田</div>
+          <div onClick={() => router.push('/profile')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--lime)', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.2)' }}>田</div>
         </div>
       </div>
 
