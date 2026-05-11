@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -31,12 +31,10 @@ export async function middleware(request: NextRequest) {
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
   const isPublic = pathname === '/' || isAuthPage
 
-  // 未ログインで保護ページにアクセス → ログインへ
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // ログイン済みでログイン・登録ページにアクセス → ホームへ
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/home', request.url))
   }
