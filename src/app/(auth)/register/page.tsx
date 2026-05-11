@@ -4,12 +4,14 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const HDCP_OPTIONS = [
-  { label: '初心者', value: '36+' },
-  { label: '初級', value: '25〜35' },
-  { label: '中級', value: '13〜24' },
-  { label: '上級', value: '〜12' },
+  { label: '初心者', value: 36 },
+  { label: '初級', value: 28 },
+  { label: '中級', value: 18 },
+  { label: '上級', value: 8 },
 ]
+const BLOOD_TYPES = ['A', 'B', 'O', 'AB']
 const DAYS = ['月', '火', '水', '木', '金', '土', '日']
+const DAY_VALUES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const AREAS = ['広島市内', '廿日市・宮島', '東広島', '福山', '山口・周南']
 const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
 
@@ -28,11 +30,12 @@ export default function RegisterPage() {
 
   // Step 2
   const [nickname, setNickname] = useState('')
-  const [hdcp, setHdcp] = useState('13〜24')
+  const [hdcp, setHdcp] = useState(18)
   const [bestScore, setBestScore] = useState('')
+  const [bloodType, setBloodType] = useState('A')
 
   // Step 3
-  const [days, setDays] = useState<string[]>(['土', '日'])
+  const [days, setDays] = useState<string[]>(['sat', 'sun'])
   const [areas, setAreas] = useState<string[]>(['広島市内'])
   const [purposes, setPurposes] = useState<string[]>(['ラウンド仲間'])
 
@@ -45,25 +48,38 @@ export default function RegisterPage() {
     setError('')
     const supabase = createClient()
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           nickname: nickname || `${lastName}${firstName}`,
           birth_date: birthDate || '1990-01-01',
-          blood_type: 'A',
+          blood_type: bloodType,
         }
       }
     })
 
-    if (error) {
-      setError(error.message)
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
-    } else {
-      router.push('/home')
-      router.refresh()
+      return
     }
+
+    // プロフィールを更新
+    if (data.user) {
+      await supabase.from('profiles').update({
+        nickname: nickname || `${lastName}${firstName}`,
+        birth_date: birthDate || '1990-01-01',
+        blood_type: bloodType,
+        handicap: hdcp,
+        best_score: bestScore ? parseInt(bestScore) : null,
+        preferred_days: days,
+      }).eq('user_id', data.user.id)
+    }
+
+    router.push('/home')
+    router.refresh()
   }
 
   return (
@@ -88,12 +104,12 @@ export default function RegisterPage() {
       </div>
 
       {error && (
-        <div style={{ margin: '0 22px', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050' }}>
+        <div style={{ margin: '0 22px', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050', marginBottom: 8 }}>
           {error}
         </div>
       )}
 
-      {/* Step 1 */}
+      {/* Step 1: 基本情報 */}
       {step === 0 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }}>アカウント作成</div>
@@ -118,15 +134,29 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Step 2 */}
+      {/* Step 2: ゴルフ情報 + 血液型 */}
       {step === 1 && (
-        <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
-            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)' }}>田</div>
+            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)' }}>
+              {nickname?.[0] || '?'}
+            </div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を変更</div>
           </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ニックネーム</div>
           <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="ニックネーム" style={{ width: '100%', background: 'white', border: '1.5px solid var(--g3)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, boxShadow: '0 0 0 3px rgba(46,125,85,.08)' }} />
+
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>血液型</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {BLOOD_TYPES.map((bt) => (
+              <button key={bt} onClick={() => setBloodType(bt)} style={{ flex: 1, background: bloodType === bt ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1.5px solid ${bloodType === bt ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '10px 4px', textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: bloodType === bt ? 'var(--g2)' : 'var(--txt)' }}>{bt}</div>
+                <div style={{ fontSize: 9, color: bloodType === bt ? 'var(--g3)' : 'var(--mute)', marginTop: 2 }}>型</div>
+              </button>
+            ))}
+          </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ハンデキャップ</div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
             {HDCP_OPTIONS.map((h) => (
@@ -136,35 +166,41 @@ export default function RegisterPage() {
               </button>
             ))}
           </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ベストスコア（任意）</div>
           <input value={bestScore} onChange={e => setBestScore(e.target.value)} type="number" placeholder="例: 92" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
+
           <button onClick={() => setStep(2)} style={{ width: '100%', background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 'auto' }}>次へ →</button>
         </div>
       )}
 
-      {/* Step 3 */}
+      {/* Step 3: エリア設定 */}
       {step === 2 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>活動エリアと希望</div>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 18 }}>マッチング精度を上げるために設定してください</div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>よく行くエリア</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {AREAS.map((a) => (
               <button key={a} onClick={() => toggleItem(a, areas, setAreas)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${areas.includes(a) ? 'var(--g3)' : 'var(--line)'}`, color: areas.includes(a) ? 'var(--g2)' : 'var(--mid)', background: areas.includes(a) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: areas.includes(a) ? 600 : 400 }}>{a}</button>
             ))}
           </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>希望曜日</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
-            {DAYS.map((d) => (
-              <button key={d} onClick={() => toggleItem(d, days, setDays)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${days.includes(d) ? 'var(--g3)' : 'var(--line)'}`, color: days.includes(d) ? 'var(--g2)' : 'var(--mid)', background: days.includes(d) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: days.includes(d) ? 600 : 400 }}>{d}</button>
+            {DAYS.map((d, i) => (
+              <button key={d} onClick={() => toggleItem(DAY_VALUES[i], days, setDays)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${days.includes(DAY_VALUES[i]) ? 'var(--g3)' : 'var(--line)'}`, color: days.includes(DAY_VALUES[i]) ? 'var(--g2)' : 'var(--mid)', background: days.includes(DAY_VALUES[i]) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: days.includes(DAY_VALUES[i]) ? 600 : 400 }}>{d}</button>
             ))}
           </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>マッチングの目的</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 20 }}>
             {PURPOSES.map((p) => (
               <button key={p} onClick={() => toggleItem(p, purposes, setPurposes)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${purposes.includes(p) ? 'var(--g3)' : 'var(--line)'}`, color: purposes.includes(p) ? 'var(--g2)' : 'var(--mid)', background: purposes.includes(p) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: purposes.includes(p) ? 600 : 400 }}>{p}</button>
             ))}
           </div>
+
           <button onClick={handleRegister} disabled={loading} style={{ width: '100%', background: loading ? 'var(--mute)' : 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '登録中...' : '登録を完了する 🎉'}
           </button>
