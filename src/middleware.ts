@@ -23,7 +23,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 未ログインなら /login にリダイレクト
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
                      request.nextUrl.pathname.startsWith('/register')
 
@@ -31,7 +30,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // ログイン済みで /login や /register にアクセスしたら /home にリダイレクト
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/home', request.url))
   }
