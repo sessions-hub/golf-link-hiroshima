@@ -24,25 +24,52 @@ export async function POST(request: NextRequest) {
   try {
     switch (event.type) {
 
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        const userId = session.metadata?.supabase_user_id
-        const plan = session.metadata?.plan
-        if (!userId || !plan) break
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const sub = event.data.object as Stripe.Subscription
+        const customerId = sub.customer as string
+        const priceId = sub.items.data[0]?.price.id
 
-        // プロフィールのプランを更新
+        // プランを判定
+        const plan = priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
+          ? 'premium' : 'standard'
+
+        // customerからメールを取得
+        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
+        const email = customer.email
+
+        if (!email) break
+
+        // メールからユーザーIDを取得
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('user_id', (await supabase.auth.admin.getUserByEmail(email)).data.user?.id ?? '')
+          .single()
+
+        // auth.usersからメールでユーザーを検索
+        const { data: authData } = await supabase.auth.admin.listUsers()
+        const user = authData?.users?.find(u => u.email === email)
+
+        if (!user) break
+
+        // プロフィールを更新
         await supabase.from('profiles')
           .update({ plan })
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
 
-        // サブスクリプションテーブルに追加
+        // サブスクリプションテーブルに保存
         await supabase.from('subscriptions').upsert({
-          user_id: userId,
-          stripe_customer_id: session.customer as string,
-          stripe_subscription_id: session.subscription as string,
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: sub.id,
           plan,
-          status: 'active',
+          status: sub.status,
+          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         }, { onConflict: 'user_id' })
+
+        console.log(`Updated plan to ${plan} for user ${user.id}`)
         break
       }
 
