@@ -42,11 +42,24 @@ export default function SubscriptionPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState('')
+  const [userId, setUserId] = useState('')
+  const [currentPlan, setCurrentPlan] = useState('free')
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user?.email) setUserEmail(user.email)
+      if (user?.email) {
+        setUserEmail(user.email)
+        setUserId(user.id)
+      }
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('user_id', user.id)
+          .single()
+        if (data) setCurrentPlan(data.plan)
+      }
     }
     getUser()
   }, [])
@@ -62,13 +75,12 @@ export default function SubscriptionPage() {
           priceId: plan.priceId,
           plan: plan.id,
           userEmail,
+          userId,
         }),
       })
       const data = await res.json()
       if (data.url) {
         window.location.href = data.url
-      } else {
-        console.error('No URL returned:', data)
       }
     } catch (error) {
       console.error(error)
@@ -98,7 +110,9 @@ export default function SubscriptionPage() {
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>無料</div>
               <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--g2)', marginTop: 2 }}>¥0<span style={{ fontSize: 12, color: 'var(--mute)', fontWeight: 400 }}>/月</span></div>
             </div>
-            <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: 'var(--mute)' }}>現在のプラン</div>
+            {currentPlan === 'free' && (
+              <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: 'var(--mute)' }}>現在のプラン</div>
+            )}
           </div>
           {['プロフィール作成', 'ゴルファー検索（閲覧のみ）', 'コンペ閲覧'].map((f) => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -116,13 +130,14 @@ export default function SubscriptionPage() {
             {plan.recommended && (
               <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--lime)', color: 'var(--g1)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>おすすめ</div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: plan.recommended ? 'white' : 'var(--txt)' }}>{plan.name}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: plan.recommended ? 'var(--lime)' : 'var(--g2)', fontFamily: 'Inter' }}>¥{plan.price.toLocaleString()}</span>
-                  <span style={{ fontSize: 12, color: plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)' }}>/月</span>
-                </div>
+            {currentPlan === plan.id && (
+              <div style={{ position: 'absolute', top: 0, left: 0, background: 'rgba(168,224,99,.3)', color: 'var(--lime)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '14px 0 8px 0' }}>現在のプラン</div>
+            )}
+            <div style={{ marginBottom: 14, marginTop: currentPlan === plan.id ? 16 : 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: plan.recommended ? 'white' : 'var(--txt)' }}>{plan.name}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: plan.recommended ? 'var(--lime)' : 'var(--g2)', fontFamily: 'Inter' }}>¥{plan.price.toLocaleString()}</span>
+                <span style={{ fontSize: 12, color: plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)' }}>/月</span>
               </div>
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -137,9 +152,9 @@ export default function SubscriptionPage() {
             </div>
             <button
               onClick={() => handleSubscribe(plan)}
-              disabled={loading === plan.id}
-              style={{ width: '100%', background: plan.recommended ? 'var(--lime)' : 'var(--g1)', color: plan.recommended ? 'var(--g1)' : 'white', border: 'none', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: loading === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? 0.7 : 1 }}>
-              {loading === plan.id ? '処理中...' : `${plan.name}に申し込む`}
+              disabled={loading === plan.id || currentPlan === plan.id}
+              style={{ width: '100%', background: currentPlan === plan.id ? 'rgba(255,255,255,.1)' : plan.recommended ? 'var(--lime)' : 'var(--g1)', color: currentPlan === plan.id ? 'rgba(255,255,255,.4)' : plan.recommended ? 'var(--g1)' : 'white', border: 'none', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: loading === plan.id || currentPlan === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? 0.7 : 1 }}>
+              {loading === plan.id ? '処理中...' : currentPlan === plan.id ? '契約中' : `${plan.name}に申し込む`}
             </button>
           </div>
         ))}
