@@ -1,6 +1,6 @@
 'use client'
-import { useEffect } from 'use'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Logo from '@/components/layout/Logo'
 
 export default function SubscriptionSuccessPage() {
