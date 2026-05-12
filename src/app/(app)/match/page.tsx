@@ -28,45 +28,29 @@ const LESSONS = [
 ]
 
 const FREQ_LABELS: Record<string, string> = {
-  weekly_2plus: '週2回以上',
-  weekly_1: '週1回',
-  monthly_2_3: '月2〜3回',
-  monthly_1: '月1回',
-  rarely: 'たまに',
+  weekly_2plus: '週2回以上', weekly_1: '週1回', monthly_2_3: '月2〜3回', monthly_1: '月1回', rarely: 'たまに',
 }
 
 const AVATAR_COLORS = [
-  { bg: '#E8F0F8', text: '#3a6aaa' },
-  { bg: '#F2EBF8', text: '#7a50aa' },
-  { bg: '#EBF5EB', text: '#3a7a3a' },
-  { bg: '#FFF5E8', text: '#c07020' },
+  { bg: '#E8F0F8', text: '#3a6aaa' }, { bg: '#F2EBF8', text: '#7a50aa' },
+  { bg: '#EBF5EB', text: '#3a7a3a' }, { bg: '#FFF5E8', text: '#c07020' },
   { bg: '#F8EBF0', text: '#aa3a6a' },
 ]
 
-// 干支を取得
 const ZODIAC_NAMES = ['子(ね)', '丑(うし)', '寅(とら)', '卯(う)', '辰(たつ)', '巳(み)', '午(うま)', '未(ひつじ)', '申(さる)', '酉(とり)', '戌(いぬ)', '亥(い)']
-const getZodiac = (birthDate: string) => {
-  const year = new Date(birthDate).getFullYear()
-  return ZODIAC_NAMES[year % 12]
-}
+const getZodiac = (birthDate: string) => ZODIAC_NAMES[new Date(birthDate).getFullYear() % 12]
 
-// 血液型相性ランク
 const BLOOD_COMPAT: Record<string, Record<string, string>> = {
-  A:  { A: '◎', B: '△', O: '◎', AB: '○' },
-  B:  { A: '△', B: '◎', O: '◎', AB: '○' },
-  O:  { A: '◎', B: '◎', O: '○', AB: '△' },
-  AB: { A: '○', B: '○', O: '△', AB: '◎' },
+  A: { A: '◎', B: '△', O: '◎', AB: '○' }, B: { A: '△', B: '◎', O: '◎', AB: '○' },
+  O: { A: '◎', B: '◎', O: '○', AB: '△' }, AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-// 干支相性ランク（三合・六合・相冲）
 const getZodiacCompat = (year1: number, year2: number): string => {
-  const z1 = year1 % 12
-  const z2 = year2 % 12
-  const diff = Math.abs(z1 - z2)
-  if (diff === 4 || diff === 8) return '◎' // 三合
-  if (diff === 1 || diff === 11) return '○' // 六合
-  if (diff === 6) return '△'               // 相冲
-  if (diff === 0) return '○'               // 同干支
+  const diff = Math.abs(year1 % 12 - year2 % 12)
+  if (diff === 4 || diff === 8) return '◎'
+  if (diff === 1 || diff === 11) return '○'
+  if (diff === 6) return '△'
+  if (diff === 0) return '○'
   return '—'
 }
 
@@ -80,13 +64,15 @@ export default function MatchPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('全員')
   const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string } | null>(null)
+  const [myId, setMyId] = useState('')
+  const [chatLoading, setChatLoading] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setMyId(user.id)
 
-      // 自分のプロフィール取得
       const { data: me } = await supabase
         .from('profiles')
         .select('blood_type, birth_date')
@@ -94,12 +80,8 @@ export default function MatchPage() {
         .single()
       if (me) setMyProfile(me)
 
-      // マッチング一覧取得
       const { data, error } = await supabase.rpc('get_matches_with_score', {
-        p_user_id: user.id,
-        p_limit: 20,
-        p_offset: 0,
-        p_min_score: 0,
+        p_user_id: user.id, p_limit: 20, p_offset: 0, p_min_score: 0,
       })
       if (!error) setMatches(data ?? [])
       setLoading(false)
@@ -107,7 +89,36 @@ export default function MatchPage() {
     fetchData()
   }, [])
 
-  // フィルタリング
+  // チャットルームを作成して遷移
+  const handleChat = async (otherUserId: string) => {
+    if (!myId) return
+    setChatLoading(otherUserId)
+
+    // 既存ルームを検索
+    const { data: existing } = await supabase
+      .from('chat_rooms')
+      .select('id')
+      .or(`and(user1_id.eq.${myId},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${myId})`)
+      .single()
+
+    if (existing) {
+      router.push(`/chat/${existing.id}`)
+      return
+    }
+
+    // 新規ルーム作成
+    const { data: newRoom } = await supabase
+      .from('chat_rooms')
+      .insert({ user1_id: myId, user2_id: otherUserId })
+      .select('id')
+      .single()
+
+    if (newRoom) {
+      router.push(`/chat/${newRoom.id}`)
+    }
+    setChatLoading(null)
+  }
+
   const filteredMatches = matches.filter(m => {
     if (filter === '全員') return true
     if (filter === '初心者') return m.handicap >= 30
@@ -116,12 +127,8 @@ export default function MatchPage() {
     if (filter === '週末希望') return m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
     if (filter === '⭐相性診断') {
       if (!myProfile || !m.blood_type || !m.birth_date) return false
-      const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
-      const zodiacOk = getZodiacCompat(
-        new Date(myProfile.birth_date).getFullYear(),
-        new Date(m.birth_date).getFullYear()
-      ) !== '△'
-      return bloodOk && zodiacOk
+      return BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△' &&
+        getZodiacCompat(new Date(myProfile.birth_date).getFullYear(), new Date(m.birth_date).getFullYear()) !== '△'
     }
     return true
   })
@@ -133,36 +140,24 @@ export default function MatchPage() {
         <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: 'rgba(168,224,99,.8)', letterSpacing: '.08em' }}>広島市</span>
       </div>
 
-      {/* 内部タブ */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['golfer', 'lesson'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, fontFamily: 'Inter', color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             {tab === 'golfer' ? '⛳ ゴルファーを探す' : '📚 レッスン'}
           </button>
         ))}
       </div>
 
-      {/* ゴルファーリスト */}
       {activeTab === 'golfer' && (
         <>
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {FILTERS.map((f) => (
-                <button key={f} onClick={() => setFilter(f)} style={{
-                  padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer',
-                  border: `1px solid ${filter === f ? 'var(--g3)' : 'var(--line)'}`,
-                  color: filter === f ? 'var(--g2)' : 'var(--mid)',
-                  background: f === '⭐相性診断'
-                    ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)'
-                    : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)',
-                  fontWeight: filter === f ? 600 : 400,
-                  borderColor: f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : filter === f ? 'var(--g3)' : 'var(--line)',
-                }}>{f}</button>
+                <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${filter === f ? 'var(--g3)' : f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : 'var(--line)'}`, color: filter === f ? 'var(--g2)' : 'var(--mid)', background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: filter === f ? 600 : 400 }}>{f}</button>
               ))}
             </div>
           </div>
 
-          {/* 相性診断バナー */}
           {filter === '⭐相性診断' && myProfile && (
             <div style={{ margin: '8px 16px 0', background: 'linear-gradient(135deg,var(--g1),var(--g2))', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(168,224,99,.2)' }}>
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.1em', marginBottom: 4 }}>あなたの相性データ</div>
@@ -186,35 +181,20 @@ export default function MatchPage() {
 
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
             <div style={{ height: 8 }} />
-
-            {loading && (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>
-                マッチングを検索中...
-              </div>
-            )}
-
+            {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>マッチングを検索中...</div>}
             {!loading && filteredMatches.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>⛳</div>
-                <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>
-                  {filter === '⭐相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
-                  {filter === '⭐相性診断' ? '他のフィルターで探してみましょう' : '友達を招待してマッチングを始めましょう！'}
-                </div>
+                <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>{filter === '⭐相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}</div>
+                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>友達を招待してマッチングを始めましょう！</div>
               </div>
             )}
-
             {!loading && filteredMatches.map((m, i) => {
               const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length]
               const bloodCompat = myProfile ? BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] : null
-              const zodiacCompat = myProfile && m.birth_date ? getZodiacCompat(
-                new Date(myProfile.birth_date).getFullYear(),
-                new Date(m.birth_date).getFullYear()
-              ) : null
-
+              const zodiacCompat = myProfile && m.birth_date ? getZodiacCompat(new Date(myProfile.birth_date).getFullYear(), new Date(m.birth_date).getFullYear()) : null
               return (
-                <div key={m.user_id} onClick={() => router.push('/chat')} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+                <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
                     <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0 }}>
                       {m.nickname?.[0] ?? '?'}
@@ -224,31 +204,24 @@ export default function MatchPage() {
                         {m.nickname}
                         {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 6 }}>{new Date().getFullYear() - new Date(m.birth_date).getFullYear()}歳</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>
-                        Hdcp {m.handicap} · {FREQ_LABELS[m.round_freq] ?? m.round_freq}
-                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>Hdcp {m.handicap} · {FREQ_LABELS[m.round_freq] ?? m.round_freq}</div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                        {m.blood_type && (
-                          <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>
-                            血液型 {m.blood_type}型 {bloodCompat ?? ''}
-                          </span>
-                        )}
-                        {m.birth_date && (
-                          <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>
-                            {getZodiac(m.birth_date)} {zodiacCompat ?? ''}
-                          </span>
-                        )}
-                        {m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
-                          ? <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>週末希望</span>
-                          : null
-                        }
+                        {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}
+                        {m.birth_date && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getZodiac(m.birth_date)} {zodiacCompat ?? ''}</span>}
+                        {(m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')) && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>週末希望</span>}
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>
-                        {Math.round(m.match_score)}<span style={{ fontSize: 12 }}>%</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{Math.round(m.match_score)}<span style={{ fontSize: 12 }}>%</span></div>
+                        <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
                       </div>
-                      <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
+                      <button
+                        onClick={() => handleChat(m.user_id)}
+                        disabled={chatLoading === m.user_id}
+                        style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
+                        {chatLoading === m.user_id ? '...' : '💬 チャット'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -258,7 +231,6 @@ export default function MatchPage() {
         </>
       )}
 
-      {/* レッスンリスト */}
       {activeTab === 'lesson' && (
         <>
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
