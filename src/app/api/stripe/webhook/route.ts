@@ -26,13 +26,12 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
-        const sub = event.data.object as Stripe.Subscription
+        const sub = event.data.object as any
         const customerId = sub.customer as string
-        const priceId = sub.items.data[0]?.price.id
+        const priceId = sub.items?.data[0]?.price?.id
         const plan = priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
           ? 'premium' : 'standard'
 
-        // customerからメールを取得
         const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
         const email = customer.email
         if (!email) {
@@ -42,7 +41,6 @@ export async function POST(request: NextRequest) {
 
         console.log(`Processing subscription for email: ${email}, plan: ${plan}`)
 
-        // Supabase authからメールでユーザーを検索
         const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers({
           page: 1,
           perPage: 1000,
@@ -61,22 +59,18 @@ export async function POST(request: NextRequest) {
 
         console.log(`Found user: ${user.id}`)
 
-        // プロフィールを更新
         const { error: profileError } = await supabase.from('profiles')
           .update({ plan })
           .eq('user_id', user.id)
 
         if (profileError) console.error('Profile update error:', profileError)
 
-        // サブスクリプションテーブルに保存
         const { error: subError } = await supabase.from('subscriptions').upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
           plan,
           status: sub.status,
-          current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         }, { onConflict: 'user_id' })
 
         if (subError) console.error('Subscription upsert error:', subError)
@@ -85,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'customer.subscription.deleted': {
-        const sub = event.data.object as Stripe.Subscription
+        const sub = event.data.object as any
         const customerId = sub.customer as string
 
         const { data } = await supabase.from('subscriptions')
