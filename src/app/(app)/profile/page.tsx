@@ -13,6 +13,12 @@ const MENU_ITEMS = [
   { icon: '⚙️', label: '設定・通知', path: '/settings' },
 ]
 
+const LEGAL_ITEMS = [
+  { icon: '📋', label: '利用規約', path: '/legal/terms' },
+  { icon: '🔒', label: 'プライバシーポリシー', path: '/legal/privacy' },
+  { icon: '🏪', label: '特定商取引法に基づく表記', path: '/legal/tokusho' },
+]
+
 interface Profile {
   nickname: string
   handicap: number
@@ -33,15 +39,8 @@ export default function ProfilePage() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-
       setEmail(user.email ?? '')
-
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
-
+      const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
       if (data) setProfile(data)
       setLoading(false)
     }
@@ -54,7 +53,6 @@ export default function ProfilePage() {
     router.refresh()
   }
 
-  // 会員歴を計算
   const getMemberDuration = (createdAt: string) => {
     const months = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
     if (months < 1) return '今月入会'
@@ -62,11 +60,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div>
-      </div>
-    )
+    return <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div></div>
   }
 
   return (
@@ -74,11 +68,7 @@ export default function ProfilePage() {
       <div style={{ background: 'var(--g1)', padding: '48px 20px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Logo variant="screen" />
-          <span style={{
-            background: profile?.plan === 'premium' ? 'var(--lime)' : profile?.plan === 'standard' ? 'rgba(168,224,99,.3)' : 'rgba(255,255,255,.15)',
-            color: profile?.plan === 'premium' ? 'var(--g1)' : 'rgba(255,255,255,.8)',
-            padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700
-          }}>
+          <span style={{ background: profile?.plan === 'premium' ? 'var(--lime)' : profile?.plan === 'standard' ? 'rgba(168,224,99,.3)' : 'rgba(255,255,255,.15)', color: profile?.plan === 'premium' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700 }}>
             {profile?.plan === 'premium' ? 'プレミアム会員' : profile?.plan === 'standard' ? 'スタンダード会員' : '無料会員'}
           </span>
         </div>
@@ -88,20 +78,13 @@ export default function ProfilePage() {
           </div>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{profile?.nickname ?? 'ゴルファー'}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>
-              {email} · {profile?.created_at ? getMemberDuration(profile.created_at) : ''}
-            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>{email} · {profile?.created_at ? getMemberDuration(profile.created_at) : ''}</div>
           </div>
         </div>
       </div>
 
-      {/* 統計 */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        {[
-          { v: profile?.handicap?.toString() ?? '-', k: 'Hdcp' },
-          { v: profile?.best_score?.toString() ?? '-', k: 'ベスト' },
-          { v: '0', k: 'ラウンド' },
-        ].map((s) => (
+        {[{ v: profile?.handicap?.toString() ?? '-', k: 'Hdcp' }, { v: profile?.best_score?.toString() ?? '-', k: 'ベスト' }, { v: '0', k: 'ラウンド' }].map((s) => (
           <div key={s.k} style={{ flex: 1, background: 'white', borderRadius: 10, border: '1px solid var(--line)', padding: 11, textAlign: 'center', boxShadow: '0 1px 6px rgba(0,0,0,.04)' }}>
             <div style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 700, color: 'var(--g2)' }}>{s.v}</div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{s.k}</div>
@@ -119,6 +102,20 @@ export default function ProfilePage() {
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
           </div>
         ))}
+
+        {/* 区切り線 */}
+        <div style={{ padding: '10px 20px 4px' }}>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>法的情報</div>
+        </div>
+
+        {LEGAL_ITEMS.map((item) => (
+          <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', fontSize: 14 }}>{item.icon}</div>
+            <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
+            <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
+          </div>
+        ))}
+
         <div onClick={handleLogout} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
           <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', fontSize: 14 }}>🚪</div>
           <div style={{ fontSize: 13, color: '#c05050' }}>ログアウト</div>
