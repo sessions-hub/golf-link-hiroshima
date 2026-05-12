@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -37,21 +38,11 @@ const AVATAR_COLORS = [
   { bg: '#F8EBF0', text: '#aa3a6a' },
 ]
 
-const ZODIAC_NAMES = ['子(ね)', '丑(うし)', '寅(とら)', '卯(う)', '辰(たつ)', '巳(み)', '午(うま)', '未(ひつじ)', '申(さる)', '酉(とり)', '戌(いぬ)', '亥(い)']
-const getZodiac = (birthDate: string) => ZODIAC_NAMES[new Date(birthDate).getFullYear() % 12]
-
 const BLOOD_COMPAT: Record<string, Record<string, string>> = {
-  A: { A: '◎', B: '△', O: '◎', AB: '○' }, B: { A: '△', B: '◎', O: '◎', AB: '○' },
-  O: { A: '◎', B: '◎', O: '○', AB: '△' }, AB: { A: '○', B: '○', O: '△', AB: '◎' },
-}
-
-const getZodiacCompat = (year1: number, year2: number): string => {
-  const diff = Math.abs(year1 % 12 - year2 % 12)
-  if (diff === 4 || diff === 8) return '◎'
-  if (diff === 1 || diff === 11) return '○'
-  if (diff === 6) return '△'
-  if (diff === 0) return '○'
-  return '—'
+  A: { A: '◎', B: '△', O: '◎', AB: '○' },
+  B: { A: '△', B: '◎', O: '◎', AB: '○' },
+  O: { A: '◎', B: '◎', O: '○', AB: '△' },
+  AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
 const FILTERS = ['全員', '初心者', '中級者', '上級者', '週末希望', '⭐相性診断']
@@ -89,33 +80,24 @@ export default function MatchPage() {
     fetchData()
   }, [])
 
-  // チャットルームを作成して遷移
   const handleChat = async (otherUserId: string) => {
     if (!myId) return
     setChatLoading(otherUserId)
-
-    // 既存ルームを検索
     const { data: existing } = await supabase
       .from('chat_rooms')
       .select('id')
       .or(`and(user1_id.eq.${myId},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${myId})`)
       .single()
 
-    if (existing) {
-      router.push(`/chat/${existing.id}`)
-      return
-    }
+    if (existing) { router.push(`/chat/${existing.id}`); return }
 
-    // 新規ルーム作成
     const { data: newRoom } = await supabase
       .from('chat_rooms')
       .insert({ user1_id: myId, user2_id: otherUserId })
       .select('id')
       .single()
 
-    if (newRoom) {
-      router.push(`/chat/${newRoom.id}`)
-    }
+    if (newRoom) router.push(`/chat/${newRoom.id}`)
     setChatLoading(null)
   }
 
@@ -127,8 +109,11 @@ export default function MatchPage() {
     if (filter === '週末希望') return m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
     if (filter === '⭐相性診断') {
       if (!myProfile || !m.blood_type || !m.birth_date) return false
-      return BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△' &&
-        getZodiacCompat(new Date(myProfile.birth_date).getFullYear(), new Date(m.birth_date).getFullYear()) !== '△'
+      const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
+      const mySign = getZodiacSign(myProfile.birth_date)
+      const otherSign = getZodiacSign(m.birth_date)
+      const zodiacOk = getZodiacCompat(mySign, otherSign) !== '△'
+      return bloodOk && zodiacOk
     }
     return true
   })
@@ -153,7 +138,7 @@ export default function MatchPage() {
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {FILTERS.map((f) => (
-                <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${filter === f ? 'var(--g3)' : f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : 'var(--line)'}`, color: filter === f ? 'var(--g2)' : 'var(--mid)', background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: filter === f ? 600 : 400 }}>{f}</button>
+                <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : filter === f ? 'var(--g3)' : 'var(--line)'}`, color: filter === f ? 'var(--g2)' : 'var(--mid)', background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: filter === f ? 600 : 400 }}>{f}</button>
               ))}
             </div>
           </div>
@@ -163,17 +148,17 @@ export default function MatchPage() {
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.1em', marginBottom: 4 }}>あなたの相性データ</div>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--lime)' }}>{myProfile.blood_type}型</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--lime)' }}>{myProfile.blood_type}型</div>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>血液型</div>
                 </div>
                 <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,.15)' }} />
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--lime)' }}>{getZodiac(myProfile.birth_date)}</div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>干支</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--lime)' }}>{ZODIAC_NAMES_JP[getZodiacSign(myProfile.birth_date)]}</div>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>星座</div>
                 </div>
                 <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,.15)' }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', lineHeight: 1.6 }}>血液型・干支ともに相性◎○のゴルファーを表示中</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', lineHeight: 1.6 }}>血液型・星座ともに相性◎○のゴルファーを表示中</div>
                 </div>
               </div>
             </div>
@@ -192,7 +177,11 @@ export default function MatchPage() {
             {!loading && filteredMatches.map((m, i) => {
               const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length]
               const bloodCompat = myProfile ? BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] : null
-              const zodiacCompat = myProfile && m.birth_date ? getZodiacCompat(new Date(myProfile.birth_date).getFullYear(), new Date(m.birth_date).getFullYear()) : null
+              const zodiacCompat = myProfile && m.birth_date
+                ? getZodiacCompat(getZodiacSign(myProfile.birth_date), getZodiacSign(m.birth_date))
+                : null
+              const otherZodiac = m.birth_date ? ZODIAC_NAMES_JP[getZodiacSign(m.birth_date)] : null
+
               return (
                 <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
@@ -207,7 +196,7 @@ export default function MatchPage() {
                       <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>Hdcp {m.handicap} · {FREQ_LABELS[m.round_freq] ?? m.round_freq}</div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                         {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}
-                        {m.birth_date && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getZodiac(m.birth_date)} {zodiacCompat ?? ''}</span>}
+                        {otherZodiac && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{otherZodiac} {zodiacCompat ?? ''}</span>}
                         {(m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')) && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>週末希望</span>}
                       </div>
                     </div>
