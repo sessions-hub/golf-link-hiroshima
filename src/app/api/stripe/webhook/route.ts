@@ -29,37 +29,47 @@ export async function POST(request: NextRequest) {
         const sub = event.data.object as Stripe.Subscription
         const customerId = sub.customer as string
         const priceId = sub.items.data[0]?.price.id
-
-        // プランを判定
         const plan = priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
           ? 'premium' : 'standard'
 
         // customerからメールを取得
         const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
         const email = customer.email
+        if (!email) {
+          console.log('No email found for customer:', customerId)
+          break
+        }
 
-        if (!email) break
+        console.log(`Processing subscription for email: ${email}, plan: ${plan}`)
 
-        // メールからユーザーIDを取得
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('user_id', (await supabase.auth.admin.getUserByEmail(email)).data.user?.id ?? '')
-          .single()
+        // Supabase authからメールでユーザーを検索
+        const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000,
+        })
 
-        // auth.usersからメールでユーザーを検索
-        const { data: authData } = await supabase.auth.admin.listUsers()
-        const user = authData?.users?.find(u => u.email === email)
+        if (usersError) {
+          console.error('Error listing users:', usersError)
+          break
+        }
 
-        if (!user) break
+        const user = users.find(u => u.email === email)
+        if (!user) {
+          console.log('No user found for email:', email)
+          break
+        }
+
+        console.log(`Found user: ${user.id}`)
 
         // プロフィールを更新
-        await supabase.from('profiles')
+        const { error: profileError } = await supabase.from('profiles')
           .update({ plan })
           .eq('user_id', user.id)
 
+        if (profileError) console.error('Profile update error:', profileError)
+
         // サブスクリプションテーブルに保存
-        await supabase.from('subscriptions').upsert({
+        const { error: subError } = await supabase.from('subscriptions').upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
@@ -69,7 +79,8 @@ export async function POST(request: NextRequest) {
           current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
         }, { onConflict: 'user_id' })
 
-        console.log(`Updated plan to ${plan} for user ${user.id}`)
+        if (subError) console.error('Subscription upsert error:', subError)
+        else console.log(`Successfully updated plan to ${plan} for user ${user.id}`)
         break
       }
 
@@ -90,6 +101,8 @@ export async function POST(request: NextRequest) {
           await supabase.from('subscriptions')
             .update({ plan: 'free', status: 'canceled' })
             .eq('user_id', data.user_id)
+
+          console.log(`Cancelled subscription for user ${data.user_id}`)
         }
         break
       }
