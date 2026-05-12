@@ -35,7 +35,6 @@ export default function ChatRoomPage() {
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
 
-      // ルーム情報取得
       const { data: room } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -46,7 +45,6 @@ export default function ChatRoomPage() {
 
       const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
 
-      // 相手のプロフィール取得
       const { data: profile } = await supabase
         .from('profiles')
         .select('user_id, nickname, avatar_url')
@@ -60,7 +58,16 @@ export default function ChatRoomPage() {
         .select('*')
         .eq('room_id', roomId)
         .order('created_at', { ascending: true })
-      if (msgs) setMessages(msgs)
+
+      if (msgs) {
+        setMessages(msgs)
+        // 読み込み後に一番下にスクロール
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'auto' })
+        }, 100)
+      }
+
+      setLoading(false)
 
       // リアルタイム購読
       const channel = supabase
@@ -75,14 +82,16 @@ export default function ChatRoomPage() {
         })
         .subscribe()
 
-      setLoading(false)
       return () => { supabase.removeChannel(channel) }
     }
     init()
   }, [roomId])
 
+  // 新メッセージで自動スクロール
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > 0) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   const sendMsg = async () => {
@@ -112,7 +121,9 @@ export default function ChatRoomPage() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading && <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>}
+        {loading && (
+          <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>
+        )}
         {!loading && messages.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
@@ -125,6 +136,9 @@ export default function ChatRoomPage() {
           const time = new Date(m.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
           return (
             <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
+              {!isMe && (
+                <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 3 }}>{otherProfile?.nickname}</div>
+              )}
               <div style={{ padding: '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none' }}>
                 {m.content}
               </div>
