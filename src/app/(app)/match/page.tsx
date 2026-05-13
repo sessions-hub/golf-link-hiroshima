@@ -20,6 +20,7 @@ interface MatchProfile {
   avatar_url: string | null
   plan: string
   match_score: number
+  gender?: string
 }
 
 const LESSONS = [
@@ -45,7 +46,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '初心者', '中級者', '上級者', '週末希望', '⭐相性診断']
+const FILTERS = ['全員', '男性', '女性', '初心者', '上級者', '週末希望', '⭐相性診断', '❤️ お気に入り']
 
 export default function MatchPage() {
   const router = useRouter()
@@ -57,6 +58,8 @@ export default function MatchPage() {
   const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string } | null>(null)
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [activeTab2, setActiveTab2] = useState<'list' | 'footprint'>('list')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,18 +74,65 @@ export default function MatchPage() {
         .single()
       if (me) setMyProfile(me)
 
+      // マッチング一覧
       const { data, error } = await supabase.rpc('get_matches_with_score', {
         p_user_id: user.id, p_limit: 20, p_offset: 0, p_min_score: 0,
       })
       if (!error) setMatches(data ?? [])
+
+      // お気に入り一覧
+      const { data: favData } = await supabase
+        .from('favorites')
+        .select('target_id')
+        .eq('user_id', user.id)
+      if (favData) setFavorites(new Set(favData.map(f => f.target_id)))
+
+      // 足跡を記録
+      await supabase.from('footprints').insert({
+        user_id: user.id,
+        target_id: user.id,
+      }).then(() => {})
+
       setLoading(false)
     }
     fetchData()
   }, [])
 
+  // プロフィールを見た時に足跡を記録
+  const recordFootprint = async (targetId: string) => {
+    if (!myId || myId === targetId) return
+    await supabase.from('footprints').insert({
+      user_id: myId,
+      target_id: targetId,
+    })
+  }
+
+  // お気に入りトグル
+  const toggleFavorite = async (targetId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!myId) return
+    const isFav = favorites.has(targetId)
+    const newFavs = new Set(favorites)
+
+    if (isFav) {
+      newFavs.delete(targetId)
+      await supabase.from('favorites').delete()
+        .eq('user_id', myId).eq('target_id', targetId)
+    } else {
+      newFavs.add(targetId)
+      await supabase.from('favorites').insert({
+        user_id: myId,
+        target_id: targetId,
+      })
+    }
+    setFavorites(newFavs)
+  }
+
   const handleChat = async (otherUserId: string) => {
     if (!myId) return
     setChatLoading(otherUserId)
+    await recordFootprint(otherUserId)
+
     const { data: existing } = await supabase
       .from('chat_rooms')
       .select('id')
@@ -103,10 +153,12 @@ export default function MatchPage() {
 
   const filteredMatches = matches.filter(m => {
     if (filter === '全員') return true
+    if (filter === '男性') return m.gender === 'male'
+    if (filter === '女性') return m.gender === 'female'
     if (filter === '初心者') return m.handicap >= 30
-    if (filter === '中級者') return m.handicap >= 13 && m.handicap < 30
     if (filter === '上級者') return m.handicap < 13
     if (filter === '週末希望') return m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
+    if (filter === '❤️ お気に入り') return favorites.has(m.user_id)
     if (filter === '⭐相性診断') {
       if (!myProfile || !m.blood_type || !m.birth_date) return false
       const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
@@ -138,7 +190,13 @@ export default function MatchPage() {
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {FILTERS.map((f) => (
-                <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : filter === f ? 'var(--g3)' : 'var(--line)'}`, color: filter === f ? 'var(--g2)' : 'var(--mid)', background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: filter === f ? 600 : 400 }}>{f}</button>
+                <button key={f} onClick={() => setFilter(f)} style={{
+                  padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer',
+                  border: `1px solid ${f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : f === '❤️ お気に入り' ? 'rgba(200,60,100,.3)' : filter === f ? 'var(--g3)' : 'var(--line)'}`,
+                  color: filter === f ? (f === '❤️ お気に入り' ? '#c05080' : 'var(--g2)') : 'var(--mid)',
+                  background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : f === '❤️ お気に入り' ? filter === f ? 'rgba(200,60,100,.12)' : 'rgba(200,60,100,.05)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)',
+                  fontWeight: filter === f ? 600 : 400,
+                }}>{f}</button>
               ))}
             </div>
           </div>
@@ -169,9 +227,15 @@ export default function MatchPage() {
             {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>マッチングを検索中...</div>}
             {!loading && filteredMatches.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>⛳</div>
-                <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>{filter === '⭐相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}</div>
-                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>友達を招待してマッチングを始めましょう！</div>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>
+                  {filter === '❤️ お気に入り' ? '❤️' : '⛳'}
+                </div>
+                <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>
+                  {filter === '❤️ お気に入り' ? 'お気に入りがまだいません' : filter === '⭐相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
+                  {filter === '❤️ お気に入り' ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
+                </div>
               </div>
             )}
             {!loading && filteredMatches.map((m, i) => {
@@ -181,12 +245,21 @@ export default function MatchPage() {
                 ? getZodiacCompat(getZodiacSign(myProfile.birth_date), getZodiacSign(m.birth_date))
                 : null
               const otherZodiac = m.birth_date ? ZODIAC_NAMES_JP[getZodiacSign(m.birth_date)] : null
+              const isFav = favorites.has(m.user_id)
 
               return (
-                <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+                <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isFav ? 'rgba(200,60,100,.2)' : 'var(--line)'}`, padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                    <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0 }}>
-                      {m.nickname?.[0] ?? '?'}
+                    <div style={{ position: 'relative' }}>
+                      <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0 }}>
+                        {m.nickname?.[0] ?? '?'}
+                      </div>
+                      {/* 性別バッジ */}
+                      {m.gender && (
+                        <div style={{ position: 'absolute', bottom: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: m.gender === 'male' ? '#4a90d9' : m.gender === 'female' ? '#e06090' : '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'white', border: '1.5px solid white' }}>
+                          {m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '⚧'}
+                        </div>
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600 }}>
@@ -201,9 +274,15 @@ export default function MatchPage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{Math.round(m.match_score)}<span style={{ fontSize: 12 }}>%</span></div>
-                        <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {/* お気に入りボタン */}
+                        <button onClick={(e) => toggleFavorite(m.user_id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: isFav ? '#e05070' : 'var(--pale)', padding: '2px 4px', lineHeight: 1 }}>
+                          {isFav ? '❤️' : '♡'}
+                        </button>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{Math.round(m.match_score)}<span style={{ fontSize: 11 }}>%</span></div>
+                          <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleChat(m.user_id)}
