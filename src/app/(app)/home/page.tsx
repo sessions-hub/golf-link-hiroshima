@@ -159,7 +159,7 @@ export default function HomePage() {
       <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 12px', borderRadius: 1 }}/>
 
       {/* タイムライン */}
-      <div style={{ padding: '0 0 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 16px 8px' }}>
+      <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.14em', textTransform: 'uppercase' }}>タイムライン</span>
         <button onClick={() => setShowPostModal(true)} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>＋ 投稿する</button>
       </div>
