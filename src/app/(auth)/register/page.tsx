@@ -16,9 +16,9 @@ const AREAS = ['広島市内', '廿日市・宮島', '東広島', '福山', '山
 const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
 
 const GENDER_OPTIONS = [
-  { label: '男性', value: 'male', icon: '👨' },
-  { label: '女性', value: 'female', icon: '👩' },
-  { label: 'その他', value: 'other', icon: '🧑' },
+  { label: "男性", value: "male", icon: "♂" },
+  { label: "女性", value: "female", icon: "♀" },
+  { label: "その他", value: "other", icon: "⚧" },
 ]
 
 export default function RegisterPage() {
