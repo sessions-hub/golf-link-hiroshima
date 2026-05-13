@@ -15,6 +15,12 @@ const DAY_VALUES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const AREAS = ['広島市内', '廿日市・宮島', '東広島', '福山', '山口・周南']
 const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
 
+const GENDER_OPTIONS = [
+  { label: '男性', value: 'male', icon: '👨' },
+  { label: '女性', value: 'female', icon: '👩' },
+  { label: 'その他', value: 'other', icon: '🧑' },
+]
+
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -27,6 +33,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [birthDate, setBirthDate] = useState('')
+  const [gender, setGender] = useState('male')
 
   // Step 2
   const [nickname, setNickname] = useState('')
@@ -66,7 +73,6 @@ export default function RegisterPage() {
       return
     }
 
-    // プロフィールを更新
     if (data.user) {
       await supabase.from('profiles').update({
         nickname: nickname || `${lastName}${firstName}`,
@@ -75,6 +81,7 @@ export default function RegisterPage() {
         handicap: hdcp,
         best_score: bestScore ? parseInt(bestScore) : null,
         preferred_days: days,
+        gender,
       }).eq('user_id', data.user.id)
     }
 
@@ -111,8 +118,20 @@ export default function RegisterPage() {
 
       {/* Step 1: 基本情報 */}
       {step === 0 && (
-        <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }}>アカウント作成</div>
+
+          {/* 性別 */}
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>性別</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {GENDER_OPTIONS.map((g) => (
+              <button key={g.value} onClick={() => setGender(g.value)} style={{ flex: 1, background: gender === g.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1.5px solid ${gender === g.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '10px 4px', textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: 20, marginBottom: 3 }}>{g.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: gender === g.value ? 700 : 400, color: gender === g.value ? 'var(--g2)' : 'var(--mute)' }}>{g.label}</div>
+              </button>
+            ))}
+          </div>
+
           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
             {[['姓', lastName, setLastName], ['名', firstName, setFirstName]].map(([label, val, setter]) => (
               <div key={label as string} style={{ flex: 1 }}>
@@ -121,12 +140,16 @@ export default function RegisterPage() {
               </div>
             ))}
           </div>
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>メールアドレス</div>
           <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="メールアドレス" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>パスワード</div>
           <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="8文字以上" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>生年月日</div>
           <input value={birthDate} onChange={e => setBirthDate(e.target.value)} type="date" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
+
           <button onClick={() => setStep(1)} style={{ width: '100%', background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 'auto' }}>次へ →</button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--mute)', marginTop: 14 }}>
             すでにアカウントをお持ちの方は<span onClick={() => router.push('/login')} style={{ color: 'var(--g2)', fontWeight: 600, cursor: 'pointer' }}>　ログイン</span>
@@ -134,12 +157,12 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Step 2: ゴルフ情報 + 血液型 */}
+      {/* Step 2: ゴルフ情報 */}
       {step === 1 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
             <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)' }}>
-              {nickname?.[0] || '?'}
+              {nickname?.[0] || (gender === 'male' ? '👨' : gender === 'female' ? '👩' : '🧑')}
             </div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を変更</div>
           </div>
