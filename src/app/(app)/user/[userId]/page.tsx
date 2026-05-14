@@ -68,7 +68,14 @@ export default function UserProfilePage() {
         .select('*, post_likes(count)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-      if (postData) setPosts(postData)
+      if (postData) {
+        const postsWithLikes = (postData as any[]).map((p) => ({
+          ...p,
+          likes_count: Number(p.post_likes?.[0]?.count ?? 0),
+          liked_by_me: false,
+        }))
+        setPosts(postsWithLikes as any)
+      }
 
       // お気に入り確認
       const { data: favData } = await supabase
