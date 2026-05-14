@@ -65,7 +65,7 @@ export default function UserProfilePage() {
       // 投稿取得
       const { data: postData } = await supabase
         .from('posts')
-        .select('*')
+        .select('*, post_likes(count)')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       if (postData) setPosts(postData)
