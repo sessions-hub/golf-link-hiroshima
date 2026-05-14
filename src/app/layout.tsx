@@ -24,6 +24,16 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'GLH.',
   },
+  icons: {
+    apple: [
+      { url: '/icon-192.png', sizes: '192x192' },
+      { url: '/icon-512.png', sizes: '512x512' },
+    ],
+    icon: [
+      { url: '/icon-192.png', sizes: '192x192' },
+      { url: '/icon-512.png', sizes: '512x512' },
+    ],
+  },
   keywords: ['ゴルフ', '広島', 'マッチング', 'ゴルファー', 'ラウンド', 'Golf Link Hiroshima', 'GLH'],
 }
 
