@@ -2,14 +2,29 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Golf Link Hiroshima',
-  description: '広島のゴルファーをつなぐコミュニティアプリ',
+  title: 'Golf Link Hiroshima | Connecting Golfers',
+  description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。ラウンド仲間を見つけよう。',
   manifest: '/manifest.json',
+  metadataBase: new URL('https://golflink-hiroshima.com'),
+  openGraph: {
+    title: 'Golf Link Hiroshima | Connecting Golfers',
+    description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。',
+    url: 'https://golflink-hiroshima.com',
+    siteName: 'Golf Link Hiroshima',
+    locale: 'ja_JP',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Golf Link Hiroshima | Connecting Golfers',
+    description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'GLH.',
   },
+  keywords: ['ゴルフ', '広島', 'マッチング', 'ゴルファー', 'ラウンド', 'Golf Link Hiroshima', 'GLH'],
 }
 
 export const viewport: Viewport = {
