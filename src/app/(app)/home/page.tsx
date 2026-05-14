@@ -89,12 +89,13 @@ export default function HomePage() {
       }
     }
 
-    const { data: newPost } = await supabase.from('posts').insert({
+    const { data: newPost, error: postError } = await supabase.from('posts').insert({
       user_id: user.id,
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
     }).select(`*, profiles(nickname, avatar_url, user_id)`).single()
+    if (postError) console.error('Post error:', postError)
 
     if (newPost) setPosts(prev => [newPost as any, ...prev])
     setCaption('')
