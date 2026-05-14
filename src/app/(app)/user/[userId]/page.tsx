@@ -273,6 +273,10 @@ export default function UserProfilePage() {
                 <button onClick={() => toggleLike(post.id, post.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: post.liked_by_me ? '#e05070' : 'var(--mute)' }}>
                   {post.liked_by_me ? '❤️' : '♡'} {post.likes_count}
                 </button>
+                <ShareButtons
+                  url={`https://golflink-hiroshima.com/user/${userId}`}
+                  text={post.caption ?? 'GLH.でゴルフ仲間を見つけよう！'}
+                />
               </div>
             </div>
           ))}
