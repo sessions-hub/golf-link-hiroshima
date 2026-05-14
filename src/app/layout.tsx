@@ -3,12 +3,12 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Golf Link Hiroshima | Connecting Golfers',
-  description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。ラウンド仲間を見つけよう。',
+  description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。ラウンド仲間を見つけよう。',
   manifest: '/manifest.json',
   metadataBase: new URL('https://golflink-hiroshima.com'),
   openGraph: {
     title: 'Golf Link Hiroshima | Connecting Golfers',
-    description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。',
+    description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。',
     url: 'https://golflink-hiroshima.com',
     siteName: 'Golf Link Hiroshima',
     locale: 'ja_JP',
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Golf Link Hiroshima | Connecting Golfers',
-    description: '広島のゴルファーをつなぐマッチングアプリ。血液型・星座相性でマッチング。',
+    description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。',
   },
   appleWebApp: {
     capable: true,

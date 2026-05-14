@@ -27,7 +27,7 @@ export default function LPPage() {
           Connecting Golfers
         </h1>
         <p style={{ fontSize: 'clamp(15px, 3vw, 19px)', color: 'rgba(255,255,255,.8)', marginBottom: 8, lineHeight: 1.7 }}>
-          広島のゴルファーをつなぐマッチングアプリ
+          広島のゴルファーをつなぐコミュニティアプリ
         </p>
         <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 44, lineHeight: 1.7 }}>
           血液型・星座相性でマッチング。ラウンド仲間を見つけよう。
