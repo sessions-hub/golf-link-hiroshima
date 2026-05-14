@@ -94,7 +94,7 @@ export default function HomePage() {
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
-    }).select(`*, profiles(nickname, avatar_url, user_id)`).single()
+    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`).single()
     if (postError) console.error('Post error:', postError)
 
     if (newPost) setPosts(prev => [newPost as any, ...prev])
