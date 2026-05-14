@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
+import ShareButtons from '@/components/ShareButtons'
 
 interface Profile {
   user_id: string
