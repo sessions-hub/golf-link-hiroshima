@@ -5,7 +5,7 @@ interface LogoProps {
   variant?: 'screen' | 'white'
 }
 
-export default function Logo({ height = 52, variant = 'screen' }: LogoProps) {
+export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
   const isWhite = variant === 'white'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
