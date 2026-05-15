@@ -12,7 +12,12 @@ export async function GET(request: NextRequest) {
   const url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=10&page=${page}&sort=recommendRank`
 
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      headers: {
+        'Referer': 'https://www.golflink-hiroshima.com',
+        'Origin': 'https://www.golflink-hiroshima.com',
+      }
+    })
     const data = await res.json()
     return NextResponse.json(data)
   } catch (error) {
