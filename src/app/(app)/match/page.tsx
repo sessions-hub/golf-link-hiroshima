@@ -172,7 +172,7 @@ export default function MatchPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '52px 20px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '44px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
         <span style={{ fontFamily: 'Inter', fontSize: 12, fontWeight: 600, color: 'rgba(168,224,99,.8)', letterSpacing: '.08em' }}>広島市</span>
       </div>
