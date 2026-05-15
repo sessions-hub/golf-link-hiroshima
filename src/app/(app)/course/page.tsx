@@ -5,6 +5,21 @@ import { createClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
+interface GoraCourse {
+  golfCourseId: number
+  golfCourseName: string
+  golfCourseAbbr: string
+  prefecture: string
+  address: string
+  golfCourseImageUrl: string
+  evaluation: number
+  reservationUrl: string
+  affiliateUrl: string
+  highestPrice: number
+  lowestPrice: number
+  holes: number
+}
+
 interface Competition {
   id: string
   organizer_id: string
@@ -21,13 +36,7 @@ interface Competition {
   is_entered?: boolean
 }
 
-const COURSES = [
-  { id: 1, name: '広島カントリークラブ', area: '広島市安佐北区', holes: 18, par: 72, price: 9200, status: 'open', times: ['7:30', '9:00', '10:30'], day: '土曜', url: 'https://www.gora.jp' },
-  { id: 2, name: '広島若草カントリークラブ', area: '安佐北区', holes: 18, par: 72, price: 7800, status: 'few', times: ['6:45', '8:15'], day: '日曜', url: 'https://www.gora.jp' },
-  { id: 3, name: '廿日市カントリークラブ', area: '廿日市市', holes: 18, par: 72, price: 8500, status: 'open', times: ['7:00', '8:30', '10:00'], day: '土曜', url: 'https://www.gora.jp' },
-]
-
-const COURSE_FILTERS = ['今週末', '平日格安', '2名〜', '早朝']
+const COURSE_FILTERS = ['広島市', '廿日市', '東広島', '福山', '山口']
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -35,7 +44,9 @@ export default function CoursePage() {
   const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
-  const [courseFilter, setCourseFilter] = useState('今週末')
+  const [courseFilter, setCourseFilter] = useState('広島市')
+  const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
+  const [courseLoading, setCourseLoading] = useState(false)
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
   const [myId, setMyId] = useState('')
@@ -69,10 +80,25 @@ export default function CoursePage() {
       if (prof) setMyPlan(prof.plan)
 
       await fetchCompetitions(user.id)
+      await fetchCourses('広島市')
       setLoading(false)
     }
     init()
   }, [])
+
+  const fetchCourses = async (keyword: string) => {
+    setCourseLoading(true)
+    try {
+      const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`)
+      const data = await res.json()
+      if (data.Items) {
+        setGoraCourses(data.Items.map((item: any) => item.Item))
+      }
+    } catch (error) {
+      console.error('Course fetch error:', error)
+    }
+    setCourseLoading(false)
+  }
 
   const fetchCompetitions = async (userId: string) => {
     const { data } = await supabase
@@ -203,38 +229,48 @@ export default function CoursePage() {
             </div>
             <div style={{ display: 'flex', gap: 5 }}>
               {COURSE_FILTERS.map((f) => (
-                <button key={f} onClick={() => setCourseFilter(f)} style={{ padding: '3px 8px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${courseFilter === f ? 'var(--g3)' : 'var(--line)'}`, color: courseFilter === f ? 'var(--g2)' : 'var(--mid)', background: courseFilter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: courseFilter === f ? 600 : 400 }}>{f}</button>
+                <button key={f} onClick={() => { setCourseFilter(f); fetchCourses(f) }} style={{ padding: '3px 8px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: `1px solid ${courseFilter === f ? 'var(--g3)' : 'var(--line)'}`, color: courseFilter === f ? 'var(--g2)' : 'var(--mid)', background: courseFilter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: courseFilter === f ? 600 : 400 }}>{f}</button>
               ))}
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
-            {COURSES.map((c) => (
-              <div key={c.id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
-                <div style={{ height: 72, background: 'var(--g1)', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.1em' }}>{c.day} {c.times[0]}〜</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: 'white', marginTop: 2 }}>{c.name}</div>
+            {courseLoading && (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>コースを検索中...</div>
+            )}
+            {!courseLoading && goraCourses.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>⛳</div>
+                <div style={{ fontSize: 13, color: 'var(--mute)' }}>コースが見つかりませんでした</div>
+              </div>
+            )}
+            {!courseLoading && goraCourses.map((c) => (
+              <div key={c.golfCourseId} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+                {c.golfCourseImageUrl && (
+                  <img src={c.golfCourseImageUrl} alt={c.golfCourseName} style={{ width: '100%', height: 120, objectFit: 'cover' }} />
+                )}
+                {!c.golfCourseImageUrl && (
+                  <div style={{ height: 72, background: 'var(--g1)', display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'white' }}>{c.golfCourseName}</div>
                   </div>
-                </div>
+                )}
                 <div style={{ padding: '12px 14px' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{c.golfCourseName}</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.area} · {c.holes}H · Par{c.par}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>¥{c.price.toLocaleString()}〜</div>
+                    <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.prefecture} · {c.holes}H</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>¥{c.lowestPrice?.toLocaleString()}〜</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 7, alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ background: c.status === 'few' ? 'var(--lime)' : 'var(--surf)', color: c.status === 'few' ? 'var(--g1)' : 'var(--g3)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: c.status !== 'few' ? '1px solid var(--line)' : 'none' }}>
-                      {c.status === 'few' ? '残2枠' : '空きあり'}
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--mute)' }}>{c.times.join(' / ')}</span>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, color: '#f59e0b' }}>{'★'.repeat(Math.round(c.evaluation ?? 0))}</span>
+                    <span style={{ fontSize: 10, color: 'var(--mute)' }}>{c.evaluation}</span>
                   </div>
-                  <a href={c.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
-                    予約サイトで予約する →
+                  <a href={c.affiliateUrl || c.reservationUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
+                    楽天GORAで予約する →
                   </a>
                 </div>
               </div>
             ))}
             <div style={{ textAlign: 'center', padding: '8px 16px 16px' }}>
-              <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.7 }}>※ 予約は楽天GORAなど外部サイトにて承ります</div>
+              <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.7 }}>※ 楽天GORAのアフィリエイトリンク経由で予約されます</div>
             </div>
           </div>
         </>
