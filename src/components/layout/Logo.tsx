@@ -5,10 +5,10 @@ interface LogoProps {
   variant?: 'screen' | 'white'
 }
 
-export default function Logo({ height = 40, variant = 'screen' }: LogoProps) {
+export default function Logo({ height = 52, variant = 'screen' }: LogoProps) {
   const isWhite = variant === 'white'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
       {/* ロゴ画像 */}
       <img
         src={isWhite ? '/GL白抜きロゴ.png' : '/グリーン.png'}
@@ -21,16 +21,31 @@ export default function Logo({ height = 40, variant = 'screen' }: LogoProps) {
       />
       {/* サブテキスト */}
       <div style={{
-        fontSize: 8,
-        fontWeight: 600,
-        color: isWhite ? 'rgba(255,255,255,.7)' : '#111814',
-        letterSpacing: '.18em',
-        textTransform: 'uppercase' as const,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
         borderLeft: `1px solid ${isWhite ? 'rgba(255,255,255,.25)' : '#dde8dd'}`,
-        paddingLeft: 10,
-        lineHeight: 1.4,
+        paddingLeft: 12,
+        gap: 3,
       }}>
-        GOLF LINK<br/>HIROSHIMA
+        <div style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: isWhite ? 'rgba(255,255,255,.8)' : '#111814',
+          letterSpacing: '.2em',
+          textTransform: 'uppercase' as const,
+          fontFamily: 'Inter, sans-serif',
+          lineHeight: 1,
+        }}>GOLF LINK</div>
+        <div style={{
+          fontSize: 9,
+          fontWeight: 700,
+          color: isWhite ? 'rgba(255,255,255,.8)' : '#111814',
+          letterSpacing: '.2em',
+          textTransform: 'uppercase' as const,
+          fontFamily: 'Inter, sans-serif',
+          lineHeight: 1,
+        }}>HIROSHIMA</div>
       </div>
     </div>
   )
