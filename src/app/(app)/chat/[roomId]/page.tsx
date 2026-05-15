@@ -8,6 +8,9 @@ interface Message {
   room_id: string
   sender_id: string
   content: string
+  image_url: string | null
+  file_url: string | null
+  file_name: string | null
   created_at: string
 }
 
@@ -27,7 +30,13 @@ export default function ChatRoomPage() {
   const [myId, setMyId] = useState('')
   const [otherProfile, setOtherProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -52,7 +61,6 @@ export default function ChatRoomPage() {
         .single()
       if (profile) setOtherProfile(profile)
 
-      // メッセージ取得
       const { data: msgs } = await supabase
         .from('messages')
         .select('*')
@@ -61,7 +69,6 @@ export default function ChatRoomPage() {
 
       if (msgs) {
         setMessages(msgs)
-        // 読み込み後に一番下にスクロール
         setTimeout(() => {
           bottomRef.current?.scrollIntoView({ behavior: 'auto' })
         }, 100)
@@ -69,7 +76,6 @@ export default function ChatRoomPage() {
 
       setLoading(false)
 
-      // リアルタイム購読
       const channel = supabase
         .channel(`room:${roomId}`)
         .on('postgres_changes', {
@@ -78,7 +84,12 @@ export default function ChatRoomPage() {
           table: 'messages',
           filter: `room_id=eq.${roomId}`,
         }, (payload) => {
-          setMessages(prev => [...prev, payload.new as Message])
+          const newMsg = payload.new as Message
+          setMessages(prev => {
+            // 重複チェック
+            if (prev.find(m => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
+          })
         })
         .subscribe()
 
@@ -87,53 +98,116 @@ export default function ChatRoomPage() {
     init()
   }, [roomId])
 
-  // 新メッセージで自動スクロール
   useEffect(() => {
-    if (messages.length > 0) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   const sendMsg = async () => {
-    if (!input.trim() || !myId) return
+    if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
+    setSending(true)
+
     const content = input.trim()
     setInput('')
-    await supabase.from('messages').insert({
+
+    let imageUrl: string | null = null
+    let fileUrl: string | null = null
+    let fileName: string | null = null
+
+    // 画像アップロード
+    if (selectedImage) {
+      const imgName = `${myId}/${Date.now()}_img`
+      const { error } = await supabase.storage
+        .from('user-photos')
+        .upload(imgName, selectedImage, { contentType: selectedImage.type, upsert: true })
+      if (!error) {
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(imgName)
+        imageUrl = data.publicUrl
+      }
+      setSelectedImage(null)
+      setImagePreview(null)
+    }
+
+    // ファイルアップロード
+    if (selectedFile) {
+      const fName = `${myId}/${Date.now()}_${selectedFile.name}`
+      const { error } = await supabase.storage
+        .from('user-photos')
+        .upload(fName, selectedFile, { contentType: selectedFile.type, upsert: true })
+      if (!error) {
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(fName)
+        fileUrl = data.publicUrl
+        fileName = selectedFile.name
+      }
+      setSelectedFile(null)
+    }
+
+    // 楽観的UI更新（即時表示）
+    const tempId = `temp-${Date.now()}`
+    const tempMsg: Message = {
+      id: tempId,
       room_id: roomId,
       sender_id: myId,
-      content,
-    })
-
-    // 相手にプッシュ通知を送信
-    const { data: room } = await supabase
-      .from('chat_rooms')
-      .select('user1_id, user2_id')
-      .eq('id', roomId)
-      .single()
-
-    if (room) {
-      const otherUserId = room.user1_id === myId ? room.user2_id : room.user1_id
-      await fetch('/api/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: otherUserId,
-          title: 'GLH. 新しいメッセージ',
-          body: content.length > 30 ? content.slice(0, 30) + '...' : content,
-          url: `/chat/${roomId}`,
-        }),
-      })
+      content: content || '',
+      image_url: imageUrl,
+      file_url: fileUrl,
+      file_name: fileName,
+      created_at: new Date().toISOString(),
     }
+    setMessages(prev => [...prev, tempMsg])
+
+    // DBに保存
+    const { data: savedMsg } = await supabase.from('messages').insert({
+      room_id: roomId,
+      sender_id: myId,
+      content: content || '',
+      image_url: imageUrl,
+      file_url: fileUrl,
+      file_name: fileName,
+    }).select().single()
+
+    // tempメッセージをDBのメッセージに置換
+    if (savedMsg) {
+      setMessages(prev => prev.map(m => m.id === tempId ? savedMsg : m))
+    }
+
+    // プッシュ通知
+    try {
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('user1_id, user2_id')
+        .eq('id', roomId)
+        .single()
+
+      if (room) {
+        const otherUserId = room.user1_id === myId ? room.user2_id : room.user1_id
+        await fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: otherUserId,
+            title: 'GLH. 新しいメッセージ',
+            body: imageUrl ? '📷 画像が届きました' : fileUrl ? '📄 ファイルが届きました' : content.length > 30 ? content.slice(0, 30) + '...' : content,
+            url: `/chat/${roomId}`,
+          }),
+        })
+      }
+    } catch (e) {}
+
+    setSending(false)
   }
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--off)' }}>
+      {/* ヘッダー */}
       <div style={{ background: 'var(--g1)', padding: '52px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <div onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </div>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa' }}>
-          {otherProfile?.nickname?.[0] ?? '?'}
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa', overflow: 'hidden' }}>
+          {otherProfile?.avatar_url
+            ? <img src={otherProfile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : otherProfile?.nickname?.[0] ?? '?'
+          }
         </div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{otherProfile?.nickname ?? 'チャット'}</div>
@@ -141,10 +215,9 @@ export default function ChatRoomPage() {
         </div>
       </div>
 
+      {/* メッセージ一覧 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading && (
-          <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>
-        )}
+        {loading && <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>}
         {!loading && messages.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
@@ -154,36 +227,83 @@ export default function ChatRoomPage() {
         )}
         {messages.map((m) => {
           const isMe = m.sender_id === myId
+          const isTemp = m.id.startsWith('temp-')
           const time = new Date(m.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
           return (
-            <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
-              {!isMe && (
-                <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 3 }}>{otherProfile?.nickname}</div>
-              )}
-              <div style={{ padding: '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none' }}>
-                {m.content}
+            <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start', opacity: isTemp ? 0.7 : 1 }}>
+              {!isMe && <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 3 }}>{otherProfile?.nickname}</div>}
+              <div style={{ padding: m.image_url || m.file_url ? '6px' : '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none' }}>
+                {m.image_url && (
+                  <img src={m.image_url} alt="画像" style={{ width: '100%', maxWidth: 200, borderRadius: 8, display: 'block' }} />
+                )}
+                {m.file_url && (
+                  <a href={m.file_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 6, color: isMe ? 'var(--lime)' : 'var(--g2)', textDecoration: 'none', padding: '4px 6px' }}>
+                    <span>📄</span>
+                    <span style={{ fontSize: 12 }}>{m.file_name ?? 'ファイル'}</span>
+                  </a>
+                )}
+                {m.content && <div style={{ padding: m.image_url || m.file_url ? '4px 4px 0' : '0' }}>{m.content}</div>}
               </div>
-              <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>{time}</div>
+              <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>
+                {isTemp ? '送信中...' : time}
+              </div>
             </div>
           )
         })}
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
+      {/* プレビュー */}
+      {(imagePreview || selectedFile) && (
+        <div style={{ padding: '8px 16px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {imagePreview && (
+            <div style={{ position: 'relative' }}>
+              <img src={imagePreview} alt="preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
+              <button onClick={() => { setSelectedImage(null); setImagePreview(null) }} style={{ position: 'absolute', top: -6, right: -6, background: 'rgba(0,0,0,.5)', border: 'none', borderRadius: '50%', width: 18, height: 18, color: 'white', cursor: 'pointer', fontSize: 10 }}>×</button>
+            </div>
+          )}
+          {selectedFile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px', flex: 1 }}>
+              <span>📄</span>
+              <span style={{ fontSize: 12, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedFile.name}</span>
+              <button onClick={() => setSelectedFile(null)} style={{ background: 'none', border: 'none', color: 'var(--mute)', cursor: 'pointer', fontSize: 14 }}>×</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 入力エリア */}
+      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        {/* 画像ボタン */}
+        <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>📷</button>
+        {/* ファイルボタン */}
+        <button onClick={() => fileRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>📄</button>
+
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMsg()}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()}
           placeholder="メッセージを入力..."
           style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
         />
-        <button onClick={sendMsg} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+        <button onClick={sendMsg} disabled={sending} style={{ width: 38, height: 38, borderRadius: '50%', background: sending ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22,2 15,22 11,13 2,9"/>
           </svg>
         </button>
+
+        <input ref={imageRef} type="file" accept="image/*" onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (!file) return
+          setSelectedImage(file)
+          setImagePreview(URL.createObjectURL(file))
+        }} style={{ display: 'none' }} />
+        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (!file) return
+          setSelectedFile(file)
+        }} style={{ display: 'none' }} />
       </div>
     </div>
   )
