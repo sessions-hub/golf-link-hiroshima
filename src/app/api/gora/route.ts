@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID
   const accessKey = process.env.RAKUTEN_ACCESS_KEY
 
-  const url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=10&page=${page}&sort=recommendRank`
+  const url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=10&page=${page}`
 
   try {
     const res = await fetch(url, {
