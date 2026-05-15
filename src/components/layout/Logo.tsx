@@ -24,8 +24,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
         }}
       />
       <div style={{
-        borderLeft: `1px solid ${isWhite ? 'rgba(255,255,255,.25)' : '#dde8dd'}`,
-        opacity: 0.6,
+        borderLeft: `1px solid ${isWhite ? 'rgba(255,255,255,.4)' : '#111814'}`,
         paddingLeft: 12,
         display: 'flex',
         flexDirection: 'column' as const,
@@ -35,7 +34,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
         <div style={{
           fontSize: 9,
           fontWeight: 700,
-          color: isWhite ? 'rgba(255,255,255,.8)' : '#111814',
+          color: isWhite ? 'rgba(255,255,255,.9)' : '#111814',
           letterSpacing: '.2em',
           textTransform: 'uppercase' as const,
           fontFamily: 'Inter, sans-serif',
@@ -44,7 +43,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
         <div style={{
           fontSize: 9,
           fontWeight: 700,
-          color: isWhite ? 'rgba(255,255,255,.8)' : '#111814',
+          color: isWhite ? 'rgba(255,255,255,.9)' : '#111814',
           letterSpacing: '.2em',
           textTransform: 'uppercase' as const,
           fontFamily: 'Inter, sans-serif',
