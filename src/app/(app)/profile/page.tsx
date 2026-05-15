@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'var(--g1)', padding: '48px 20px 20px' }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '48px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Logo variant="screen" />
           <span style={{ background: profile?.plan === 'premium' ? 'var(--lime)' : profile?.plan === 'standard' ? 'rgba(168,224,99,.3)' : 'rgba(255,255,255,.15)', color: profile?.plan === 'premium' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700 }}>

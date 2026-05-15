@@ -42,7 +42,7 @@ export default function GpsPage() {
       <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
         <div style={{ background: 'var(--g1)', padding: '52px 20px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <Logo variant="screen" />
-          <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'white' }}>GPS距離計測</span>
+          <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>GPS距離計測</span>
         </div>
         <div style={{ background: 'rgba(13,61,43,.9)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--lime)', animation: 'pulse 1.5s infinite' }} />
@@ -96,7 +96,7 @@ export default function GpsPage() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '52px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
