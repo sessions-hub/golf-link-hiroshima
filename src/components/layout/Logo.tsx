@@ -29,7 +29,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
         display: 'flex',
         flexDirection: 'column' as const,
         justifyContent: 'center',
-        height: height,
+        gap: 4,
       }}>
         <div style={{
           fontSize: 9,
@@ -38,7 +38,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
           letterSpacing: '.2em',
           textTransform: 'uppercase' as const,
           fontFamily: 'Inter, sans-serif',
-          lineHeight: 1.6,
+          lineHeight: 1,
         }}>GOLF LINK</div>
         <div style={{
           fontSize: 9,
@@ -47,7 +47,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
           letterSpacing: '.2em',
           textTransform: 'uppercase' as const,
           fontFamily: 'Inter, sans-serif',
-          lineHeight: 1.6,
+          lineHeight: 1,
         }}>HIROSHIMA</div>
       </div>
     </div>
