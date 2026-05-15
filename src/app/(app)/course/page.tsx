@@ -13,8 +13,8 @@ interface GoraCourse {
   address: string
   golfCourseImageUrl: string
   evaluation: number
-  reservationUrl: string
-  affiliateUrl: string
+  golfCourseDetailUrl: string
+  reserveCalUrl: string
   highestPrice: number
   lowestPrice: number
   holes: number
@@ -263,7 +263,7 @@ export default function CoursePage() {
                     <span style={{ fontSize: 11, color: '#f59e0b' }}>{'★'.repeat(Math.round(c.evaluation ?? 0))}</span>
                     <span style={{ fontSize: 10, color: 'var(--mute)' }}>{c.evaluation}</span>
                   </div>
-                  <a href={c.affiliateUrl || c.reservationUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
+                  <a href={c.golfCourseDetailUrl || c.reserveCalUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
                     楽天GORAで予約する →
                   </a>
                 </div>
