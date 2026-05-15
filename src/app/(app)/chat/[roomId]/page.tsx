@@ -129,14 +129,18 @@ export default function ChatRoomPage() {
 
     // ファイルアップロード
     if (selectedFile) {
-      const fName = `${myId}/${Date.now()}_${selectedFile.name}`
+      // ファイル名をASCIIのみに変換
+      const ext = selectedFile.name.split('.').pop() ?? 'file'
+      const safeName = `${myId}/${Date.now()}.${ext}`
       const { error } = await supabase.storage
         .from('user-photos')
-        .upload(fName, selectedFile, { contentType: selectedFile.type, upsert: true })
+        .upload(safeName, selectedFile, { contentType: selectedFile.type, upsert: true })
       if (!error) {
-        const { data } = supabase.storage.from('user-photos').getPublicUrl(fName)
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(safeName)
         fileUrl = data.publicUrl
-        fileName = selectedFile.name
+        fileName = selectedFile.name  // 元のファイル名は表示用に保持
+      } else {
+        console.error('File upload error:', error)
       }
       setSelectedFile(null)
     }
