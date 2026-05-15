@@ -7,11 +7,16 @@ export async function GET(request: NextRequest) {
 
   const appId = process.env.RAKUTEN_APP_ID
   const affiliateId = process.env.RAKUTEN_AFFILIATE_ID
+  const accessKey = process.env.RAKUTEN_ACCESS_KEY
 
   const url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&keyword=${encodeURIComponent(keyword)}&hits=10&page=${page}&sort=recommendRank`
 
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessKey}`,
+      }
+    })
     const data = await res.json()
     return NextResponse.json(data)
   } catch (error) {
