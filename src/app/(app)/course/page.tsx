@@ -51,6 +51,9 @@ export default function CoursePage() {
   const [maxPlayers, setMaxPlayers] = useState(24)
   const [fee, setFee] = useState(5000)
   const [description, setDescription] = useState('')
+  const [compImage, setCompImage] = useState<File | null>(null)
+  const [compPdf, setCompPdf] = useState<File | null>(null)
+  const [compImagePreview, setCompImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -99,6 +102,31 @@ export default function CoursePage() {
     if (!title || !courseName || !compDate) return
     setCreating(true)
 
+    let imageUrl: string | null = null
+    let pdfUrl: string | null = null
+
+    if (compImage) {
+      const fileName = `${myId}/${Date.now()}_image`
+      const { error: uploadError } = await supabase.storage
+        .from('comp-files')
+        .upload(fileName, compImage, { contentType: compImage.type, upsert: true })
+      if (!uploadError) {
+        const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
+        imageUrl = data.publicUrl
+      }
+    }
+
+    if (compPdf) {
+      const fileName = `${myId}/${Date.now()}_pdf`
+      const { error: uploadError } = await supabase.storage
+        .from('comp-files')
+        .upload(fileName, compPdf, { contentType: 'application/pdf', upsert: true })
+      if (!uploadError) {
+        const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
+        pdfUrl = data.publicUrl
+      }
+    }
+
     const { error } = await supabase.from('competitions').insert({
       organizer_id: myId,
       title,
@@ -108,6 +136,8 @@ export default function CoursePage() {
       max_players: maxPlayers,
       fee,
       description: description || null,
+      image_url: imageUrl,
+      pdf_url: pdfUrl,
       status: 'recruiting',
     })
 
@@ -118,6 +148,9 @@ export default function CoursePage() {
       setCourseName('')
       setCompDate('')
       setDescription('')
+      setCompImage(null)
+      setCompPdf(null)
+      setCompImagePreview(null)
     }
     setCreating(false)
   }
@@ -252,6 +285,14 @@ export default function CoursePage() {
               {c.description && (
                 <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.6, marginBottom: 10 }}>{c.description}</div>
               )}
+              {(c as any).image_url && (
+                <img src={(c as any).image_url} alt="コンペ画像" style={{ width: '100%', borderRadius: 8, marginBottom: 10, maxHeight: 200, objectFit: 'cover' }} />
+              )}
+              {(c as any).pdf_url && (
+                <a href={(c as any).pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, textDecoration: 'none', color: 'var(--g2)', fontSize: 12, fontWeight: 600 }}>
+                  <span>📄</span> 要項PDFを見る
+                </a>
+              )}
 
               {c.status === 'recruiting' && c.organizer_id !== myId && (
                 <button
@@ -316,6 +357,44 @@ export default function CoursePage() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>説明（任意）</div>
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="コンペの詳細・注意事項など" rows={3} style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '11px 14px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', fontFamily: 'inherit' }} />
+            </div>
+
+            {/* 写真アップロード */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>コンペ画像（任意）</div>
+              {compImagePreview && (
+                <div style={{ position: 'relative', marginBottom: 8 }}>
+                  <img src={compImagePreview} alt="preview" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 8 }} />
+                  <button onClick={() => { setCompImage(null); setCompImagePreview(null) }} style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.5)', border: 'none', borderRadius: '50%', width: 24, height: 24, color: 'white', cursor: 'pointer', fontSize: 14 }}>×</button>
+                </div>
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
+                <span style={{ fontSize: 16 }}>📷</span>
+                <span style={{ fontSize: 13, color: 'var(--mid)' }}>{compImage ? compImage.name : '画像を選択'}</span>
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setCompImage(file)
+                  setCompImagePreview(URL.createObjectURL(file))
+                }} style={{ display: 'none' }} />
+              </label>
+            </div>
+
+            {/* PDFアップロード */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>要項PDF（任意）</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 14px', cursor: 'pointer' }}>
+                <span style={{ fontSize: 16 }}>📄</span>
+                <span style={{ fontSize: 13, color: compPdf ? 'var(--g2)' : 'var(--mid)', fontWeight: compPdf ? 600 : 400 }}>{compPdf ? compPdf.name : 'PDFを選択'}</span>
+                <input type="file" accept=".pdf" onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setCompPdf(file)
+                }} style={{ display: 'none' }} />
+              </label>
+              {compPdf && (
+                <button onClick={() => setCompPdf(null)} style={{ marginTop: 6, background: 'none', border: 'none', color: 'var(--mute)', fontSize: 11, cursor: 'pointer' }}>× PDFを削除</button>
+              )}
             </div>
 
             <button onClick={handleCreateComp} disabled={creating || !title || !courseName || !compDate} style={{ width: '100%', background: creating || !title || !courseName || !compDate ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '14px', fontSize: 14, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer' }}>
