@@ -129,7 +129,7 @@ export default function HomePage() {
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       {/* グリーンヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '44px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 12px)', paddingBottom: '12px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {activeTab === 'timeline' && (
