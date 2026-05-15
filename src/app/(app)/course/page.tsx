@@ -92,7 +92,20 @@ export default function CoursePage() {
       const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`)
       const data = await res.json()
       if (data.Items) {
-        setGoraCourses(data.Items.map((item: any) => item.Item))
+        const allCourses = data.Items.map((item: any) => item.Item)
+        // キーワードに基づいて住所でフィルタリング
+        const filtered = allCourses.filter((c: any) => {
+          const addr = c.address ?? ''
+          const name = c.golfCourseName ?? ''
+          if (keyword === '広島' || keyword === '廿日市' || keyword === '東広島' || keyword === '福山') {
+            return addr.includes('広島') || name.includes('広島')
+          }
+          if (keyword === '山口') {
+            return addr.includes('山口') || name.includes('山口')
+          }
+          return true
+        })
+        setGoraCourses(filtered.length > 0 ? filtered : allCourses)
       }
     } catch (error) {
       console.error('Course fetch error:', error)
