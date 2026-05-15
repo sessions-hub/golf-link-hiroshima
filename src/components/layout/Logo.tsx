@@ -25,6 +25,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
       />
       <div style={{
         borderLeft: `1px solid ${isWhite ? 'rgba(255,255,255,.25)' : '#dde8dd'}`,
+        opacity: 0.6,
         paddingLeft: 12,
         display: 'flex',
         flexDirection: 'column' as const,
