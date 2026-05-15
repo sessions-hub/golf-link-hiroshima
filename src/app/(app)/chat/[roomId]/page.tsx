@@ -103,6 +103,27 @@ export default function ChatRoomPage() {
       sender_id: myId,
       content,
     })
+
+    // 相手にプッシュ通知を送信
+    const { data: room } = await supabase
+      .from('chat_rooms')
+      .select('user1_id, user2_id')
+      .eq('id', roomId)
+      .single()
+
+    if (room) {
+      const otherUserId = room.user1_id === myId ? room.user2_id : room.user1_id
+      await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: otherUserId,
+          title: 'GLH. 新しいメッセージ',
+          body: content.length > 30 ? content.slice(0, 30) + '...' : content,
+          url: `/chat/${roomId}`,
+        }),
+      })
+    }
   }
 
   return (

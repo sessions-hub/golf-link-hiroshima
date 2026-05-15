@@ -47,6 +47,36 @@ export default function ProfilePage() {
     fetchProfile()
   }, [])
 
+  const registerPush = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('このブラウザはプッシュ通知に対応していません')
+      return
+    }
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') {
+        alert('通知を許可してください')
+        return
+      }
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY,
+      })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, userId: user.id }),
+      })
+      alert('プッシュ通知を有効にしました！')
+    } catch (error) {
+      console.error('Push registration error:', error)
+      alert('通知の設定に失敗しました')
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')

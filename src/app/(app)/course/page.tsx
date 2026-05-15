@@ -204,6 +204,20 @@ export default function CoursePage() {
         user_id: myId,
         status: 'confirmed',
       })
+      // 主催者にプッシュ通知
+      const comp = competitions.find(c => c.id === compId)
+      if (comp?.organizer_id) {
+        await fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: comp.organizer_id,
+            title: 'GLH. コンペに参加者が来ました！',
+            body: `${comp.title}に新しい参加者が申し込みました`,
+            url: '/course',
+          }),
+        })
+      }
     }
     await fetchCompetitions(myId)
   }
