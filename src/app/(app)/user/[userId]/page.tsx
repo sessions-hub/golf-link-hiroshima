@@ -198,7 +198,7 @@ export default function UserProfilePage() {
 
           {/* 基本情報 */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{profile.nickname}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)' }}>{profile.nickname}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,.6)', marginTop: 2 }}>
               {age && `${age}歳`}{zodiac && ` · ${zodiac}`}{profile.blood_type && ` · ${profile.blood_type}型`}
             </div>
