@@ -10,7 +10,7 @@ const MENU_ITEMS = [
   { icon: '📅', label: '予約履歴', path: '/course' },
   { icon: '🏆', label: '参加コンペ一覧', path: '/comp' },
   { icon: '💳', label: 'サブスクリプション管理', path: '/subscription' },
-  { icon: '⚙️', label: '設定・通知', path: '/settings' },
+  { icon: '🔔', label: 'プッシュ通知を設定', path: '/settings' },
 ]
 
 const LEGAL_ITEMS = [
@@ -126,7 +126,7 @@ export default function ProfilePage() {
 
       <div style={{ flex: 1, paddingBottom: 90 }}>
         {MENU_ITEMS.map((item) => (
-          <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+          <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
             <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', fontSize: 14 }}>{item.icon}</div>
             <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
