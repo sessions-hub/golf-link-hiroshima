@@ -93,15 +93,14 @@ export default function CoursePage() {
       const data = await res.json()
       if (data.Items) {
         const allCourses = data.Items.map((item: any) => item.Item)
-        // キーワードに基づいて住所でフィルタリング
+        // 住所でフィルタリング（北海道の北広島市を除外）
         const filtered = allCourses.filter((c: any) => {
           const addr = c.address ?? ''
-          const name = c.golfCourseName ?? ''
           if (keyword === '広島' || keyword === '廿日市' || keyword === '東広島' || keyword === '福山') {
-            return addr.includes('広島') || name.includes('広島')
+            return addr.includes('広島県')
           }
           if (keyword === '山口') {
-            return addr.includes('山口') || name.includes('山口')
+            return addr.includes('山口県')
           }
           return true
         })
