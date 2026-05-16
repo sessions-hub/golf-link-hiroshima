@@ -314,18 +314,22 @@ export default function MatchPage() {
 
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
                         {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
                         {m.nickname}
-                        {m.gender && <span style={{ fontSize: 10, color: m.gender === 'male' ? '#4a90d9' : m.gender === 'female' ? '#e06090' : '#888', fontWeight: 600 }}>{m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '⚧'}</span>}
-                        {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 2 }}>{AGE_DECADE(m.birth_date)}</span>}
+                        {m.gender && (
+                          <span style={{ width: 14, height: 14, borderRadius: 3, background: m.gender === 'male' ? '#3b82f6' : m.gender === 'female' ? '#ec4899' : '#9ca3af', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {m.gender === 'male' && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="10" cy="14" r="6"/><line x1="14.5" y1="9.5" x2="21" y2="3"/><polyline points="16,3 21,3 21,8"/></svg>}
+                            {m.gender === 'female' && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="9" r="6"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="19" x2="15" y2="19"/></svg>}
+                            {m.gender === 'other' && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <span style={{ color: LEVEL_LABEL(m.handicap).color, fontWeight: 600, fontSize: 10 }}>{LEVEL_LABEL(m.handicap).label}</span>
-                        {m.areas && m.areas.length > 0 && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid #bbf7d0', color: 'var(--g2)', background: '#f0fdf4', fontWeight: 500 }}>{AREA_LABELS[m.areas[0]] ?? m.areas[0]}</span>}
-                      </div>
-                      <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                        {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}
+                      {m.areas && m.areas.length > 0 && (
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mid)', marginBottom: 5 }}>{AREA_LABELS[m.areas[0]] ?? m.areas[0]}</div>
+                      )}
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{m.blood_type}型 {bloodCompat ?? ''}</span>}
                         {otherZodiac && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{otherZodiac} {zodiacCompat ?? ''}</span>}
                         {(m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')) && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>週末希望</span>}
                       </div>
