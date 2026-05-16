@@ -260,7 +260,7 @@ export default function HomePage() {
               </div>
               {chatRooms.map((room) => {
                 const unread = room.user1_id === myUserId ? room.unread_count_user1 : room.unread_count_user2
-                const time = new Date(room.last_message_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                const time = new Date(room.last_message_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' })
                 return (
                   <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>

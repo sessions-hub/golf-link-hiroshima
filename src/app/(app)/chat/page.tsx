@@ -67,12 +67,16 @@ export default function ChatListPage() {
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr)
     const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    if (days === 0) return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-    if (days === 1) return '昨日'
-    if (days < 7) return `${days}日前`
-    return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })
+    const diffMs = now.getTime() - date.getTime()
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const todayStr = now.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    const datStr = date.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    if (todayStr === datStr) {
+      return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' })
+    }
+    if (diffDays === 1) return '昨日'
+    if (diffDays < 7) return `${diffDays}日前`
+    return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', timeZone: 'Asia/Tokyo' })
   }
 
   const totalUnread = rooms.reduce((sum, room) => sum + getUnreadCount(room), 0)
