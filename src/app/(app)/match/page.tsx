@@ -266,9 +266,10 @@ export default function MatchPage() {
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600 }}>
+                      <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                        {m.plan === 'premium' && <span style={{ fontSize: 11 }}>👑</span>}
                         {m.nickname}
-                        {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 6 }}>{new Date().getFullYear() - new Date(m.birth_date).getFullYear()}歳</span>}
+                        {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 2 }}>{new Date().getFullYear() - new Date(m.birth_date).getFullYear()}歳</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>Hdcp {m.handicap} · {FREQ_LABELS[m.round_freq] ?? m.round_freq}</div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
