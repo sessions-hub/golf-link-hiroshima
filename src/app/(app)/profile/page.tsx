@@ -20,17 +20,17 @@ const SVG_ICONS: Record<string, React.ReactNode> = {
 }
 
 const MENU_ITEMS = [
-  { icon: '👤', label: 'プロフィール編集', path: '/profile/edit' },
-  { icon: '📅', label: '予約履歴', path: '/course' },
-  { icon: '🏆', label: '参加コンペ一覧', path: '/comp' },
-  { icon: '💳', label: 'サブスクリプション管理', path: '/subscription' },
-  { icon: '🔔', label: 'プッシュ通知を設定', path: '/settings' },
+  { icon: 'user', label: 'プロフィール編集', path: '/profile/edit' },
+  { icon: 'calendar', label: '予約履歴', path: '/course' },
+  { icon: 'trophy', label: '参加コンペ一覧', path: '/comp' },
+  { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
+  { icon: 'bell', label: 'プッシュ通知を設定', path: '/settings' },
 ]
 
 const LEGAL_ITEMS = [
-  { icon: '📋', label: '利用規約', path: '/legal/terms' },
-  { icon: '🔒', label: 'プライバシーポリシー', path: '/legal/privacy' },
-  { icon: '🏪', label: '特定商取引法に基づく表記', path: '/legal/tokusho' },
+  { icon: 'book', label: '利用規約', path: '/legal/terms' },
+  { icon: 'lock', label: 'プライバシーポリシー', path: '/legal/privacy' },
+  { icon: 'store', label: '特定商取引法に基づく表記', path: '/legal/tokusho' },
 ]
 
 interface Profile {
