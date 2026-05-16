@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const FILTER_MAP: Record<string, { keyword: string; addressMatch: string }> = {
-  '広島県': { keyword: '広島', addressMatch: '広島県' },
-  '山口県': { keyword: '山口', addressMatch: '山口県' },
-  '岡山県': { keyword: '岡山', addressMatch: '岡山県' },
-  '島根県': { keyword: '島根', addressMatch: '島根県' },
+const FILTER_MAP: Record<string, { keyword: string; addressMatch: string; excludes: string[] }> = {
+  '広島県': { keyword: '広島', addressMatch: '広島', excludes: ['北海道'] },
+  '山口県': { keyword: '山口', addressMatch: '山口', excludes: ['北海道'] },
+  '岡山県': { keyword: '岡山', addressMatch: '岡山', excludes: ['北海道'] },
+  '島根県': { keyword: '島根', addressMatch: '島根', excludes: ['北海道'] },
 }
 
 export async function GET(request: NextRequest) {
@@ -50,21 +50,17 @@ export async function GET(request: NextRequest) {
     }
 
     // フィルタリング
-    if (isTabFilter) {
-      // 広島県・山口県など県名で絞り込み
-      // addressがない場合もあるのでgolfCourseNameも確認
-      allItems = allItems.filter((item: any) => {
-        const addr = item.Item?.address ?? ''
-        const name = item.Item?.golfCourseName ?? ''
-        if (addr) return addr.includes(filter.addressMatch)
-        return false
-      })
-    } else {
-      allItems = allItems.filter((item: any) => {
-        const addr = item.Item?.address ?? ''
-        return !addr.includes('北海道')
-      })
-    }
+    allItems = allItems.filter((item: any) => {
+      const addr = item.Item?.address ?? ''
+      // 除外ワードをチェック
+      if (isTabFilter) {
+        for (const ex of filter.excludes) {
+          if (addr.includes(ex)) return false
+        }
+        return addr.includes(filter.addressMatch)
+      }
+      return !addr.includes('北海道')
+    })
 
     // 重複除去
     const seen = new Set()
