@@ -93,7 +93,7 @@ export default function RegisterPage() {
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       {/* グリーンヘッダー */}
-      <div style={{ background: 'var(--g1)', padding: '52px 22px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: 'calc(env(safe-area-inset-top) + 22px) 22px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <img src="/GL白抜きロゴ.png" alt="GLH." style={{ height: 52, width: 'auto', mixBlendMode: 'screen' }} />
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter', letterSpacing: '.1em' }}>STEP {step + 1} / 3</div>
