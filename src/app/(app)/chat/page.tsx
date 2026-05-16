@@ -1,32 +1,31 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import BottomNav from '@/components/layout/BottomNav'
+import Logo from '@/components/layout/Logo'
 
-interface Message {
+interface ChatRoom {
   id: string
-  room_id: string
-  sender_id: string
-  content: string
-  created_at: string
+  user1_id: string
+  user2_id: string
+  last_message: string | null
+  last_message_at: string
+  unread_count_user1: number
+  unread_count_user2: number
+  other_user: {
+    user_id: string
+    nickname: string
+    avatar_url: string | null
+  }
 }
 
-interface Profile {
-  user_id: string
-  nickname: string
-  avatar_url: string | null
-}
-
-export default function ChatPage() {
+export default function ChatListPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
+  const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [myId, setMyId] = useState('')
-  const [otherProfile, setOtherProfile] = useState<Profile | null>(null)
-  const [roomId, setRoomId] = useState('')
   const [loading, setLoading] = useState(true)
-  const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -34,151 +33,117 @@ export default function ChatPage() {
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
 
-      // チャットルーム一覧から最初のルームを取得（または新規作成）
-      const { data: rooms } = await supabase
+      const { data } = await supabase
         .from('chat_rooms')
         .select('*')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false })
-        .limit(1)
 
-      let currentRoomId = ''
-      let otherUserId = ''
-
-      if (rooms && rooms.length > 0) {
-        currentRoomId = rooms[0].id
-        otherUserId = rooms[0].user1_id === user.id ? rooms[0].user2_id : rooms[0].user1_id
-        setRoomId(currentRoomId)
-      } else {
-        // ルームがない場合はデモモードで表示
-        setLoading(false)
-        return
+      if (data) {
+        const roomsWithProfiles = await Promise.all(data.map(async (room) => {
+          const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url')
+            .eq('user_id', otherUserId)
+            .single()
+          return {
+            ...room,
+            other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
+          }
+        }))
+        setRooms(roomsWithProfiles)
       }
-
-      // 相手のプロフィール取得
-      if (otherUserId) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id, nickname, avatar_url')
-          .eq('user_id', otherUserId)
-          .single()
-        if (profile) setOtherProfile(profile)
-      }
-
-      // メッセージ取得
-      const { data: msgs } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('room_id', currentRoomId)
-        .order('created_at', { ascending: true })
-      if (msgs) setMessages(msgs)
-
-      // リアルタイム購読
-      const channel = supabase
-        .channel(`room:${currentRoomId}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `room_id=eq.${currentRoomId}`,
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new as Message])
-        })
-        .subscribe()
-
       setLoading(false)
-
-      return () => { supabase.removeChannel(channel) }
     }
     init()
   }, [])
 
-  // 新しいメッセージが来たら自動スクロール
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const sendMsg = async () => {
-    if (!input.trim() || !roomId || !myId) return
-    const content = input.trim()
-    setInput('')
-
-    await supabase.from('messages').insert({
-      room_id: roomId,
-      sender_id: myId,
-      content,
-    })
+  const getUnreadCount = (room: ChatRoom) => {
+    if (!myId) return 0
+    return room.user1_id === myId ? room.unread_count_user1 : room.unread_count_user2
   }
 
-  return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--off)' }}>
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    if (days === 0) return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+    if (days === 1) return '昨日'
+    if (days < 7) return `${days}日前`
+    return date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })
+  }
 
-      {/* ヘッダー */}
-      <div style={{ background: 'var(--g1)', padding: '52px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <div onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
-        </div>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa' }}>
-          {otherProfile?.nickname?.[0] ?? '?'}
-        </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
-            {otherProfile?.nickname ?? 'チャット'}
+  const totalUnread = rooms.reduce((sum, room) => sum + getUnreadCount(room), 0)
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <Logo />
+        {totalUnread > 0 && (
+          <div style={{ background: '#e05070', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+            {totalUnread}件の未読
           </div>
-          <div style={{ fontSize: 10, color: 'var(--lime)', marginTop: 1 }}>● オンライン</div>
-        </div>
+        )}
       </div>
 
-      {/* メッセージ一覧 */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading && (
-          <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>
-        )}
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+        {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>}
 
-        {!loading && messages.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
-            <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>メッセージを送ってみましょう！</div>
-            <div style={{ fontSize: 12, color: 'var(--mute)' }}>マッチングした相手とチャットできます</div>
+        {!loading && rooms.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>💬</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', marginBottom: 8 }}>チャットがまだありません</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 24 }}>マッチングした相手と<br/>チャットを始めましょう</div>
+            <button onClick={() => router.push('/match')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '12px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>マッチングを探す</button>
           </div>
         )}
 
-        {messages.map((m) => {
-          const isMe = m.sender_id === myId
-          const time = new Date(m.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+        {rooms.map((room) => {
+          const unread = getUnreadCount(room)
           return (
-            <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
-              <div style={{
-                padding: '10px 13px',
-                borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
-                background: isMe ? 'var(--g1)' : 'white',
-                color: isMe ? 'white' : 'var(--txt)',
-                fontSize: 13, lineHeight: 1.5,
-                border: !isMe ? '1px solid var(--line)' : 'none',
-              }}>{m.content}</div>
-              <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>{time}</div>
+            <div
+              key={room.id}
+              onClick={() => router.push(`/chat/${room.id}`)}
+              style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative' }}
+            >
+              {/* アバター */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden' }}>
+                  {room.other_user.avatar_url
+                    ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : room.other_user.nickname?.[0] ?? '?'
+                  }
+                </div>
+                {unread > 0 && (
+                  <div style={{ position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white' }}>
+                    {unread > 9 ? '9+' : unread}
+                  </div>
+                )}
+              </div>
+
+              {/* テキスト */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)' }}>
+                    {room.other_user.nickname}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--mute)', flexShrink: 0 }}>
+                    {formatTime(room.last_message_at)}
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {room.last_message ?? 'チャットを始めましょう'}
+                </div>
+              </div>
+
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
             </div>
           )
         })}
-        <div ref={bottomRef} />
       </div>
-
-      {/* 入力エリア */}
-      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMsg()}
-          placeholder="メッセージを入力..."
-          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
-        />
-        <button onClick={sendMsg} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22,2 15,22 11,13 2,9"/>
-          </svg>
-        </button>
-      </div>
+      <BottomNav />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 const NAV_ITEMS = [
   {
@@ -27,6 +29,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    key: 'chat',
+    label: 'チャット',
+    path: '/chat',
+    icon: (active: boolean) => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" width={22} height={22}>
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    ),
+  },
+  {
     key: 'course',
     label: '予約・コンペ',
     path: '/course',
@@ -36,17 +48,6 @@ const NAV_ITEMS = [
         <line x1="16" y1="2" x2="16" y2="6"/>
         <line x1="8" y1="2" x2="8" y2="6"/>
         <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-    ),
-  },
-  {
-    key: 'gps',
-    label: 'GPS計測',
-    path: '/gps',
-    icon: (active: boolean) => (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" width={22} height={22}>
-        <circle cx="12" cy="12" r="3"/>
-        <path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
       </svg>
     ),
   },
@@ -66,6 +67,28 @@ const NAV_ITEMS = [
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data } = await supabase
+        .from('chat_rooms')
+        .select('user1_id, unread_count_user1, unread_count_user2')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+
+      if (data) {
+        const total = data.reduce((sum, room) => {
+          return sum + (room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2)
+        }, 0)
+        setUnreadCount(total)
+      }
+    }
+    fetchUnread()
+  }, [pathname])
 
   return (
     <nav style={{
@@ -86,9 +109,23 @@ export default function BottomNav() {
               alignItems: 'center', gap: 3, background: 'none', border: 'none',
               cursor: 'pointer', color: isActive ? 'var(--g2)' : 'var(--mute)',
               opacity: isActive ? 1 : 0.45, transition: 'opacity 0.18s',
+              position: 'relative',
             }}
           >
             {item.icon(isActive)}
+            {/* 未読バッジ */}
+            {item.key === 'chat' && unreadCount > 0 && (
+              <div style={{
+                position: 'absolute', top: 0, right: '20%',
+                width: 16, height: 16, borderRadius: '50%',
+                background: '#e05070', color: 'white',
+                fontSize: 9, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1.5px solid white',
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </div>
+            )}
             <span style={{
               fontSize: 9, fontWeight: isActive ? 600 : 400,
               fontFamily: 'Inter, sans-serif',

@@ -169,6 +169,13 @@ export default function ChatRoomPage() {
       file_name: fileName,
     }).select().single()
 
+    // チャットルームのlast_messageを更新
+    const lastMsgText = imageUrl ? '📷 画像' : fileUrl ? '📄 ファイル' : content
+    await supabase.from('chat_rooms').update({
+      last_message: lastMsgText,
+      last_message_at: new Date().toISOString(),
+    }).eq('id', roomId)
+
     // tempメッセージをDBのメッセージに置換
     if (savedMsg) {
       setMessages(prev => prev.map(m => m.id === tempId ? savedMsg : m))
