@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
     if (!data1.Items) return NextResponse.json(data1)
 
     const total = data1.count ?? 0
+    console.log(`GORA API: keyword=${searchKeyword}, total=${total}, page1items=${data1.Items?.length}`)
     let allItems = [...data1.Items]
 
     // 並列で残りページ取得
