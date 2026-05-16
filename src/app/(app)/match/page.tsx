@@ -36,7 +36,7 @@ const AREA_LABELS: Record<string, string> = {
   '広島・廿日市エリア': '広島・廿日市',
   '広島北エリア': '広島北',
   '東広島・呉エリア': '東広島・呉',
-  '竹原・三原・尾道エリア': '竹原・三原・尾道',
+  '竹原・三原・尾道エリア': '尾道エリア',
   '福山エリア': '福山',
 }
 
@@ -322,7 +322,7 @@ export default function MatchPage() {
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center' }}>
                         <span style={{ color: LEVEL_LABEL(m.handicap).color, fontWeight: 600, fontSize: 10 }}>{LEVEL_LABEL(m.handicap).label}</span>
-                        {m.areas && m.areas.length > 0 && <span>· {m.areas.map((a: string) => AREA_LABELS[a] ?? a).join('・')}</span>}
+                        {m.areas && m.areas.length > 0 && <span>· {AREA_LABELS[m.areas[0]] ?? m.areas[0]}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                         {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}

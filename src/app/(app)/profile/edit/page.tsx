@@ -42,7 +42,7 @@ export default function ProfileEditPage() {
   const [bestScore, setBestScore] = useState('')
   const [roundFreq, setRoundFreq] = useState('monthly_1')
   const [preferredDays, setPreferredDays] = useState<string[]>([])
-  const [areas, setAreas] = useState<string[]>([])
+  const [area, setArea] = useState<string>('')
   const [bio, setBio] = useState('')
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function ProfileEditPage() {
         setBestScore(data.best_score?.toString() ?? '')
         setRoundFreq(data.round_freq ?? 'monthly_1')
         setPreferredDays(data.preferred_days ?? [])
-        setAreas(data.areas ?? [])
+        setArea(data.areas?.[0] ?? '')
         setBio(data.bio ?? '')
       }
       setLoading(false)
@@ -118,7 +118,7 @@ export default function ProfileEditPage() {
         best_score: bestScore ? parseInt(bestScore) : null,
         round_freq: roundFreq,
         preferred_days: preferredDays,
-        areas: areas,
+        areas: area ? [area] : [],
         bio,
         avatar_url: avatarUrl,
       })
@@ -287,12 +287,10 @@ export default function ProfileEditPage() {
         </div>
 
         {/* 活動エリア */}
-        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>活動エリア（複数選択可）</div>
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>主な活動エリア（1つ選択）</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
           {['広島・廿日市エリア', '広島北エリア', '東広島・呉エリア', '竹原・三原・尾道エリア', '福山エリア'].map((a) => (
-            <button key={a} onClick={() => {
-              setAreas(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a])
-            }} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: `1px solid ${areas.includes(a) ? 'var(--g3)' : 'var(--line)'}`, color: areas.includes(a) ? 'var(--g2)' : 'var(--mid)', background: areas.includes(a) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: areas.includes(a) ? 600 : 400 }}>{a}</button>
+            <button key={a} onClick={() => setArea(a)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: `1px solid ${area === a ? 'var(--g3)' : 'var(--line)'}`, color: area === a ? 'var(--g2)' : 'var(--mid)', background: area === a ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: area === a ? 600 : 400 }}>{a}</button>
           ))}
         </div>
 

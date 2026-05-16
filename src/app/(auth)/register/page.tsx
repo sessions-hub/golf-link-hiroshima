@@ -43,7 +43,7 @@ export default function RegisterPage() {
 
   // Step 3
   const [days, setDays] = useState<string[]>(['sat', 'sun'])
-  const [areas, setAreas] = useState<string[]>(['広島市内'])
+  const [area, setArea] = useState<string>('')
   const [purposes, setPurposes] = useState<string[]>(['ラウンド仲間'])
 
   const toggleItem = (item: string, list: string[], setList: (v: string[]) => void) => {
@@ -203,10 +203,10 @@ export default function RegisterPage() {
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>活動エリアと希望</div>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 18 }}>マッチング精度を上げるために設定してください</div>
 
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>よく行くエリア</div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>主な活動エリア（1つ選択）</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {AREAS.map((a) => (
-              <button key={a} onClick={() => toggleItem(a, areas, setAreas)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${areas.includes(a) ? 'var(--g3)' : 'var(--line)'}`, color: areas.includes(a) ? 'var(--g2)' : 'var(--mid)', background: areas.includes(a) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: areas.includes(a) ? 600 : 400 }}>{a}</button>
+              <button key={a} onClick={() => setArea(a)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${area === a ? 'var(--g3)' : 'var(--line)'}`, color: area === a ? 'var(--g2)' : 'var(--mid)', background: area === a ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: area === a ? 600 : 400 }}>{a}</button>
             ))}
           </div>
 
