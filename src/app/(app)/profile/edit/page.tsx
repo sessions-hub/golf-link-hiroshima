@@ -77,15 +77,19 @@ export default function ProfileEditPage() {
       if (!user) return
 
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${user.id}/avatar.${ext}`
+      const filePath = `${user.id}/avatar_${Date.now()}.${ext}`
 
       const { error } = await supabase.storage
         .from('user-photos')
-        .upload(path, file, { contentType: file.type, upsert: true })
+        .upload(filePath, file, { contentType: file.type, upsert: true })
 
       if (!error) {
-        const { data } = supabase.storage.from('user-photos').getPublicUrl(path)
-        setAvatarUrl(data.publicUrl)
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(filePath)
+        // キャッシュ回避のためタイムスタンプを付与
+        setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`)
+      } else {
+        console.error('Upload error:', error)
+        alert('アップロードに失敗しました: ' + error.message)
       }
     } catch (e) {
       console.error('Avatar upload error:', e)
