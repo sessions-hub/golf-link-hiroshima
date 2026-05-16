@@ -32,8 +32,12 @@ const LESSONS = [
 ]
 
 const AREA_LABELS: Record<string, string> = {
-  '1': '広島市', '2': '呉市', '3': '東広島市', '4': '福山市', '5': '尾道市',
-  '6': '三次市', '7': '庄原市', '8': '廿日市市', '9': '大竹市', '10': 'その他',
+  'hiroshima_minami': '広島市南区',
+  'hiroshima_nishi': '広島市西区',
+  'hiroshima_asaminami': '広島市安佐南区',
+  'hiroshima_asaki': '広島市安佐北区',
+  'hatsukaichi': '廿日市市',
+  'higashihiroshima': '東広島市',
 }
 
 const LEVEL_LABEL = (hdcp: number) => {
@@ -65,7 +69,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島市', '東広島市', '福山市', '相性診断', 'お気に入り']
+const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島市内', '東広島市', '廿日市市', '相性診断', 'お気に入り']
 
 
 const getPlanBadge = (plan: Plan) => {
@@ -200,9 +204,9 @@ export default function MatchPage() {
       if (f === '初心者') return m.handicap >= 30
       if (f === '中級者') return m.handicap >= 13 && m.handicap < 30
       if (f === '上級者') return m.handicap < 13
-      if (f === '広島市') return m.area_id === '1'
-      if (f === '東広島市') return m.area_id === '3'
-      if (f === '福山市') return m.area_id === '4'
+      if (f === '広島市内') return ['hiroshima_minami','hiroshima_nishi','hiroshima_asaminami','hiroshima_asaki'].includes(String(m.area_id))
+      if (f === '東広島市') return String(m.area_id) === 'higashihiroshima'
+      if (f === '廿日市市') return String(m.area_id) === 'hatsukaichi'
       if (f === 'お気に入り') return favorites.has(m.user_id)
       if (f === '相性診断') {
         if (!myProfile || !m.blood_type || !m.birth_date) return false
@@ -317,7 +321,7 @@ export default function MatchPage() {
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center' }}>
                         <span style={{ color: LEVEL_LABEL(m.handicap).color, fontWeight: 600, fontSize: 10 }}>{LEVEL_LABEL(m.handicap).label}</span>
-                        {m.area_id && <span>· {AREA_LABELS[m.area_id] ?? 'エリア未設定'}</span>}
+                        {m.area_id && <span>· {AREA_LABELS[String(m.area_id)] ?? String(m.area_id)}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                         {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}
