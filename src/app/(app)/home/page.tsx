@@ -154,9 +154,20 @@ export default function HomePage() {
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
     }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`).single()
-    if (postError) console.error('Post error:', postError)
+    if (postError) {
+      console.error('Post error:', postError)
+      setPosting(false)
+      return
+    }
 
-    if (newPost) setPosts(prev => [newPost as any, ...prev])
+    // 投稿後にDBから再取得
+    const { data: refreshedPosts } = await supabase
+      .from('posts')
+      .select(`*, profiles(nickname, avatar_url, user_id)`)
+      .order('created_at', { ascending: false })
+      .limit(30)
+    if (refreshedPosts) setPosts(refreshedPosts as any)
+
     setCaption('')
     setPhoto(null)
     setPhotoPreview(null)
