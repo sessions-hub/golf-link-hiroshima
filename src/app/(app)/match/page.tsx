@@ -289,10 +289,16 @@ export default function MatchPage() {
                         </div>
                       </div>
                       <button
-                        onClick={() => handleChat(m.user_id)}
+                        onClick={() => {
+                          if (!canCreateChat(userPlan)) {
+                            alert('チャットの新規作成はスタンダードプラン以上が必要です\nプランのアップグレードはマイページから')
+                            return
+                          }
+                          handleChat(m.user_id)
+                        }}
                         disabled={chatLoading === m.user_id}
-                        style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
-                        {chatLoading === m.user_id ? '...' : '💬 チャット'}
+                        style={{ background: canCreateChat(userPlan) ? 'var(--g1)' : 'var(--mute)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
+                        {chatLoading === m.user_id ? '...' : canCreateChat(userPlan) ? '💬 チャット' : '💬 🔒'}
                       </button>
                     </div>
                   </div>
