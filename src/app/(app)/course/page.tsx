@@ -37,7 +37,7 @@ interface Competition {
   is_entered?: boolean
 }
 
-const COURSE_FILTERS = ['広島', '廿日市', '東広島', '福山', '山口']
+const COURSE_FILTERS = ['広島県', '廿日市市', '東広島市', '福山市', '山口県']
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -45,7 +45,7 @@ export default function CoursePage() {
   const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
-  const [courseFilter, setCourseFilter] = useState('広島')
+  const [courseFilter, setCourseFilter] = useState('広島県')
   const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
   const [courseLoading, setCourseLoading] = useState(false)
@@ -82,7 +82,7 @@ export default function CoursePage() {
       if (prof) setMyPlan(prof.plan)
 
       await fetchCompetitions(user.id)
-      await fetchCourses('広島')
+      await fetchCourses('広島県')
       setLoading(false)
     }
     init()
@@ -300,7 +300,7 @@ export default function CoursePage() {
                     <span style={{ fontSize: 10, color: 'var(--mute)' }}>{c.evaluation}</span>
                   </div>
                   {c.golfCourseCaption && (
-                    <div style={{ fontSize: 11, color: 'var(--mid)', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.golfCourseCaption}</div>
+                    <div style={{ fontSize: 11, color: 'var(--mid)', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.golfCourseCaption}</div>
                   )}
                   <a href={c.golfCourseDetailUrl || c.reserveCalUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
                     楽天GORAで予約する →

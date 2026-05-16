@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const PREFECTURE_CODES: Record<string, string> = {
-  '広島': '34',
-  '廿日市': '34',
-  '東広島': '34',
-  '福山': '34',
-  '山口': '35',
+  '広島県': '34',
+  '廿日市市': '34',
+  '東広島市': '34',
+  '福山市': '34',
+  '山口県': '35',
 }
 
 export async function GET(request: NextRequest) {
@@ -32,8 +32,13 @@ export async function GET(request: NextRequest) {
     if (data.Items) {
       data.Items = data.Items.filter((item: any) => {
         const addr = item.Item?.address ?? ''
-        if (keyword === '山口') return addr.includes('山口県')
-        return addr.includes('広島県')
+        if (keyword === '山口県') return addr.includes('山口県')
+        if (keyword === '廿日市市') return addr.includes('廿日市')
+        if (keyword === '東広島市') return addr.includes('東広島')
+        if (keyword === '福山市') return addr.includes('福山')
+        if (keyword === '広島県') return addr.includes('広島県')
+        // フリーワード検索の場合
+        return addr.includes('広島県') || addr.includes('山口県')
       })
     }
 
