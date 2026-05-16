@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const FILTER_MAP: Record<string, { keywords: string[]; addressMatch: string }> = {
-  '広島県': { keywords: ['広島', '呉', '尾道', '福山', '三次', '庄原', '竹原', '府中', '大竹', '江田島'], addressMatch: '広島' },
+  '広島県': { keywords: ['広島', '呉市', '三次市', '庄原市', '郷原', '久井'], addressMatch: '広島' },
   '山口県': { keywords: ['山口', '下関', '宇部', '周南', '岩国', '萩'], addressMatch: '山口' },
   '岡山県': { keywords: ['岡山', '倉敷', '津山', '備前'], addressMatch: '岡山' },
   '島根県': { keywords: ['島根', '松江', '出雲', '浜田', '益田'], addressMatch: '島根' },
