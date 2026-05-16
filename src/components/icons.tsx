@@ -1,3 +1,5 @@
+import React from 'react'
+
 // シンプルなSVGアイコン集（Lucideスタイル）
 export const Icons = {
   home: (size = 22, color = 'currentColor') => (
