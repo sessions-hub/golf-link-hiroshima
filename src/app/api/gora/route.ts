@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const FILTER_MAP: Record<string, { prefectureId: string; addressKeyword: string }> = {
-  '広島県': { prefectureId: '34', addressKeyword: '広島県' },
-  '山口県': { prefectureId: '35', addressKeyword: '山口県' },
-  '岡山県': { prefectureId: '33', addressKeyword: '岡山県' },
-  '島根県': { prefectureId: '32', addressKeyword: '島根県' },
+const FILTER_MAP: Record<string, { keyword: string; addressMatch: string }> = {
+  '広島県': { keyword: '広島', addressMatch: '広島県' },
+  '山口県': { keyword: '山口', addressMatch: '山口県' },
+  '岡山県': { keyword: '岡山', addressMatch: '岡山県' },
+  '島根県': { keyword: '島根', addressMatch: '島根県' },
 }
 
 export async function GET(request: NextRequest) {
@@ -16,15 +16,10 @@ export async function GET(request: NextRequest) {
 
   const isTabFilter = Object.keys(FILTER_MAP).includes(keyword)
   const filter = FILTER_MAP[keyword]
+  const searchKeyword = isTabFilter ? filter.keyword : keyword
 
   const fetchPage = async (p: number) => {
-    let url = ''
-    if (isTabFilter) {
-      // keywordなし・prefectureIdのみで全件取得
-      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&prefectureId=${filter.prefectureId}&hits=30&page=${p}`
-    } else {
-      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=30&page=${p}`
-    }
+    const url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(searchKeyword)}&hits=30&page=${p}`
     const res = await fetch(url, {
       headers: {
         'Referer': 'https://www.golflink-hiroshima.com',
@@ -55,19 +50,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 住所フィルタリング
-    if (isTabFilter) {
-      // タブフィルターは県名で絞り込み
-      allItems = allItems.filter((item: any) => {
-        const addr = item.Item?.address ?? ''
-        return addr.includes(filter.addressKeyword)
-      })
-    } else {
-      // フリーワード検索は北海道の北広島のみ除外
-      allItems = allItems.filter((item: any) => {
-        const addr = item.Item?.address ?? ''
-        return !addr.includes('北海道')
-      })
-    }
+    allItems = allItems.filter((item: any) => {
+      const addr = item.Item?.address ?? ''
+      if (isTabFilter) {
+        return addr.includes(filter.addressMatch)
+      }
+      // フリーワードは北海道除外のみ
+      return !addr.includes('北海道')
+    })
 
     data.Items = allItems
     data.count = allItems.length
