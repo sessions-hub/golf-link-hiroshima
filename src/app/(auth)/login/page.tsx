@@ -26,8 +26,9 @@ export default function LoginPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img src="/ヘッダーロゴ.png" alt="GLH." style={{ height: 128, width: 'auto', objectFit: 'contain' }} />
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <img src="/グリーン.png" alt="GLH." style={{ height: 64, width: 'auto', objectFit: 'contain' }} />
+        <div style={{ fontSize: 9, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif' }}>GOLF LINK HIROSHIMA</div>
       </div>
       <div style={{ flex: 1, padding: '24px 22px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>ログイン</div>
