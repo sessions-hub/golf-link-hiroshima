@@ -1,92 +1,153 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 
-const COURSES = [
-  { id: 1, name: '広島カントリークラブ', area: '広島市安佐北区', holes: 18, par: 72, dist: 3.2 },
-  { id: 2, name: '広島若草カントリークラブ', area: '安佐北区', holes: 18, par: 72, dist: 5.8 },
-  { id: 3, name: '廿日市カントリークラブ', area: '廿日市市', holes: 18, par: 72, dist: 12.4 },
-]
+interface GoraCourse {
+  golfCourseId: number
+  golfCourseName: string
+  address: string
+  latitude: number
+  longitude: number
+  golfCourseDetailUrl: string
+  holes: number
+  evaluation: number
+}
+
+interface GPSPosition {
+  lat: number
+  lng: number
+  accuracy: number
+}
+
+// 2点間の距離計算（km）
+function calcDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+}
+
+// ヤードをメートルに変換
+function mToY(m: number): number {
+  return Math.round(m * 1.09361)
+}
+
+const getClub = (y: number) => {
+  if (y >= 220) return 'Dr'
+  if (y >= 200) return '3W'
+  if (y >= 185) return '5W'
+  if (y >= 170) return '4番I'
+  if (y >= 158) return '5番I'
+  if (y >= 145) return '6番I'
+  if (y >= 133) return '7番I'
+  if (y >= 120) return '8番I'
+  if (y >= 108) return '9番I'
+  return 'PW'
+}
 
 export default function GpsPage() {
   const router = useRouter()
   const [userPlan, setUserPlan] = useState<Plan>('free')
-  const [selected, setSelected] = useState<number | null>(null)
+  const [position, setPosition] = useState<GPSPosition | null>(null)
+  const [gpsError, setGpsError] = useState('')
+  const [courses, setCourses] = useState<(GoraCourse & { distKm: number })[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(false)
+  const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
   const [hole, setHole] = useState(1)
-  const [dist, setDist] = useState({ front: 168, center: 182, back: 196 })
+  const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
+  const [searchText, setSearchText] = useState('')
+  const watchRef = useRef<number | null>(null)
 
   useEffect(() => {
     getUserPlan().then(setUserPlan)
   }, [])
 
+  // GPS取得
   useEffect(() => {
-    if (selected === null) return
-    const timer = setInterval(() => {
-      const jitter = Math.round((Math.random() - 0.5) * 6)
-      setDist({ front: 168 + jitter, center: 182 + jitter, back: 196 + jitter })
-    }, 2000)
-    return () => clearInterval(timer)
-  }, [selected])
-
-  const getClub = (y: number) => {
-    if (y >= 200) return '3W'
-    if (y >= 185) return '5W'
-    if (y >= 170) return '4番I'
-    if (y >= 158) return '5番I'
-    if (y >= 145) return '6番I'
-    if (y >= 133) return '7番I'
-    if (y >= 120) return '8番I'
-    if (y >= 108) return '9番I'
-    return 'PW'
-  }
-
-  if (selected === null) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          <Logo variant="screen" />
-          <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>GPS距離計測</span>
-        </div>
-        <div style={{ background: 'rgba(13,61,43,.9)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--lime)', animation: 'pulse 1.5s infinite' }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.7)' }}>GPS接続中 — 現在地を取得しました</span>
-          <span style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter' }}>精度 ±3m</span>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0 90px' }}>
-          <div style={{ padding: '0 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', fontFamily: 'Inter' }}>近くのゴルフ場</div>
-          {COURSES.map((c) => (
-            <div key={c.id} onClick={() => setSelected(c.id)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
-              <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>⛳</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600 }}>{c.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>{c.area} · {c.holes}H · Par{c.par}</div>
-                  <div style={{ fontSize: 10, color: 'var(--g3)', marginTop: 3 }}>📍 現在地から {c.dist}km</div>
-                </div>
-                {c.dist < 5 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(168,224,99,.12)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 10, padding: '3px 8px', flexShrink: 0 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lime)', animation: 'pulse 1.5s infinite' }} />
-                    <span style={{ fontSize: 9, color: 'var(--lime)', fontFamily: 'Inter' }}>近い</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        <BottomNav />
-      </div>
+    if (!navigator.geolocation) {
+      setGpsError('このデバイスはGPSに対応していません')
+      return
+    }
+    watchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setPosition({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy),
+        })
+        setGpsError('')
+      },
+      (err) => {
+        setGpsError('GPS取得に失敗しました。位置情報を許可してください。')
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
     )
+    return () => {
+      if (watchRef.current !== null) navigator.geolocation.clearWatch(watchRef.current)
+    }
+  }, [])
+
+  // コース一覧取得
+  useEffect(() => {
+    fetchCourses('広島県')
+  }, [])
+
+  // 現在地が取得できたら距離を計算してソート
+  useEffect(() => {
+    if (!position || courses.length === 0) return
+    const updated = courses.map(c => ({
+      ...c,
+      distKm: c.latitude && c.longitude
+        ? calcDistance(position.lat, position.lng, c.latitude, c.longitude)
+        : 999,
+    })).sort((a, b) => a.distKm - b.distKm)
+    setCourses(updated)
+  }, [position])
+
+  const fetchCourses = async (keyword: string) => {
+    setLoadingCourses(true)
+    try {
+      const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`)
+      const data = await res.json()
+      if (data.Items) {
+        const list = data.Items.map((item: any) => ({
+          ...item.Item,
+          distKm: position && item.Item.latitude && item.Item.longitude
+            ? calcDistance(position.lat, position.lng, item.Item.latitude, item.Item.longitude)
+            : 999,
+        })).sort((a: any, b: any) => a.distKm - b.distKm)
+        setCourses(list)
+      }
+    } catch (e) {}
+    setLoadingCourses(false)
   }
 
-  const course = COURSES.find(c => c.id === selected)!
+  // コース選択時にグリーン距離を計算
+  const selectCourse = (course: GoraCourse & { distKm: number }) => {
+    setSelected(course)
+    setHole(1)
+    if (position && course.latitude && course.longitude) {
+      const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
+      const center = mToY(distM)
+      setGreenDist({ front: center - 10, center, back: center + 10 })
+    }
+  }
 
+  const filteredCourses = courses.filter(c =>
+    c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
+  )
+
+  // プラン制限
   if (!canUseGPS(userPlan)) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center' }}>
           <Logo />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
@@ -100,6 +161,83 @@ export default function GpsPage() {
     )
   }
 
+  // コース選択画面
+  if (!selected) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Logo variant="screen" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: position ? 'var(--lime)' : gpsError ? '#e05070' : '#f59e0b' }} />
+              <span style={{ fontSize: 10, color: 'var(--mute)' }}>
+                {position ? `GPS ±${position.accuracy}m` : gpsError ? 'GPS未取得' : 'GPS取得中...'}
+              </span>
+            </div>
+          </div>
+          {/* 検索窓 */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--line)', padding: '8px 12px', gap: 8 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="コース名・エリアで検索"
+                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--txt)' }}
+              />
+            </div>
+          </div>
+          {/* エリアタブ */}
+          <div style={{ display: 'flex', gap: 5, marginTop: 8, overflowX: 'auto' }}>
+            {['広島県', '山口県', '岡山県', '島根県'].map(f => (
+              <button key={f} onClick={() => fetchCourses(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)', flexShrink: 0, fontWeight: 500 }}>{f}</button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
+          {gpsError && (
+            <div style={{ margin: '8px 16px', background: 'rgba(200,60,60,.08)', border: '1px solid rgba(200,60,60,.2)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050' }}>
+              ⚠️ {gpsError}
+            </div>
+          )}
+          {loadingCourses && (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>コースを読み込み中...</div>
+          )}
+          {!loadingCourses && (
+            <div style={{ padding: '4px 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>
+              {filteredCourses.length}件のコース
+            </div>
+          )}
+          {filteredCourses.map((c) => (
+            <div key={c.golfCourseId} onClick={() => selectCourse(c)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+              <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
+                <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>⛳</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 600, marginBottom: 2 }}>{c.golfCourseName}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.address}</div>
+                  {c.distKm < 999 && (
+                    <div style={{ fontSize: 10, color: 'var(--g3)', marginTop: 3 }}>
+                      📍 {c.distKm < 1 ? `${Math.round(c.distKm * 1000)}m` : `${c.distKm.toFixed(1)}km`}
+                    </div>
+                  )}
+                </div>
+                {c.distKm < 5 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(74,222,128,.1)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, padding: '3px 8px', flexShrink: 0 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lime)' }} />
+                    <span style={{ fontSize: 9, color: 'var(--g2)', fontFamily: 'Inter' }}>近い</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <BottomNav />
+      </div>
+    )
+  }
+
+  // GPS計測画面
   return (
     <div style={{ minHeight: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
@@ -116,58 +254,74 @@ export default function GpsPage() {
           <circle cx="200" cy="490" r="7" fill="#A8E063"/>
           <circle cx="200" cy="490" r="3" fill="rgba(0,0,0,.85)"/>
         </svg>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '52px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%)' }}>
+
+        {/* ヘッダー */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: 'calc(env(safe-area-inset-top) + 8px) 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ background: 'rgba(168,224,99,.25)', border: '1px solid rgba(168,224,99,.5)', borderRadius: 20, padding: '2px 9px', fontSize: 9, color: '#C5F08A', fontFamily: 'Inter', fontWeight: 600 }}>HOLE {hole}</div>
-                <div style={{ fontSize: 10, color: 'white', fontWeight: 600 }}>Par 5 · 520y</div>
               </div>
-              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.42)', marginTop: 1 }}>{course.name}</div>
+              <div style={{ fontSize: 9, color: 'rgba(255,255,255,.6)', marginTop: 1 }}>{selected.golfCourseName}</div>
             </div>
           </div>
           <div style={{ background: 'rgba(0,0,0,.4)', border: '1px solid rgba(255,255,255,.14)', borderRadius: 20, padding: '3px 9px', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#A8E063', animation: 'pulse 1.5s infinite' }} />
-            <span style={{ fontSize: 8, color: 'rgba(255,255,255,.65)' }}>GPS ±3m</span>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: position ? '#A8E063' : '#e05070' }} />
+            <span style={{ fontSize: 8, color: 'rgba(255,255,255,.65)' }}>
+              {position ? `GPS ±${position.accuracy}m` : 'GPS未取得'}
+            </span>
           </div>
         </div>
+
+        {/* 距離パネル */}
         <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, background: 'white', borderRadius: '18px 18px 0 0', padding: '16px 14px 16px', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)' }}>
           <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
+
+          {/* ホール選択 */}
           <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
-            {Array.from({ length: 9 }, (_, i) => i + 1).map((h) => (
-              <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 12, fontWeight: 700, boxShadow: hole === h ? '0 2px 8px rgba(13,61,43,.25)' : 'none' }}>{h}</button>
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
+              <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 11 }}>
-            <div>
-              <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>グリーン センター</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{dist.center}</span>
-                <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+
+          {greenDist ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 11 }}>
+                <div>
+                  <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>グリーン センター</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
+                    <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+                  </div>
+                  <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
+                </div>
+                <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderLeft: '2.5px solid var(--g3)', borderRadius: 7, padding: '9px 13px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>推奨クラブ</div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: 'var(--g1)', marginTop: 2 }}>{getClub(greenDist.center)}</div>
+                </div>
               </div>
-              <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±3m</div>
-            </div>
-            <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderLeft: '2.5px solid var(--g3)', borderRadius: 7, padding: '9px 13px', textAlign: 'center' }}>
-              <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>推奨クラブ</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: 'var(--g1)', marginTop: 2 }}>{getClub(dist.center)}</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 5 }}>
-            {[
-              { label: 'FRONT', val: dist.front, color: '#3a7a3a', bg: 'var(--off)', border: 'var(--line)' },
-              { label: 'CENTER', val: dist.center, color: 'var(--g1)', bg: 'rgba(13,61,43,.06)', border: 'rgba(13,61,43,.18)' },
-              { label: 'BACK', val: dist.back, color: '#c05050', bg: 'var(--off)', border: 'var(--line)' },
-            ].map((d) => (
-              <div key={d.label} style={{ flex: 1, background: d.bg, borderRadius: 6, padding: 7, textAlign: 'center', border: `1px solid ${d.border}` }}>
-                <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>{d.label}</div>
-                <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: d.color }}>{d.val}</div>
-                <div style={{ fontSize: 7, color: 'var(--pale)' }}>y</div>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {[
+                  { label: 'FRONT', val: greenDist.front, color: '#3a7a3a', bg: 'var(--off)', border: 'var(--line)' },
+                  { label: 'CENTER', val: greenDist.center, color: 'var(--g1)', bg: 'rgba(13,61,43,.06)', border: 'rgba(13,61,43,.18)' },
+                  { label: 'BACK', val: greenDist.back, color: '#c05050', bg: 'var(--off)', border: 'var(--line)' },
+                ].map((d) => (
+                  <div key={d.label} style={{ flex: 1, background: d.bg, borderRadius: 6, padding: 7, textAlign: 'center', border: `1px solid ${d.border}` }}>
+                    <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>{d.label}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: d.color }}>{d.val}</div>
+                    <div style={{ fontSize: 7, color: 'var(--pale)' }}>y</div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
+              GPS取得中...現在地からの距離を計算します
+            </div>
+          )}
         </div>
       </div>
       <BottomNav />
