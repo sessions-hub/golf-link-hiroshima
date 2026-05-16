@@ -116,8 +116,13 @@ export default function HomePage() {
         .select(`*, profiles(nickname, avatar_url, user_id)`)
         .order('created_at', { ascending: false })
         .limit(30)
-      console.log('Posts fetched:', postData?.length, postData)
-      if (postData) setPosts(postData as any)
+      const { data: postData2, error: postError2 } = await supabase
+        .from('posts')
+        .select(`*, profiles(nickname, avatar_url, user_id)`)
+        .order('created_at', { ascending: false })
+        .limit(30)
+      console.log('Posts fetched:', postData2?.length, 'Error:', postError2)
+      if (postData2) setPosts(postData2 as any)
 
       setLoading(false)
     }
