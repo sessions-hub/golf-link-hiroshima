@@ -31,8 +31,25 @@ const LESSONS = [
   { id: 3, name: '小林 美香 プロ', desc: 'スコアアップ · メンタル強化', price: 9500, rating: 4.8, reviews: 56, initial: '小', color: '#F2EBF8', textColor: '#7a50aa', badge: '人気', badgeColor: '#A8E063', badgeText: '#0D3D2B' },
 ]
 
-const FREQ_LABELS: Record<string, string> = {
-  weekly_2plus: '週2回以上', weekly_1: '週1回', monthly_2_3: '月2〜3回', monthly_1: '月1回', rarely: 'たまに',
+const AREA_LABELS: Record<string, string> = {
+  '1': '広島市', '2': '呉市', '3': '東広島市', '4': '福山市', '5': '尾道市',
+  '6': '三次市', '7': '庄原市', '8': '廿日市市', '9': '大竹市', '10': 'その他',
+}
+
+const LEVEL_LABEL = (hdcp: number) => {
+  if (hdcp >= 30) return { label: '初心者', color: '#4a90d9' }
+  if (hdcp >= 20) return { label: '中級者', color: '#3a7a3a' }
+  return { label: '上級者', color: '#c07020' }
+}
+
+const AGE_DECADE = (birthDate: string) => {
+  const age = new Date().getFullYear() - new Date(birthDate).getFullYear()
+  if (age < 20) return '10代'
+  if (age < 30) return '20代'
+  if (age < 40) return '30代'
+  if (age < 50) return '40代'
+  if (age < 60) return '50代'
+  return '60代以上'
 }
 
 const AVATAR_COLORS = [
@@ -48,7 +65,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '男性', '女性', '初心者', '上級者', '週末希望', '相性診断', 'お気に入り']
+const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島市', '東広島市', '福山市', '相性診断', 'お気に入り']
 
 
 const getPlanBadge = (plan: Plan) => {
@@ -64,7 +81,7 @@ export default function MatchPage() {
   const [matches, setMatches] = useState<MatchProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
-  const [filter, setFilter] = useState('全員')
+  const [filters, setFilters] = useState<string[]>(['全員'])
   const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string } | null>(null)
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
@@ -163,23 +180,40 @@ export default function MatchPage() {
     setChatLoading(null)
   }
 
+  const toggleFilter = (f: string) => {
+    if (f === '全員') { setFilters(['全員']); return }
+    setFilters(prev => {
+      const next = prev.filter(x => x !== '全員')
+      if (next.includes(f)) {
+        const removed = next.filter(x => x !== f)
+        return removed.length === 0 ? ['全員'] : removed
+      }
+      return [...next, f]
+    })
+  }
+
   const filteredMatches = matches.filter(m => {
-    if (filter === '全員') return true
-    if (filter === '男性') return m.gender === 'male'
-    if (filter === '女性') return m.gender === 'female'
-    if (filter === '初心者') return m.handicap >= 30
-    if (filter === '上級者') return m.handicap < 13
-    if (filter === '週末希望') return m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
-    if (filter === 'お気に入り') return favorites.has(m.user_id)
-    if (filter === '相性診断') {
-      if (!myProfile || !m.blood_type || !m.birth_date) return false
-      const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
-      const mySign = getZodiacSign(myProfile.birth_date)
-      const otherSign = getZodiacSign(m.birth_date)
-      const zodiacOk = getZodiacCompat(mySign, otherSign) !== '△'
-      return bloodOk && zodiacOk
-    }
-    return true
+    if (filters.includes('全員')) return true
+    return filters.every(f => {
+      if (f === '男性') return m.gender === 'male'
+      if (f === '女性') return m.gender === 'female'
+      if (f === '初心者') return m.handicap >= 30
+      if (f === '中級者') return m.handicap >= 13 && m.handicap < 30
+      if (f === '上級者') return m.handicap < 13
+      if (f === '広島市') return m.area_id === '1'
+      if (f === '東広島市') return m.area_id === '3'
+      if (f === '福山市') return m.area_id === '4'
+      if (f === 'お気に入り') return favorites.has(m.user_id)
+      if (f === '相性診断') {
+        if (!myProfile || !m.blood_type || !m.birth_date) return false
+        const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
+        const mySign = getZodiacSign(myProfile.birth_date)
+        const otherSign = getZodiacSign(m.birth_date)
+        const zodiacOk = getZodiacCompat(mySign, otherSign) !== '△'
+        return bloodOk && zodiacOk
+      }
+      return true
+    })
   })
 
   return (
@@ -205,18 +239,18 @@ export default function MatchPage() {
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {FILTERS.map((f) => (
-                <button key={f} onClick={() => setFilter(f)} style={{
+                <button key={f} onClick={() => toggleFilter(f)} style={{
                   padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer',
-                  border: `1px solid ${f === '相性診断' ? 'rgba(168,224,99,.5)' : f === 'お気に入り' ? 'rgba(200,60,100,.3)' : filter === f ? 'var(--g3)' : 'var(--line)'}`,
-                  color: filter === f ? (f === 'お気に入り' ? '#c05080' : 'var(--g2)') : 'var(--mid)',
-                  background: f === '相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : f === 'お気に入り' ? filter === f ? 'rgba(200,60,100,.12)' : 'rgba(200,60,100,.05)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)',
-                  fontWeight: filter === f ? 600 : 400,
+                  border: `1px solid ${f === '相性診断' ? 'rgba(168,224,99,.5)' : f === 'お気に入り' ? 'rgba(200,60,100,.3)' : filters.includes(f) ? 'var(--g3)' : 'var(--line)'}`,
+                  color: filters.includes(f) ? (f === 'お気に入り' ? '#c05080' : 'var(--g2)') : 'var(--mid)',
+                  background: f === '相性診断' ? filters.includes(f) ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : f === 'お気に入り' ? filters.includes(f) ? 'rgba(200,60,100,.12)' : 'rgba(200,60,100,.05)' : filters.includes(f) ? 'rgba(46,125,85,.1)' : 'var(--surf)',
+                  fontWeight: filters.includes(f) ? 600 : 400,
                 }}>{f}</button>
               ))}
             </div>
           </div>
 
-          {filter === '相性診断' && myProfile && (
+          {filters.includes('相性診断') && myProfile && (
             <div style={{ margin: '8px 16px 0', background: 'linear-gradient(135deg,var(--g1),var(--g2))', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(168,224,99,.2)' }}>
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.1em', marginBottom: 4 }}>あなたの相性データ</div>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -243,13 +277,13 @@ export default function MatchPage() {
             {!loading && filteredMatches.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>
-                  {filter === 'お気に入り' ? '❤️' : '⛳'}
+                  {filters.includes('お気に入り') ? '❤️' : '⛳'}
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>
-                  {filter === 'お気に入り' ? 'お気に入りがまだいません' : filter === '相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
+                  {filters.includes('お気に入り') ? 'お気に入りがまだいません' : filters.includes('相性診断') ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
-                  {filter === 'お気に入り' ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
+                  {filters.includes('お気に入り') ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
                 </div>
               </div>
             )}
@@ -266,23 +300,25 @@ export default function MatchPage() {
                 <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isFav ? 'rgba(200,60,100,.2)' : 'var(--line)'}`, padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
                     <div style={{ position: 'relative' }}>
-                      <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0 }}>
-                        {m.nickname?.[0] ?? '?'}
+                      <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0, overflow: 'hidden' }}>
+                        {m.avatar_url
+                          ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : m.nickname?.[0] ?? '?'
+                        }
                       </div>
-                      {/* 性別バッジ */}
-                      {m.gender && (
-                        <div style={{ position: 'absolute', bottom: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: m.gender === 'male' ? '#4a90d9' : m.gender === 'female' ? '#e06090' : '#888', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'white', border: '1.5px solid white' }}>
-                          {m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '⚧'}
-                        </div>
-                      )}
+
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                         {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
                         {m.nickname}
-                        {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 2 }}>{new Date().getFullYear() - new Date(m.birth_date).getFullYear()}歳</span>}
+                        {m.gender && <span style={{ fontSize: 10, color: m.gender === 'male' ? '#4a90d9' : m.gender === 'female' ? '#e06090' : '#888', fontWeight: 600 }}>{m.gender === 'male' ? '♂' : m.gender === 'female' ? '♀' : '⚧'}</span>}
+                        {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 2 }}>{AGE_DECADE(m.birth_date)}</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>Hdcp {m.handicap} · {FREQ_LABELS[m.round_freq] ?? m.round_freq}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2, display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <span style={{ color: LEVEL_LABEL(m.handicap).color, fontWeight: 600, fontSize: 10 }}>{LEVEL_LABEL(m.handicap).label}</span>
+                        {m.area_id && <span>· {AREA_LABELS[m.area_id] ?? 'エリア未設定'}</span>}
+                      </div>
                       <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                         {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>血液型 {m.blood_type}型 {bloodCompat ?? ''}</span>}
                         {otherZodiac && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{otherZodiac} {zodiacCompat ?? ''}</span>}
@@ -300,18 +336,23 @@ export default function MatchPage() {
                           <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          if (!canCreateChat(userPlan)) {
-                            alert('チャットの新規作成はスタンダードプラン以上が必要です\nプランのアップグレードはマイページから')
-                            return
-                          }
-                          handleChat(m.user_id)
-                        }}
-                        disabled={chatLoading === m.user_id}
-                        style={{ background: canCreateChat(userPlan) ? 'var(--g1)' : 'var(--mute)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
-                        {chatLoading === m.user_id ? '...' : canCreateChat(userPlan) ? '💬 チャット' : '💬 🔒'}
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                        <button
+                          onClick={() => {
+                            if (!canCreateChat(userPlan)) {
+                              alert('新規チャットはスタンダードプラン以上が必要です\n\n※受信したチャットへの返信は\n無料プランでも可能です\n\nマイページからアップグレードできます')
+                              return
+                            }
+                            handleChat(m.user_id)
+                          }}
+                          disabled={chatLoading === m.user_id}
+                          style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
+                          {chatLoading === m.user_id ? '...' : '💬 チャット'}
+                        </button>
+                        {!canCreateChat(userPlan) && (
+                          <div style={{ fontSize: 8, color: 'var(--mute)', textAlign: 'right', lineHeight: 1.4 }}>返信は無料で可能</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
