@@ -243,7 +243,13 @@ export default function CoursePage() {
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
         {activeTab === 'comp' && (myPlan === 'premium') && (
-          <button onClick={() => setShowCreateModal(true)} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>＋ 主催する</button>
+          <button onClick={() => {
+            if (!canHostComp(userPlan)) {
+              alert('コンペの主催はプレミアムプランが必要です\nマイページからアップグレードできます')
+              return
+            }
+            setShowCreateModal(true)
+          }} style={{ background: canHostComp(userPlan) ? 'var(--lime)' : 'var(--mute)', color: canHostComp(userPlan) ? 'var(--g1)' : 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>＋ 主催する{!canHostComp(userPlan) ? ' 🔒' : ''}</button>
         )}
         {activeTab === 'comp' && myPlan !== 'premium' && (
           <button onClick={() => router.push('/subscription')} style={{ background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '6px 12px', fontSize: 11, cursor: 'pointer' }}>プレミアムで主催</button>
@@ -389,9 +395,15 @@ export default function CoursePage() {
 
               {c.status === 'recruiting' && c.organizer_id !== myId && (
                 <button
-                  onClick={() => handleEntry(c.id, c.is_entered ?? false)}
-                  style={{ width: '100%', background: c.is_entered ? 'var(--surf)' : 'var(--g1)', color: c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  {c.is_entered ? '参加キャンセル' : '参加申し込み'}
+                  onClick={() => {
+                    if (!canJoinComp(userPlan)) {
+                      alert('コンペへの参加はスタンダードプラン以上が必要です\nマイページからアップグレードできます')
+                      return
+                    }
+                    handleEntry(c.id, c.is_entered ?? false)
+                  }}
+                  style={{ width: '100%', background: !canJoinComp(userPlan) ? 'var(--mute)' : c.is_entered ? 'var(--surf)' : 'var(--g1)', color: !canJoinComp(userPlan) ? 'white' : c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {!canJoinComp(userPlan) ? '参加申し込み 🔒' : c.is_entered ? '参加キャンセル' : '参加申し込み'}
                 </button>
               )}
 
