@@ -268,7 +268,7 @@ export default function CoursePage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['course', 'comp'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
               {tab === 'course' ? Icons.golf(14, 'currentColor') : Icons.trophy(14, 'currentColor')}
               {tab === 'course' ? 'ゴルフ場予約' : 'コンペ'}
             </span>

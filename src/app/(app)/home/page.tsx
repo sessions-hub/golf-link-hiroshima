@@ -226,7 +226,7 @@ export default function HomePage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['home', 'timeline'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '11px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
               {tab === 'home' ? Icons.home(14, 'currentColor') : Icons.timeline(14, 'currentColor')}
               {tab === 'home' ? 'ホーム' : 'タイムライン'}
             </span>

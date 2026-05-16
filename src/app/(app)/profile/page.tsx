@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -160,7 +161,16 @@ export default function ProfilePage() {
       <div style={{ flex: 1, paddingBottom: 90 }}>
         {MENU_ITEMS.map((item) => (
           <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', fontSize: 14 }}>{item.icon}</div>
+            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', color: 'var(--g2)' }}>
+                {item.icon === 'user' && Icons.user(16, 'var(--g2)')}
+                {item.icon === 'calendar' && Icons.calendar(16, 'var(--g2)')}
+                {item.icon === 'trophy' && Icons.trophy(16, 'var(--g2)')}
+                {item.icon === 'star' && Icons.star(16, 'var(--g2)')}
+                {item.icon === 'bell' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>}
+                {item.icon === 'book' && Icons.book(16, 'var(--g2)')}
+                {item.icon === 'lock' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>}
+                {item.icon === 'store' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>}
+              </div>
             <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
           </div>
@@ -238,7 +248,16 @@ export default function ProfilePage() {
 
         {LEGAL_ITEMS.map((item) => (
           <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', fontSize: 14 }}>{item.icon}</div>
+            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', color: 'var(--g2)' }}>
+                {item.icon === 'user' && Icons.user(16, 'var(--g2)')}
+                {item.icon === 'calendar' && Icons.calendar(16, 'var(--g2)')}
+                {item.icon === 'trophy' && Icons.trophy(16, 'var(--g2)')}
+                {item.icon === 'star' && Icons.star(16, 'var(--g2)')}
+                {item.icon === 'bell' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>}
+                {item.icon === 'book' && Icons.book(16, 'var(--g2)')}
+                {item.icon === 'lock' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>}
+                {item.icon === 'store' && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>}
+              </div>
             <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
             <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
           </div>

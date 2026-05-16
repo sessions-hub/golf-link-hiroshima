@@ -192,7 +192,7 @@ export default function MatchPage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['golfer', 'lesson'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
               {tab === 'golfer' ? Icons.users(14, 'currentColor') : Icons.book(14, 'currentColor')}
               {tab === 'golfer' ? 'ゴルファーを探す' : 'レッスン'}
             </span>
