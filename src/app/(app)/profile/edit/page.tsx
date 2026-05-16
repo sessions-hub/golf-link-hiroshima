@@ -1,5 +1,7 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -31,7 +33,11 @@ export default function ProfileEditPage() {
   const [nickname, setNickname] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
+  const [cropSrc, setCropSrc] = useState<string | null>(null)
+  const [crop, setCrop] = useState<Crop>()
+  const [showCropModal, setShowCropModal] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const [handicap, setHandicap] = useState(36)
   const [bestScore, setBestScore] = useState('')
   const [roundFreq, setRoundFreq] = useState('monthly_1')
@@ -170,8 +176,72 @@ export default function ProfileEditPage() {
           <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 8 }}>タップして写真を変更</div>
           <input ref={fileRef} type="file" accept="image/*" onChange={(e) => {
             const file = e.target.files?.[0]
-            if (file) handleAvatarUpload(file)
+            if (!file) return
+            const reader = new FileReader()
+            reader.onload = () => {
+              setCropSrc(reader.result as string)
+              setShowCropModal(true)
+            }
+            reader.readAsDataURL(file)
           }} style={{ display: 'none' }} />
+
+          {/* トリミングモーダル */}
+          {showCropModal && cropSrc && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.8)', zIndex: 1000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+              <div style={{ background: 'white', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 16, textAlign: 'center' }}>写真をトリミング</div>
+                <ReactCrop
+                  crop={crop}
+                  onChange={c => setCrop(c)}
+                  aspect={1}
+                  circularCrop
+                >
+                  <img
+                    ref={imgRef}
+                    src={cropSrc}
+                    alt="crop"
+                    style={{ width: '100%', maxHeight: 300, objectFit: 'contain' }}
+                    onLoad={(e) => {
+                      const { width, height } = e.currentTarget
+                      const c = centerCrop(
+                        makeAspectCrop({ unit: '%', width: 80 }, 1, width, height),
+                        width, height
+                      )
+                      setCrop(c)
+                    }}
+                  />
+                </ReactCrop>
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <button onClick={() => { setShowCropModal(false); setCropSrc(null) }} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--mute)' }}>キャンセル</button>
+                  <button onClick={async () => {
+                    if (!imgRef.current || !crop) return
+                    const canvas = document.createElement('canvas')
+                    const size = 300
+                    canvas.width = size
+                    canvas.height = size
+                    const ctx = canvas.getContext('2d')!
+                    const scaleX = imgRef.current.naturalWidth / imgRef.current.width
+                    const scaleY = imgRef.current.naturalHeight / imgRef.current.height
+                    ctx.drawImage(
+                      imgRef.current,
+                      (crop.x ?? 0) * scaleX,
+                      (crop.y ?? 0) * scaleY,
+                      (crop.width ?? 100) * scaleX,
+                      (crop.height ?? 100) * scaleY,
+                      0, 0, size, size
+                    )
+                    canvas.toBlob(async (blob) => {
+                      if (!blob) return
+                      const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
+                      setShowCropModal(false)
+                      setCropSrc(null)
+                      await handleAvatarUpload(file)
+                    }, 'image/jpeg', 0.9)
+                  }} style={{ flex: 1, background: 'var(--g1)', border: 'none', borderRadius: 8, padding: 12, fontSize: 13, fontWeight: 700, cursor: 'pointer', color: 'white' }}>適用する</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ニックネーム */}

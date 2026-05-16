@@ -132,8 +132,11 @@ export default function ProfilePage() {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <div style={{ width: 62, height: 62, borderRadius: '50%', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--lime)', border: '2px solid rgba(168,224,99,.3)', flexShrink: 0 }}>
-            {profile?.nickname?.[0] ?? '?'}
+          <div onClick={() => router.push('/profile/edit')} style={{ width: 62, height: 62, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--g1)', border: '2px solid var(--line)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+            {profile?.avatar_url
+              ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : profile?.nickname?.[0] ?? '?'
+            }
           </div>
           <div>
             <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{profile?.nickname ?? 'ゴルファー'}</div>
