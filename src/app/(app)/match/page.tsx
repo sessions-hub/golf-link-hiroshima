@@ -340,23 +340,19 @@ export default function MatchPage() {
                           <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                        <button
-                          onClick={() => {
-                            if (!canCreateChat(userPlan)) {
-                              alert('新規チャットはスタンダードプラン以上が必要です\n\n※受信したチャットへの返信は\n無料プランでも可能です\n\nマイページからアップグレードできます')
-                              return
-                            }
-                            handleChat(m.user_id)
-                          }}
-                          disabled={chatLoading === m.user_id}
-                          style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
-                          {chatLoading === m.user_id ? '...' : '💬 チャット'}
-                        </button>
-                        {!canCreateChat(userPlan) && (
-                          <div style={{ fontSize: 8, color: 'var(--mute)', textAlign: 'right', lineHeight: 1.4 }}>返信は無料で可能</div>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => {
+                          if (!canCreateChat(userPlan)) {
+                            alert('チャットの新規作成はスタンダードプラン以上が必要です。\n\n受信したチャットへの返信は無料プランでも可能です。\n\nマイページからアップグレードできます。')
+                            return
+                          }
+                          handleChat(m.user_id)
+                        }}
+                        disabled={chatLoading === m.user_id}
+                        style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
+                        {chatLoading === m.user_id ? '...' : '💬 チャット'}
+                      </button>
+
                     </div>
                   </div>
                 </div>
