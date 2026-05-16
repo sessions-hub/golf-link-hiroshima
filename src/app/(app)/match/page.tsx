@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getUserPlan, canCreateChat, type Plan } from '@/lib/plan'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
@@ -54,6 +55,7 @@ export default function MatchPage() {
   const [activeTab, setActiveTab] = useState<'golfer' | 'lesson'>('golfer')
   const [matches, setMatches] = useState<MatchProfile[]>([])
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [filter, setFilter] = useState('全員')
   const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string } | null>(null)
   const [myId, setMyId] = useState('')
@@ -93,7 +95,9 @@ export default function MatchPage() {
         target_id: user.id,
       }).then(() => {})
 
-      setLoading(false)
+      const plan = await getUserPlan()
+    setUserPlan(plan)
+    setLoading(false)
     }
     fetchData()
   }, [])

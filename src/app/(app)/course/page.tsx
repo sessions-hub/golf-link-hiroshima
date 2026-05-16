@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getUserPlan, canJoinComp, canHostComp, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -51,6 +52,7 @@ export default function CoursePage() {
   const [courseLoading, setCourseLoading] = useState(false)
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [myId, setMyId] = useState('')
   const [myPlan, setMyPlan] = useState('free')
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -81,7 +83,9 @@ export default function CoursePage() {
         .single()
       if (prof) setMyPlan(prof.plan)
 
-      await fetchCompetitions(user.id)
+      const plan = await getUserPlan()
+    setUserPlan(plan)
+    await fetchCompetitions(user.id)
       await fetchCourses('広島県')
       setLoading(false)
     }
