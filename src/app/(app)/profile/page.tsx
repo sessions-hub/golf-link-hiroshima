@@ -266,7 +266,13 @@ export default function ProfilePage() {
         ))}
 
         <div onClick={handleLogout} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-          <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', fontSize: 14 }}>🚪</div>
+          <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c05050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+              <polyline points="16,17 21,12 16,7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </div>
           <div style={{ fontSize: 13, color: '#c05050' }}>ログアウト</div>
           <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
         </div>
