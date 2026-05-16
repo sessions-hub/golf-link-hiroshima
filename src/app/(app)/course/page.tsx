@@ -395,15 +395,9 @@ export default function CoursePage() {
 
               {c.status === 'recruiting' && c.organizer_id !== myId && (
                 <button
-                  onClick={() => {
-                    if (!canJoinComp(userPlan)) {
-                      alert('コンペへの参加はスタンダードプラン以上が必要です\nマイページからアップグレードできます')
-                      return
-                    }
-                    handleEntry(c.id, c.is_entered ?? false)
-                  }}
-                  style={{ width: '100%', background: !canJoinComp(userPlan) ? 'var(--mute)' : c.is_entered ? 'var(--surf)' : 'var(--g1)', color: !canJoinComp(userPlan) ? 'white' : c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  {!canJoinComp(userPlan) ? '参加申し込み 🔒' : c.is_entered ? '参加キャンセル' : '参加申し込み'}
+                  onClick={() => handleEntry(c.id, c.is_entered ?? false)}
+                  style={{ width: '100%', background: c.is_entered ? 'var(--surf)' : 'var(--g1)', color: c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                  {c.is_entered ? '参加キャンセル' : '参加申し込み'}
                 </button>
               )}
 
