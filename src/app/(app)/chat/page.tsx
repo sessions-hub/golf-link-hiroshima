@@ -52,6 +52,13 @@ export default function ChatListPage() {
             other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
           }
         }))
+        // 最新メッセージ順にソート（nullは最後）
+        roomsWithProfiles.sort((a: any, b: any) => {
+          if (!a.last_message_at && !b.last_message_at) return 0
+          if (!a.last_message_at) return 1
+          if (!b.last_message_at) return -1
+          return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+        })
         setRooms(roomsWithProfiles)
       }
       setLoading(false)
