@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 
 const COURSES = [
   { id: 1, name: '広島カントリークラブ', area: '広島市安佐北区', holes: 18, par: 72, dist: 3.2 },
@@ -15,6 +16,10 @@ export default function GpsPage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [hole, setHole] = useState(1)
   const [dist, setDist] = useState({ front: 168, center: 182, back: 196 })
+
+  useEffect(() => {
+    getUserPlan().then(setUserPlan)
+  }, [])
 
   useEffect(() => {
     if (selected === null) return
@@ -76,6 +81,23 @@ export default function GpsPage() {
   }
 
   const course = COURSES.find(c => c.id === selected)!
+
+  if (!canUseGPS(userPlan)) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 48, marginBottom: 20 }}>📍</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', marginBottom: 10 }}>GPS計測はスタンダードプラン以上</div>
+          <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>GPS距離計測機能を使うには<br/>スタンダードプランへのアップグレードが必要です</div>
+          <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>プランをアップグレード</button>
+        </div>
+        <BottomNav />
+      </div>
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column', position: 'relative' }}>
