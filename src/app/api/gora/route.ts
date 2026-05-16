@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
   const fetchPage = async (p: number) => {
     let url = ''
     if (isTabFilter) {
-      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(filter.addressKeyword)}&hits=30&page=${p}`
+      // keywordなし・prefectureIdのみで全件取得
+      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&prefectureId=${filter.prefectureId}&hits=30&page=${p}`
     } else {
       url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=30&page=${p}`
     }
@@ -53,15 +54,16 @@ export async function GET(request: NextRequest) {
       if (data4.Items) allItems = [...allItems, ...data4.Items]
     }
 
-    // 住所で確実にフィルタリング
-    if (isTabFilter) {
+    // フリーワード検索の場合は北海道の北広島のみ除外
+    if (!isTabFilter) {
       allItems = allItems.filter((item: any) => {
         const addr = item.Item?.address ?? ''
-        return addr.includes(filter.addressKeyword)
+        return !addr.includes('北海道')
       })
     }
 
     data.Items = allItems
+    data.count = allItems.length
     return NextResponse.json(data)
   } catch (error) {
     console.error('Rakuten GORA API error:', error)
