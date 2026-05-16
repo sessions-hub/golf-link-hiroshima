@@ -110,7 +110,7 @@ export default function ChatListPage() {
             <div
               key={room.id}
               onClick={() => router.push(`/chat/${room.id}`)}
-              style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative' }}
+              style={{ background: unread > 0 ? '#fffbf5' : 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative', borderLeft: unread > 0 ? '3px solid #e05070' : '3px solid transparent' }}
             >
               {/* アバター */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -121,8 +121,8 @@ export default function ChatListPage() {
                   }
                 </div>
                 {unread > 0 && (
-                  <div style={{ position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white' }}>
-                    {unread > 9 ? '9+' : unread}
+                  <div style={{ position: 'absolute', top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white', padding: '0 4px' }}>
+                    {unread > 99 ? '99+' : unread}
                   </div>
                 )}
               </div>
