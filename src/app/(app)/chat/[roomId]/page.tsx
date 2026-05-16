@@ -74,6 +74,21 @@ export default function ChatRoomPage() {
         }, 100)
       }
 
+      // 未読カウントをリセット
+      const { data: roomInfo } = await supabase
+        .from('chat_rooms')
+        .select('user1_id')
+        .eq('id', roomId)
+        .single()
+
+      if (roomInfo) {
+        const isUser1 = roomInfo.user1_id === user.id
+        await supabase.from('chat_rooms').update({
+          unread_count_user1: isUser1 ? 0 : undefined,
+          unread_count_user2: isUser1 ? undefined : 0,
+        }).eq('id', roomId)
+      }
+
       setLoading(false)
 
       const channel = supabase
@@ -169,12 +184,25 @@ export default function ChatRoomPage() {
       file_name: fileName,
     }).select().single()
 
-    // チャットルームのlast_messageを更新
+    // チャットルームのlast_messageと未読カウントを更新
     const lastMsgText = imageUrl ? '📷 画像' : fileUrl ? '📄 ファイル' : content
-    await supabase.from('chat_rooms').update({
-      last_message: lastMsgText,
-      last_message_at: new Date().toISOString(),
-    }).eq('id', roomId)
+
+    const { data: roomData } = await supabase
+      .from('chat_rooms')
+      .select('user1_id, user2_id, unread_count_user1, unread_count_user2')
+      .eq('id', roomId)
+      .single()
+
+    if (roomData) {
+      const isUser1 = roomData.user1_id === myId
+      await supabase.from('chat_rooms').update({
+        last_message: lastMsgText,
+        last_message_at: new Date().toISOString(),
+        // 相手の未読カウントを増やす
+        unread_count_user1: isUser1 ? roomData.unread_count_user1 : (roomData.unread_count_user1 ?? 0) + 1,
+        unread_count_user2: isUser1 ? (roomData.unread_count_user2 ?? 0) + 1 : roomData.unread_count_user2,
+      }).eq('id', roomId)
+    }
 
     // tempメッセージをDBのメッセージに置換
     if (savedMsg) {
