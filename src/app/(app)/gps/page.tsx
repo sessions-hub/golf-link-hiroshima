@@ -13,6 +13,7 @@ const COURSES = [
 
 export default function GpsPage() {
   const router = useRouter()
+  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [selected, setSelected] = useState<number | null>(null)
   const [hole, setHole] = useState(1)
   const [dist, setDist] = useState({ front: 168, center: 182, back: 196 })
