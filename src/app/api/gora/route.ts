@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const FILTER_MAP: Record<string, { prefectureId: string }> = {
-  '広島県': { prefectureId: '34' },
-  '山口県': { prefectureId: '35' },
-  '岡山県': { prefectureId: '33' },
-  '島根県': { prefectureId: '32' },
+const FILTER_MAP: Record<string, { prefectureId: string; addressKeyword: string }> = {
+  '広島県': { prefectureId: '34', addressKeyword: '広島県' },
+  '山口県': { prefectureId: '35', addressKeyword: '山口県' },
+  '岡山県': { prefectureId: '33', addressKeyword: '岡山県' },
+  '島根県': { prefectureId: '32', addressKeyword: '島根県' },
 }
 
 export async function GET(request: NextRequest) {
@@ -20,10 +20,8 @@ export async function GET(request: NextRequest) {
   const fetchPage = async (p: number) => {
     let url = ''
     if (isTabFilter) {
-      // 県タブの場合はprefectureIdで検索
-      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&prefectureId=${filter.prefectureId}&hits=30&page=${p}`
+      url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(filter.addressKeyword)}&hits=30&page=${p}`
     } else {
-      // フリーワード検索
       url = `https://openapi.rakuten.co.jp/engine/api/Gora/GoraGolfCourseSearch/20170623?format=json&applicationId=${appId}&affiliateId=${affiliateId}&accessKey=${accessKey}&keyword=${encodeURIComponent(keyword)}&hits=30&page=${p}`
     }
     const res = await fetch(url, {
@@ -53,6 +51,14 @@ export async function GET(request: NextRequest) {
     if (total > 90) {
       const data4 = await fetchPage(4)
       if (data4.Items) allItems = [...allItems, ...data4.Items]
+    }
+
+    // 住所で確実にフィルタリング
+    if (isTabFilter) {
+      allItems = allItems.filter((item: any) => {
+        const addr = item.Item?.address ?? ''
+        return addr.includes(filter.addressKeyword)
+      })
     }
 
     data.Items = allItems
