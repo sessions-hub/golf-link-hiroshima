@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -47,7 +48,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '男性', '女性', '初心者', '上級者', '週末希望', '⭐相性診断', '❤️ お気に入り']
+const FILTERS = ['全員', '男性', '女性', '初心者', '上級者', '週末希望', '相性診断', 'お気に入り']
 
 
 const getPlanBadge = (plan: Plan) => {
@@ -169,8 +170,8 @@ export default function MatchPage() {
     if (filter === '初心者') return m.handicap >= 30
     if (filter === '上級者') return m.handicap < 13
     if (filter === '週末希望') return m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')
-    if (filter === '❤️ お気に入り') return favorites.has(m.user_id)
-    if (filter === '⭐相性診断') {
+    if (filter === 'お気に入り') return favorites.has(m.user_id)
+    if (filter === '相性診断') {
       if (!myProfile || !m.blood_type || !m.birth_date) return false
       const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
       const mySign = getZodiacSign(myProfile.birth_date)
@@ -191,7 +192,10 @@ export default function MatchPage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['golfer', 'lesson'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            {tab === 'golfer' ? '⛳ ゴルファーを探す' : '📚 レッスン'}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {tab === 'golfer' ? Icons.users(14, 'currentColor') : Icons.book(14, 'currentColor')}
+              {tab === 'golfer' ? 'ゴルファーを探す' : 'レッスン'}
+            </span>
           </button>
         ))}
       </div>
@@ -203,16 +207,16 @@ export default function MatchPage() {
               {FILTERS.map((f) => (
                 <button key={f} onClick={() => setFilter(f)} style={{
                   padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer',
-                  border: `1px solid ${f === '⭐相性診断' ? 'rgba(168,224,99,.5)' : f === '❤️ お気に入り' ? 'rgba(200,60,100,.3)' : filter === f ? 'var(--g3)' : 'var(--line)'}`,
-                  color: filter === f ? (f === '❤️ お気に入り' ? '#c05080' : 'var(--g2)') : 'var(--mid)',
-                  background: f === '⭐相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : f === '❤️ お気に入り' ? filter === f ? 'rgba(200,60,100,.12)' : 'rgba(200,60,100,.05)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)',
+                  border: `1px solid ${f === '相性診断' ? 'rgba(168,224,99,.5)' : f === 'お気に入り' ? 'rgba(200,60,100,.3)' : filter === f ? 'var(--g3)' : 'var(--line)'}`,
+                  color: filter === f ? (f === 'お気に入り' ? '#c05080' : 'var(--g2)') : 'var(--mid)',
+                  background: f === '相性診断' ? filter === f ? 'rgba(168,224,99,.2)' : 'rgba(168,224,99,.08)' : f === 'お気に入り' ? filter === f ? 'rgba(200,60,100,.12)' : 'rgba(200,60,100,.05)' : filter === f ? 'rgba(46,125,85,.1)' : 'var(--surf)',
                   fontWeight: filter === f ? 600 : 400,
                 }}>{f}</button>
               ))}
             </div>
           </div>
 
-          {filter === '⭐相性診断' && myProfile && (
+          {filter === '相性診断' && myProfile && (
             <div style={{ margin: '8px 16px 0', background: 'linear-gradient(135deg,var(--g1),var(--g2))', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(168,224,99,.2)' }}>
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.1em', marginBottom: 4 }}>あなたの相性データ</div>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -239,13 +243,13 @@ export default function MatchPage() {
             {!loading && filteredMatches.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>
-                  {filter === '❤️ お気に入り' ? '❤️' : '⛳'}
+                  {filter === 'お気に入り' ? '❤️' : '⛳'}
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>
-                  {filter === '❤️ お気に入り' ? 'お気に入りがまだいません' : filter === '⭐相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
+                  {filter === 'お気に入り' ? 'お気に入りがまだいません' : filter === '相性診断' ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
-                  {filter === '❤️ お気に入り' ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
+                  {filter === 'お気に入り' ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
                 </div>
               </div>
             )}
@@ -274,7 +278,7 @@ export default function MatchPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                        {m.plan === 'premium' && <span style={{ fontSize: 11 }}>👑</span>}
+                        {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
                         {m.nickname}
                         {m.birth_date && <span style={{ fontSize: 10, color: 'var(--mute)', fontWeight: 400, marginLeft: 2 }}>{new Date().getFullYear() - new Date(m.birth_date).getFullYear()}歳</span>}
                       </div>
@@ -289,7 +293,7 @@ export default function MatchPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {/* お気に入りボタン */}
                         <button onClick={(e) => toggleFavorite(m.user_id, e)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: isFav ? '#e05070' : 'var(--pale)', padding: '2px 4px', lineHeight: 1 }}>
-                          {isFav ? '❤️' : '♡'}
+                          {isFav ? Icons.heart(16, '#e05070', true) : Icons.heart(16, 'var(--mute)')}
                         </button>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{Math.round(m.match_score)}<span style={{ fontSize: 11 }}>%</span></div>

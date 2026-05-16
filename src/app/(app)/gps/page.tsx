@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
@@ -158,7 +159,7 @@ export default function GpsPage() {
           <Logo />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>📍</div>
+          <div style={{ marginBottom: 20, color: "var(--mute)" }}>{Icons.pin(48, "var(--mute)")}</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', marginBottom: 10 }}>GPS計測はスタンダードプラン以上</div>
           <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>GPS距離計測機能を使うには<br/>スタンダードプランへのアップグレードが必要です</div>
           <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>プランをアップグレード</button>
@@ -219,7 +220,7 @@ export default function GpsPage() {
           {filteredCourses.map((c) => (
             <div key={c.golfCourseId} onClick={() => selectCourse(c)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
               <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>⛳</div>
+                <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--g2)' }}>{Icons.golf(22, 'var(--g2)')}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 600, marginBottom: 2 }}>{c.golfCourseName}</div>
                   <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.address}</div>

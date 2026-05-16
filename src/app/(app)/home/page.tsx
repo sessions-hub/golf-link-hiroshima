@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -225,7 +226,10 @@ export default function HomePage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['home', 'timeline'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '11px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            {tab === 'home' ? '🏠 ホーム' : '📸 タイムライン'}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {tab === 'home' ? Icons.home(14, 'currentColor') : Icons.timeline(14, 'currentColor')}
+              {tab === 'home' ? 'ホーム' : 'タイムライン'}
+            </span>
           </button>
         ))}
       </div>
@@ -326,7 +330,7 @@ export default function HomePage() {
 
           {!loading && posts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>📸</div>
+              <div style={{ marginBottom: 8, color: "var(--mute)" }}>{Icons.camera(32, "var(--mute)")}</div>
               <div style={{ fontSize: 12, color: 'var(--mute)' }}>まだ投稿がありません</div>
               <button onClick={() => { setActiveTab('timeline'); setShowPostModal(true) }} style={{ marginTop: 10, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>最初の投稿をする</button>
             </div>
@@ -382,7 +386,7 @@ export default function HomePage() {
 
             {!loading && filteredPosts.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ fontSize: 28, marginBottom: 10 }}>📸</div>
+                <div style={{ marginBottom: 10, color: "var(--mute)" }}>{Icons.camera(28, "var(--mute)")}</div>
                 <div style={{ fontSize: 13, color: 'var(--mute)' }}>{searchQuery ? '検索結果がありません' : 'まだ投稿がありません'}</div>
                 {!searchQuery && (
                   <button onClick={() => setShowPostModal(true)} style={{ marginTop: 12, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 7, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>最初の投稿をする</button>
@@ -412,7 +416,7 @@ export default function HomePage() {
                 )}
                 <div style={{ padding: '8px 16px 12px', display: 'flex', gap: 14 }}>
                   <button onClick={() => toggleLike(post.id, post.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: post.liked_by_me ? '#e05070' : 'var(--mute)' }}>
-                    {post.liked_by_me ? '❤️' : '♡'} {post.likes_count}
+                    {post.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {post.likes_count}
                   </button>
                 </div>
               </div>
@@ -443,7 +447,7 @@ export default function HomePage() {
               style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', marginBottom: 12, fontFamily: 'var(--sans)' }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => fileRef.current?.click()} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--mid)', cursor: 'pointer' }}>📷 写真を追加</button>
+              <button onClick={() => fileRef.current?.click()} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--mid)', cursor: 'pointer' }}>写真を追加</button>
               <button onClick={handlePost} disabled={posting || (!caption.trim() && !photo)} style={{ flex: 1, background: posting || (!caption.trim() && !photo) ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontSize: 13, fontWeight: 700, cursor: posting ? 'not-allowed' : 'pointer' }}>
                 {posting ? '投稿中...' : '投稿する'}
               </button>

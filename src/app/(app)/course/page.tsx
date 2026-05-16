@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -267,7 +268,10 @@ export default function CoursePage() {
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
         {(['course', 'comp'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
-            {tab === 'course' ? '⛳ ゴルフ場予約' : '🏆 コンペ'}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              {tab === 'course' ? Icons.golf(14, 'currentColor') : Icons.trophy(14, 'currentColor')}
+              {tab === 'course' ? 'ゴルフ場予約' : 'コンペ'}
+            </span>
           </button>
         ))}
       </div>
@@ -304,7 +308,7 @@ export default function CoursePage() {
             )}
             {!courseLoading && goraCourses.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>⛳</div>
+                <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.golf(32, "var(--mute)")}</div>
                 <div style={{ fontSize: 13, color: 'var(--mute)' }}>コースが見つかりませんでした</div>
               </div>
             )}
@@ -353,7 +357,7 @@ export default function CoursePage() {
 
           {!loading && competitions.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🏆</div>
+              <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.trophy(32, "var(--mute)")}</div>
               <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>コンペがまだありません</div>
               <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>プレミアム会員になるとコンペを主催できます</div>
               {myPlan !== 'premium' && (
@@ -504,7 +508,7 @@ export default function CoursePage() {
             </div>
 
             <button onClick={handleCreateComp} disabled={creating || !title || !courseName || !compDate} style={{ width: '100%', background: creating || !title || !courseName || !compDate ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '14px', fontSize: 14, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer' }}>
-              {creating ? '作成中...' : 'コンペを作成する 🏆'}
+              {creating ? '作成中...' : 'コンペを作成する'}
             </button>
           </div>
         </div>

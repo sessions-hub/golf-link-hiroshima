@@ -1,4 +1,5 @@
 'use client'
+import { Icons } from '@/components/icons'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -259,7 +260,7 @@ export default function ChatRoomPage() {
         {loading && <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>}
         {!loading && messages.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>💬</div>
+            <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.chat(32, "var(--mute)")}</div>
             <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>最初のメッセージを送りましょう！</div>
             <div style={{ fontSize: 12, color: 'var(--mute)' }}>{otherProfile?.nickname ?? '相手'}さんとのチャットが始まります</div>
           </div>
@@ -314,7 +315,7 @@ export default function ChatRoomPage() {
       {/* 入力エリア */}
       <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
         {/* 画像ボタン */}
-        <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>📷</button>
+        <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>{Icons.camera(16, 'var(--mid)')}</button>
         {/* ファイルボタン */}
         <button onClick={() => fileRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>📄</button>
 
