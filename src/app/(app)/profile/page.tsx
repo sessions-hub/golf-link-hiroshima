@@ -7,6 +7,17 @@ import { getUserPlan, canSeeWhoLiked, canSeeWhoVisited, isPremium, type Plan } f
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
+const SVG_ICONS: Record<string, string> = {
+  user: "M12 8a4 4 0 100-8 4 4 0 000 8zm-8 12c0-4 3.6-7 8-7s8 3 8 7",
+  calendar: "M3 4h18v16H3zM16 2v4M8 2v4M3 10h18",
+  trophy: "M8 21h8M12 17v4M7 4h10l-1 7a5 5 0 01-10 0L5 4zM5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4",
+  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+  bell: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0",
+  book: "M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z",
+  lock: "M3 11h18v11H3zM7 11V7a5 5 0 0110 0v4",
+  store: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10",
+}
+
 const MENU_ITEMS = [
   { icon: '👤', label: 'プロフィール編集', path: '/profile/edit' },
   { icon: '📅', label: '予約履歴', path: '/course' },
