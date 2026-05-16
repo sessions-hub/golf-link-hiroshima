@@ -109,8 +109,24 @@ export default function ProfilePage() {
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '48px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <Logo variant="screen" />
-          <span style={{ background: profile?.plan === 'premium' ? 'var(--lime)' : profile?.plan === 'standard' ? 'rgba(168,224,99,.3)' : 'rgba(255,255,255,.15)', color: profile?.plan === 'premium' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700 }}>
-            {profile?.plan === 'premium' ? 'プレミアム会員' : profile?.plan === 'standard' ? 'スタンダード会員' : '無料会員'}
+          <span style={{
+            background: userPlan === 'premium'
+              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+              : userPlan === 'standard'
+              ? 'linear-gradient(135deg, var(--g2), var(--g3))'
+              : '#eef3ee',
+            color: userPlan === 'premium' ? 'white'
+              : userPlan === 'standard' ? 'white'
+              : 'var(--mute)',
+            padding: '4px 12px',
+            borderRadius: 20,
+            fontSize: 10,
+            fontWeight: 700,
+            fontFamily: 'Inter',
+            letterSpacing: '.06em',
+            border: userPlan === 'free' ? '1px solid var(--line)' : 'none',
+          }}>
+            {userPlan === 'premium' ? '👑 PREMIUM' : userPlan === 'standard' ? '⭐ STANDARD' : 'FREE'}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
