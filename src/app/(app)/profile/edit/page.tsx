@@ -42,6 +42,7 @@ export default function ProfileEditPage() {
   const [bestScore, setBestScore] = useState('')
   const [roundFreq, setRoundFreq] = useState('monthly_1')
   const [preferredDays, setPreferredDays] = useState<string[]>([])
+  const [areas, setAreas] = useState<string[]>([])
   const [bio, setBio] = useState('')
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function ProfileEditPage() {
         setBestScore(data.best_score?.toString() ?? '')
         setRoundFreq(data.round_freq ?? 'monthly_1')
         setPreferredDays(data.preferred_days ?? [])
+        setAreas(data.areas ?? [])
         setBio(data.bio ?? '')
       }
       setLoading(false)
@@ -116,6 +118,7 @@ export default function ProfileEditPage() {
         best_score: bestScore ? parseInt(bestScore) : null,
         round_freq: roundFreq,
         preferred_days: preferredDays,
+        areas: areas,
         bio,
         avatar_url: avatarUrl,
       })
