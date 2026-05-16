@@ -27,6 +27,7 @@ interface Profile {
   area_id: string | null
   plan: string
   created_at: string
+  avatar_url: string | null
 }
 
 
