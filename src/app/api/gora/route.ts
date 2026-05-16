@@ -54,8 +54,15 @@ export async function GET(request: NextRequest) {
       if (data4.Items) allItems = [...allItems, ...data4.Items]
     }
 
-    // フリーワード検索の場合は北海道の北広島のみ除外
-    if (!isTabFilter) {
+    // 住所フィルタリング
+    if (isTabFilter) {
+      // タブフィルターは県名で絞り込み
+      allItems = allItems.filter((item: any) => {
+        const addr = item.Item?.address ?? ''
+        return addr.includes(filter.addressKeyword)
+      })
+    } else {
+      // フリーワード検索は北海道の北広島のみ除外
       allItems = allItems.filter((item: any) => {
         const addr = item.Item?.address ?? ''
         return !addr.includes('北海道')
