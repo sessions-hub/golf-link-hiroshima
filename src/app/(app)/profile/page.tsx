@@ -53,6 +53,8 @@ export default function ProfilePage() {
       setEmail(user.email ?? '')
       const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
       if (data) setProfile(data)
+      const plan = await getUserPlan()
+      setUserPlan(plan)
       setLoading(false)
     }
     fetchProfile()
