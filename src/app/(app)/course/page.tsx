@@ -37,7 +37,7 @@ interface Competition {
   is_entered?: boolean
 }
 
-const COURSE_FILTERS = ['広島県', '廿日市市', '東広島市', '福山市', '山口県']
+const COURSE_FILTERS = ['広島', '広島市', '廿日市', '東広島', '三原', '福山', '山口', '岡山']
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -45,7 +45,7 @@ export default function CoursePage() {
   const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
-  const [courseFilter, setCourseFilter] = useState('広島県')
+  const [courseFilter, setCourseFilter] = useState('広島')
   const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
   const [courseLoading, setCourseLoading] = useState(false)
@@ -82,15 +82,17 @@ export default function CoursePage() {
       if (prof) setMyPlan(prof.plan)
 
       await fetchCompetitions(user.id)
-      await fetchCourses('広島県')
+      await fetchCourses('広島')
       setLoading(false)
     }
     init()
   }, [])
 
   const handleCourseSearch = () => {
-    if (searchText.trim()) {
-      fetchCourses(searchText.trim())
+    const q = searchText.trim()
+    if (q) {
+      setCourseFilter('')
+      fetchCourses(q)
     }
   }
 
