@@ -121,14 +121,14 @@ export default function ProfilePage() {
               : userPlan === 'standard' ? 'white'
               : 'var(--mute)',
             padding: '4px 12px',
-            borderRadius: 20,
+            borderRadius: 4,
             fontSize: 10,
             fontWeight: 700,
             fontFamily: 'Inter',
             letterSpacing: '.06em',
             border: userPlan === 'free' ? '1px solid var(--line)' : 'none',
           }}>
-            {userPlan === 'premium' ? '👑 PREMIUM' : userPlan === 'standard' ? '⭐ STANDARD' : 'FREE'}
+            {userPlan === 'premium' ? 'PREMIUM' : userPlan === 'standard' ? 'STANDARD' : 'FREE'}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
