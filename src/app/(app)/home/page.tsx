@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -46,6 +47,7 @@ export default function HomePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [activeTab, setActiveTab] = useState<'home' | 'timeline'>('home')
   const [showPostModal, setShowPostModal] = useState(false)
   const [caption, setCaption] = useState('')
@@ -68,6 +70,8 @@ export default function HomePage() {
         .eq('user_id', user.id)
         .single()
       if (prof) setProfile(prof)
+      const plan = await getUserPlan()
+      setUserPlan(plan)
       setMyUserId(user.id)
 
       // チャット一覧取得（未読あり・最新3件）
@@ -179,11 +183,16 @@ export default function HomePage() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
           )}
-          <div onClick={() => router.push(`/user/${profile?.user_id}`)} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', cursor: 'pointer', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer' }} onClick={() => router.push('/profile')}>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             {profile?.avatar_url
               ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : profile?.nickname?.[0] ?? '?'
             }
+            </div>
+            <div style={{ background: getPlanBadge(userPlan).bg, color: getPlanBadge(userPlan).color, borderRadius: 4, padding: '1px 5px', fontSize: 7, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.08em', border: userPlan === 'free' ? '1px solid var(--line)' : 'none' }}>
+              {getPlanBadge(userPlan).label}
+            </div>
           </div>
         </div>
       </div>

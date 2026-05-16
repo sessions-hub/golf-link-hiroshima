@@ -51,6 +51,13 @@ const getClub = (y: number) => {
   return 'PW'
 }
 
+
+const getPlanBadge = (plan: Plan) => {
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+}
+
 export default function GpsPage() {
   const router = useRouter()
   const [userPlan, setUserPlan] = useState<Plan>('free')

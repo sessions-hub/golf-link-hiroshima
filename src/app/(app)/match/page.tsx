@@ -49,6 +49,13 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
 
 const FILTERS = ['全員', '男性', '女性', '初心者', '上級者', '週末希望', '⭐相性診断', '❤️ お気に入り']
 
+
+const getPlanBadge = (plan: Plan) => {
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+}
+
 export default function MatchPage() {
   const router = useRouter()
   const supabase = createClient()

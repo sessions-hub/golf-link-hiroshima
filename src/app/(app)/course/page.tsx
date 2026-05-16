@@ -42,6 +42,13 @@ const COURSE_FILTERS = ['広島県', '山口県', '岡山県', '島根県']
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
+
+const getPlanBadge = (plan: Plan) => {
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+}
+
 export default function CoursePage() {
   const router = useRouter()
   const supabase = createClient()
