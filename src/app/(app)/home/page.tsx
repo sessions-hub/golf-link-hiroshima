@@ -13,6 +13,21 @@ interface Profile {
   avatar_url: string | null
 }
 
+interface ChatRoom {
+  id: string
+  user1_id: string
+  user2_id: string
+  last_message: string | null
+  last_message_at: string
+  unread_count_user1: number
+  unread_count_user2: number
+  other_user: {
+    user_id: string
+    nickname: string
+    avatar_url: string | null
+  }
+}
+
 interface Post {
   id: string
   user_id: string
@@ -38,6 +53,8 @@ export default function HomePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [posting, setPosting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
+  const [myUserId, setMyUserId] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -51,6 +68,31 @@ export default function HomePage() {
         .eq('user_id', user.id)
         .single()
       if (prof) setProfile(prof)
+      setMyUserId(user.id)
+
+      // チャット一覧取得（未読あり・最新3件）
+      const { data: chatData } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+        .order('last_message_at', { ascending: false })
+        .limit(3)
+
+      if (chatData) {
+        const roomsWithProfiles = await Promise.all(chatData.map(async (room) => {
+          const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url')
+            .eq('user_id', otherUserId)
+            .single()
+          return {
+            ...room,
+            other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
+          }
+        }))
+        setChatRooms(roomsWithProfiles)
+      }
 
       const { data: postData } = await supabase
         .from('posts')
@@ -198,6 +240,48 @@ export default function HomePage() {
 
           {/* ライムライン */}
           <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
+
+          {/* 新着チャット */}
+          {chatRooms.length > 0 && (
+            <>
+              <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'Inter' }}>新着チャット</span>
+                <span onClick={() => router.push('/chat')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
+              </div>
+              {chatRooms.map((room) => {
+                const unread = room.user1_id === myUserId ? room.unread_count_user1 : room.unread_count_user2
+                const time = new Date(room.last_message_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                return (
+                  <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden' }}>
+                        {room.other_user.avatar_url
+                          ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : room.other_user.nickname?.[0] ?? '?'
+                        }
+                      </div>
+                      {unread > 0 && (
+                        <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
+                          {unread > 9 ? '9+' : unread}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                        <div style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)' }}>{room.other_user.nickname}</div>
+                        <div style={{ fontSize: 10, color: 'var(--mute)' }}>{time}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {room.last_message ?? 'チャットを始めましょう'}
+                      </div>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+                  </div>
+                )
+              })}
+              <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
+            </>
+          )}
 
           {/* おすすめタイムライン（サムネイルグリッド） */}
           <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
