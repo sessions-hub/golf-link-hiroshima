@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { Icons } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -7,15 +8,15 @@ import { getUserPlan, canSeeWhoLiked, canSeeWhoVisited, isPremium, type Plan } f
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
-const SVG_ICONS: Record<string, string> = {
-  user: "M12 8a4 4 0 100-8 4 4 0 000 8zm-8 12c0-4 3.6-7 8-7s8 3 8 7",
-  calendar: "M3 4h18v16H3zM16 2v4M8 2v4M3 10h18",
-  trophy: "M8 21h8M12 17v4M7 4h10l-1 7a5 5 0 01-10 0L5 4zM5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4",
-  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  bell: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0",
-  book: "M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z",
-  lock: "M3 11h18v11H3zM7 11V7a5 5 0 0110 0v4",
-  store: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10",
+const SVG_ICONS: Record<string, React.ReactNode> = {
+  user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+  trophy: <><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><path d="M7 4h10l-1 7a5 5 0 01-10 0z"/><path d="M5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4"/></>,
+  star: <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>,
+  bell: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></>,
+  book: <><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></>,
+  lock: <><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></>,
+  store: <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></>,
 }
 
 const MENU_ITEMS = [
@@ -174,7 +175,7 @@ export default function ProfilePage() {
           <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
             <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={SVG_ICONS[item.icon] ?? ''}/>
+                  {SVG_ICONS[item.icon]}
                 </svg>
               </div>
             <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
@@ -256,7 +257,7 @@ export default function ProfilePage() {
           <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
             <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={SVG_ICONS[item.icon] ?? ''}/>
+                  {SVG_ICONS[item.icon]}
                 </svg>
               </div>
             <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
