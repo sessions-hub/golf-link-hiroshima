@@ -286,6 +286,16 @@ export default function ProfileEditPage() {
           ))}
         </div>
 
+        {/* 活動エリア */}
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>活動エリア（複数選択可）</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          {['広島・廿日市エリア', '広島北エリア', '東広島・呉エリア', '竹原・三原・尾道エリア', '福山エリア'].map((a) => (
+            <button key={a} onClick={() => {
+              setAreas(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a])
+            }} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: `1px solid ${areas.includes(a) ? 'var(--g3)' : 'var(--line)'}`, color: areas.includes(a) ? 'var(--g2)' : 'var(--mid)', background: areas.includes(a) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: areas.includes(a) ? 600 : 400 }}>{a}</button>
+          ))}
+        </div>
+
         {/* 希望曜日 */}
         <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>希望曜日</div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
