@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getUserPlan, canSeeWhoLiked, canSeeWhoVisited, isPremium, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -34,6 +35,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<Plan>('free')
+  const [whoLiked, setWhoLiked] = useState<any[]>([])
+  const [whoVisited, setWhoVisited] = useState<any[]>([])
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -135,6 +139,71 @@ export default function ProfilePage() {
 
         {/* 区切り線 */}
         <div style={{ padding: '10px 20px 4px' }}>
+          {/* プレミアム限定セクション */}
+          {isPremium(userPlan) ? (
+            <>
+              <div style={{ padding: '16px 20px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>プレミアム限定</div>
+
+              {/* 足跡を見た人 */}
+              <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--surf)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>👣</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>足跡を見た人</span>
+                  <span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 'auto' }}>{whoVisited.length}人</span>
+                </div>
+                {whoVisited.length === 0 ? (
+                  <div style={{ padding: '16px', fontSize: 12, color: 'var(--mute)', textAlign: 'center' }}>まだ足跡がありません</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 10, padding: '12px 16px', overflowX: 'auto' }}>
+                    {whoVisited.map((v: any) => {
+                      const p = v.profiles
+                      return (
+                        <div key={v.visitor_id} onClick={() => router.push(`/user/${v.visitor_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                            {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* お気に入りしてくれた人 */}
+              <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--surf)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>❤️</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>お気に入りしてくれた人</span>
+                  <span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 'auto' }}>{whoLiked.length}人</span>
+                </div>
+                {whoLiked.length === 0 ? (
+                  <div style={{ padding: '16px', fontSize: 12, color: 'var(--mute)', textAlign: 'center' }}>まだお気に入りがありません</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 10, padding: '12px 16px', overflowX: 'auto' }}>
+                    {whoLiked.map((l: any) => {
+                      const p = l.profiles
+                      return (
+                        <div key={l.user_id} onClick={() => router.push(`/user/${l.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                            {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 プレミアムプランで解放</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 12, lineHeight: 1.6 }}>足跡を見た人・お気に入りしてくれた人<br/>マッチング上位表示など</div>
+              <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>プレミアムにアップグレード</button>
+            </div>
+          )}
+
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>法的情報</div>
         </div>
 
