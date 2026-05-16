@@ -12,6 +12,7 @@ interface GoraCourse {
   prefecture: string
   address: string
   golfCourseImageUrl: string
+  golfCourseCaption: string
   evaluation: number
   golfCourseDetailUrl: string
   reserveCalUrl: string
@@ -45,6 +46,7 @@ export default function CoursePage() {
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
   const [courseFilter, setCourseFilter] = useState('広島')
+  const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
   const [courseLoading, setCourseLoading] = useState(false)
   const [competitions, setCompetitions] = useState<Competition[]>([])
@@ -85,6 +87,12 @@ export default function CoursePage() {
     }
     init()
   }, [])
+
+  const handleCourseSearch = () => {
+    if (searchText.trim()) {
+      fetchCourses(searchText.trim())
+    }
+  }
 
   const fetchCourses = async (keyword: string) => {
     setCourseLoading(true)
@@ -281,14 +289,19 @@ export default function CoursePage() {
                 )}
                 <div style={{ padding: '12px 14px' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{c.golfCourseName}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.prefecture} · {c.holes}H</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>¥{c.lowestPrice?.toLocaleString()}〜</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.address}</div>
+                    {c.lowestPrice > 0 && (
+                      <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)', flexShrink: 0, marginLeft: 8 }}>¥{c.lowestPrice?.toLocaleString()}〜</div>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
                     <span style={{ fontSize: 11, color: '#f59e0b' }}>{'★'.repeat(Math.round(c.evaluation ?? 0))}</span>
                     <span style={{ fontSize: 10, color: 'var(--mute)' }}>{c.evaluation}</span>
                   </div>
+                  {c.golfCourseCaption && (
+                    <div style={{ fontSize: 11, color: 'var(--mid)', lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.golfCourseCaption}</div>
+                  )}
                   <a href={c.golfCourseDetailUrl || c.reserveCalUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', textAlign: 'center', textDecoration: 'none' }}>
                     楽天GORAで予約する →
                   </a>
