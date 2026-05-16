@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -29,6 +29,9 @@ export default function ProfileEditPage() {
   const [success, setSuccess] = useState(false)
 
   const [nickname, setNickname] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [handicap, setHandicap] = useState(36)
   const [bestScore, setBestScore] = useState('')
   const [roundFreq, setRoundFreq] = useState('monthly_1')
@@ -48,6 +51,7 @@ export default function ProfileEditPage() {
 
       if (data) {
         setNickname(data.nickname ?? '')
+      setAvatarUrl(data.avatar_url ?? null)
         setHandicap(data.handicap ?? 36)
         setBestScore(data.best_score?.toString() ?? '')
         setRoundFreq(data.round_freq ?? 'monthly_1')
@@ -63,6 +67,30 @@ export default function ProfileEditPage() {
     setPreferredDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
     )
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    setAvatarUploading(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${user.id}/avatar.${ext}`
+
+      const { error } = await supabase.storage
+        .from('user-photos')
+        .upload(path, file, { contentType: file.type, upsert: true })
+
+      if (!error) {
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(path)
+        setAvatarUrl(data.publicUrl)
+      }
+    } catch (e) {
+      console.error('Avatar upload error:', e)
+    }
+    setAvatarUploading(false)
   }
 
   const handleSave = async () => {
@@ -122,13 +150,23 @@ export default function ProfileEditPage() {
 
         {/* アバター */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 700, color: 'var(--lime)', position: 'relative' }}>
-            {nickname?.[0] ?? '?'}
+          <div onClick={() => fileRef.current?.click()} style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 700, color: 'var(--lime)', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+            {avatarUrl
+              ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : nickname?.[0] ?? '?'
+            }
+            {avatarUploading && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>...</div>
+            )}
             <div style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
           </div>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 8 }}>タップして写真を変更</div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) handleAvatarUpload(file)
+          }} style={{ display: 'none' }} />
         </div>
 
         {/* ニックネーム */}
