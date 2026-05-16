@@ -26,12 +26,13 @@ export default function LoginPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 32px)', paddingBottom: '28px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <img src="/グリーン.png" alt="GLH." style={{ height: 100, width: 'auto', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ height: 1, width: 24, background: '#166534' }} />
-          <div style={{ fontSize: 10, fontWeight: 600, color: '#111814', letterSpacing: '.22em', fontFamily: 'Inter, sans-serif' }}>GOLF LINK HIROSHIMA</div>
-          <div style={{ height: 1, width: 24, background: '#166534' }} />
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 28px)', paddingBottom: '28px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/グリーン.png" alt="GLH." style={{ height: 64, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <div style={{ borderLeft: '1px solid #111814', paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>GOLF LINK</div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>HIROSHIMA</div>
+          </div>
         </div>
       </div>
       <div style={{ flex: 1, padding: '24px 22px', display: 'flex', flexDirection: 'column' }}>
