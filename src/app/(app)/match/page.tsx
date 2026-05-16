@@ -80,7 +80,6 @@ export default function MatchPage() {
       const { data, error } = await supabase.rpc('get_matches_with_score', {
         p_user_id: user.id, p_limit: 20, p_offset: 0, p_min_score: 0,
       })
-      console.log('Match data:', data, 'Error:', error)
       if (!error) setMatches(data ?? [])
 
       // お気に入り一覧
