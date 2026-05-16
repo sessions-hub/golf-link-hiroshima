@@ -107,6 +107,7 @@ export default function ProfileEditPage() {
         round_freq: roundFreq,
         preferred_days: preferredDays,
         bio,
+        avatar_url: avatarUrl,
       })
       .eq('user_id', user.id)
 
