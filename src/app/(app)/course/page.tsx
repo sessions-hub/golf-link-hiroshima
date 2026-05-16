@@ -37,7 +37,7 @@ interface Competition {
   is_entered?: boolean
 }
 
-const COURSE_FILTERS = ['広島', '広島市', '廿日市', '東広島', '三原', '福山', '山口', '岡山']
+const COURSE_FILTERS = ['広島県', '山口県', '岡山県', '島根県']
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -45,7 +45,7 @@ export default function CoursePage() {
   const router = useRouter()
   const supabase = createClient()
   const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
-  const [courseFilter, setCourseFilter] = useState('広島')
+  const [courseFilter, setCourseFilter] = useState('広島県')
   const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
   const [courseLoading, setCourseLoading] = useState(false)
@@ -82,7 +82,7 @@ export default function CoursePage() {
       if (prof) setMyPlan(prof.plan)
 
       await fetchCompetitions(user.id)
-      await fetchCourses('広島')
+      await fetchCourses('広島県')
       setLoading(false)
     }
     init()
@@ -270,7 +270,7 @@ export default function CoursePage() {
                   style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--txt)' }}
                 />
                 {searchText && (
-                  <button onClick={() => { setSearchText(''); fetchCourses('広島') }} style={{ background: 'none', border: 'none', color: 'var(--mute)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
+                  <button onClick={() => { setSearchText(''); fetchCourses('広島県') }} style={{ background: 'none', border: 'none', color: 'var(--mute)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>×</button>
                 )}
               </div>
               <button onClick={handleCourseSearch} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '0 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>検索</button>
