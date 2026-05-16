@@ -12,7 +12,7 @@ const HDCP_OPTIONS = [
 const BLOOD_TYPES = ['A', 'B', 'O', 'AB']
 const DAYS = ['月', '火', '水', '木', '金', '土', '日']
 const DAY_VALUES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-const AREAS = ['広島市内', '廿日市・宮島', '東広島', '福山', '山口・周南']
+const AREAS = ['広島・廿日市エリア', '広島北エリア', '東広島・呉エリア', '竹原・三原・尾道エリア', '福山エリア']
 const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
 
 const GENDER_OPTIONS = [
