@@ -71,6 +71,9 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true)
   const [isFav, setIsFav] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [modalComments, setModalComments] = useState<any[]>([])
+  const [modalCommentInput, setModalCommentInput] = useState('')
+  const [showModalComments, setShowModalComments] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -147,6 +150,26 @@ export default function UserProfilePage() {
       .insert({ user1_id: myId, user2_id: userId })
       .select('id').single()
     if (newRoom) router.push(`/chat/${newRoom.id}`)
+  }
+
+  const fetchModalComments = async (postId: string) => {
+    const { data } = await supabase
+      .from('post_comments')
+      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url)`)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (data) setModalComments(data as any)
+  }
+
+  const handleModalComment = async () => {
+    if (!modalCommentInput.trim() || !myId || !selectedPost) return
+    await supabase.from('post_comments').insert({
+      post_id: selectedPost.id,
+      user_id: myId,
+      content: modalCommentInput.trim(),
+    })
+    setModalCommentInput('')
+    await fetchModalComments(selectedPost.id)
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
@@ -321,7 +344,7 @@ export default function UserProfilePage() {
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '85vh', overflow: 'auto', paddingBottom: 40 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 12px', borderBottom: '1px solid var(--surf)' }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>投稿</div>
-              <button onClick={() => setSelectedPost(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+              <button onClick={() => { setSelectedPost(null); setModalComments([]); setModalCommentInput(''); setShowModalComments(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
             </div>
             {selectedPost.photo_url && (
               <img src={selectedPost.photo_url} alt="" style={{ width: '100%', maxHeight: 320, objectFit: 'cover' }} />
@@ -332,11 +355,45 @@ export default function UserProfilePage() {
             <div style={{ padding: '4px 16px 10px', fontSize: 10, color: 'var(--mute)' }}>
               {new Date(selectedPost.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}
             </div>
-            <div style={{ padding: '0 16px', display: 'flex', gap: 14 }}>
-              <button onClick={() => toggleLike(selectedPost.id, selectedPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: selectedPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
+            <div style={{ padding: '8px 16px', display: 'flex', gap: 14, borderBottom: '1px solid var(--surf)' }}>
+              <button onClick={() => {
+                toggleLike(selectedPost.id, selectedPost.liked_by_me)
+                setSelectedPost(prev => prev ? { ...prev, liked_by_me: !prev.liked_by_me, likes_count: prev.liked_by_me ? prev.likes_count - 1 : prev.likes_count + 1 } : null)
+              }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: selectedPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
                 {selectedPost.liked_by_me ? '❤️' : '♡'} {selectedPost.likes_count}
               </button>
+              <button onClick={() => {
+                setShowModalComments(v => !v)
+                if (!showModalComments) fetchModalComments(selectedPost.id)
+              }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--mute)' }}>
+                💬 コメント
+              </button>
             </div>
+            {showModalComments && (
+              <div style={{ padding: '8px 16px' }}>
+                {modalComments.map((c: any) => (
+                  <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
+                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <input
+                    value={modalCommentInput}
+                    onChange={e => setModalCommentInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleModalComment() }}
+                    placeholder="コメントを入力..."
+                    style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }}
+                  />
+                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
