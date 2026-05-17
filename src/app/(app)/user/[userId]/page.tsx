@@ -163,15 +163,24 @@ export default function UserProfilePage() {
     setShowModalComments(true)
   }
 
-  const handleModalComment = async () => {
-    if (!modalCommentInput.trim() || !myId || !selectedPost) return
+  const handleModalComment = async (postId?: string) => {
+    const targetPostId = postId ?? selectedPost?.id
+    if (!modalCommentInput.trim() || !myId || !targetPostId) return
     await supabase.from('post_comments').insert({
-      post_id: selectedPost.id,
+      post_id: targetPostId,
       user_id: myId,
       content: modalCommentInput.trim(),
     })
     setModalCommentInput('')
-    await fetchModalComments(selectedPost.id)
+    await fetchModalComments(targetPostId)
+    // 通知
+    const targetPost = posts.find(p => p.id === targetPostId) ?? featuredPost
+    if (targetPost && targetPost.user_id !== myId) {
+      await supabase.from('post_notifications').insert({
+        user_id: targetPost.user_id, actor_id: myId, post_id: targetPostId,
+        type: 'comment', comment_text: modalCommentInput.trim().slice(0, 50)
+      })
+    }
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
@@ -303,7 +312,7 @@ export default function UserProfilePage() {
               <div style={{ padding: '10px 16px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.6 }}>{featuredPost.caption}</div>
             )}
             <div style={{ padding: '4px 16px', display: 'flex', gap: 14, borderBottom: '1px solid var(--surf)' }}>
-              <button onClick={() => toggleLike(featuredPost.id, featuredPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: featuredPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
+              <button onClick={() => { toggleLike(featuredPost.id, featuredPost.liked_by_me); setFeaturedPost(prev => prev ? { ...prev, liked_by_me: !prev.liked_by_me, likes_count: prev.liked_by_me ? prev.likes_count - 1 : prev.likes_count + 1 } : null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: featuredPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
                 {featuredPost.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {featuredPost.likes_count}
               </button>
               <button onClick={() => {
@@ -337,7 +346,7 @@ export default function UserProfilePage() {
                     placeholder="コメントを入力..."
                     style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }}
                   />
-                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                  <button onClick={() => handleModalComment(featuredPost.id)} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
                 </div>
               </div>
             )}
@@ -426,7 +435,7 @@ export default function UserProfilePage() {
                     placeholder="コメントを入力..."
                     style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }}
                   />
-                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                  <button onClick={() => handleModalComment()} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
                 </div>
               </div>
             )}
