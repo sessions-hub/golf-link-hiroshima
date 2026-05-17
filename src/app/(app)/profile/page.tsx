@@ -93,6 +93,9 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
   const [myUserId, setMyUserId] = useState('')
   const [showPostModal, setShowPostModal] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
+  const [editPostId, setEditPostId] = useState<string | null>(null)
+  const [editCaption, setEditCaption] = useState('')
   const [caption, setCaption] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -142,6 +145,22 @@ export default function ProfilePage() {
     }
     fetchProfile()
   }, [])
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('この投稿を削除しますか？')) return
+    await supabase.from('posts').delete().eq('id', postId)
+    setPosts(prev => prev.filter(p => p.id !== postId))
+    setSelectedPost(null)
+  }
+
+  const handleEditPost = async (postId: string) => {
+    if (!editCaption.trim()) return
+    await supabase.from('posts').update({ caption: editCaption }).eq('id', postId)
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, caption: editCaption } : p))
+    if (selectedPost?.id === postId) setSelectedPost(prev => prev ? { ...prev, caption: editCaption } : null)
+    setEditPostId(null)
+    setEditCaption('')
+  }
 
   const handlePost = async () => {
     if (!caption.trim() && !photo) return
@@ -302,7 +321,7 @@ export default function ProfilePage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
               {posts.map(post => (
-                <div key={post.id} onClick={() => router.push(`/user/${myUserId}?postId=${post.id}`)} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--mute)', padding: 4, textAlign: 'center', lineHeight: 1.4 }}>
+                <div key={post.id} onClick={() => setSelectedPost(post)} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--mute)', padding: 4, textAlign: 'center', lineHeight: 1.4 }}>
                   {post.photo_url
                     ? <img src={post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : post.caption?.slice(0, 20)
@@ -447,6 +466,41 @@ export default function ProfilePage() {
                 reader.readAsDataURL(file)
               }
             }} style={{ display: 'none' }} />
+          </div>
+        </div>
+      )}
+
+      {/* 投稿詳細モーダル */}
+      {selectedPost && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '85vh', overflow: 'auto', paddingBottom: 40 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 12px', borderBottom: '1px solid var(--surf)' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>投稿</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button onClick={() => { setEditPostId(selectedPost.id); setEditCaption(selectedPost.caption ?? '') }} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>編集</button>
+                <button onClick={() => handleDeletePost(selectedPost.id)} style={{ background: 'none', border: '1px solid rgba(200,60,60,.3)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: '#c05050', cursor: 'pointer', fontWeight: 600 }}>削除</button>
+                <button onClick={() => { setSelectedPost(null); setEditPostId(null); setEditCaption('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+              </div>
+            </div>
+            {selectedPost.photo_url && (
+              <img src={selectedPost.photo_url} alt="" style={{ width: '100%', maxHeight: 300, objectFit: 'cover' }} />
+            )}
+            {editPostId === selectedPost.id ? (
+              <div style={{ padding: '12px 16px' }}>
+                <textarea value={editCaption} onChange={e => setEditCaption(e.target.value)} style={{ width: '100%', border: '1px solid var(--g3)', borderRadius: 8, padding: '10px', fontSize: 13, resize: 'none', outline: 'none', minHeight: 80, marginBottom: 8 }} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => { setEditPostId(null); setEditCaption('') }} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, padding: '10px', fontSize: 13, color: 'var(--mute)', cursor: 'pointer' }}>キャンセル</button>
+                  <button onClick={() => handleEditPost(selectedPost.id)} style={{ flex: 1, background: 'var(--g1)', border: 'none', borderRadius: 7, padding: '10px', fontSize: 13, fontWeight: 700, color: 'white', cursor: 'pointer' }}>保存</button>
+                </div>
+              </div>
+            ) : (
+              selectedPost.caption && (
+                <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7 }}>{selectedPost.caption}</div>
+              )
+            )}
+            <div style={{ padding: '4px 16px', fontSize: 10, color: 'var(--mute)' }}>
+              {new Date(selectedPost.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}
+            </div>
           </div>
         </div>
       )}
