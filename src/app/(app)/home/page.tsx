@@ -276,6 +276,13 @@ export default function HomePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+      // 投稿者に通知
+      const post = posts.find(p => p.id === postId)
+      if (post && post.user_id !== user.id) {
+        await supabase.from('post_notifications').insert({
+          user_id: post.user_id, actor_id: user.id, post_id: postId, type: 'like'
+        })
+      }
     }
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !liked, likes_count: liked ? p.likes_count - 1 : p.likes_count + 1 }
