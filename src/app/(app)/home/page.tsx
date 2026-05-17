@@ -269,9 +269,8 @@ export default function HomePage() {
           {/* マッチング待ちカード */}
           <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: 16, position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(13,61,43,.2)', cursor: 'pointer' }}>
             <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.18) 0%,transparent 70%)' }}/>
-            <div style={{ fontSize: 10, color: 'rgba(168,224,99,.65)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 4 }}>あなたの近くのゴルファー</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4 }}>マッチングを探す</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.4)', marginBottom: 12 }}>広島市内 · 今週末空きあり</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'white', marginBottom: 4, lineHeight: 1.4 }}>あなたに相性抜群の<br/>ゴルファーフレンドを探す</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.5)', marginBottom: 12, lineHeight: 1.6 }}>血液型・星座・年代など独自アルゴリズムで表示</div>
             <button style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 6, padding: '7px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>マッチングを見る →</button>
           </div>
 
