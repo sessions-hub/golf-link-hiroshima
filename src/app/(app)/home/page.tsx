@@ -30,6 +30,14 @@ interface ChatRoom {
   }
 }
 
+interface Comment {
+  id: string
+  user_id: string
+  content: string
+  created_at: string
+  profiles?: { nickname: string | null; avatar_url: string | null }
+}
+
 interface Post {
   id: string
   user_id: string
@@ -496,7 +504,42 @@ export default function HomePage() {
                   <button onClick={() => toggleLike(post.id, post.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: post.liked_by_me ? '#e05070' : 'var(--mute)' }}>
                     {post.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {post.likes_count}
                   </button>
+                  <button onClick={() => handleToggleComments(post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: showComments[post.id] ? 'var(--g2)' : 'var(--mute)' }}>
+                    {Icons.chat(14, showComments[post.id] ? 'var(--g2)' : 'var(--mute)')} {comments[post.id]?.length ?? 0}
+                  </button>
                 </div>
+                {/* コメント欄 */}
+                {showComments[post.id] && (
+                  <div style={{ borderTop: '1px solid var(--surf)', padding: '8px 16px' }}>
+                    {(comments[post.id] ?? []).map(c => (
+                      <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
+                          {c.profiles?.avatar_url
+                            ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : c.profiles?.nickname?.[0] ?? '?'
+                          }
+                        </div>
+                        <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                          <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                        </div>
+                        {c.user_id === myId && (
+                          <button onClick={() => handleDeleteComment(c.id, post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 11, padding: '4px', flexShrink: 0 }}>✕</button>
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      <input
+                        value={commentInputs[post.id] ?? ''}
+                        onChange={e => setCommentInputs(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') handleAddComment(post.id) }}
+                        placeholder="コメントを入力..."
+                        style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }}
+                      />
+                      <button onClick={() => handleAddComment(post.id)} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
