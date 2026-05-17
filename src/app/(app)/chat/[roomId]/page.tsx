@@ -243,7 +243,7 @@ export default function ChatRoomPage() {
         <div onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </div>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa', overflow: 'hidden' }}>
+        <div onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)} style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa', overflow: 'hidden', cursor: 'pointer' }}>
           {otherProfile?.avatar_url
             ? <img src={otherProfile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : otherProfile?.nickname?.[0] ?? '?'
