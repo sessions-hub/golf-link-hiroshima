@@ -156,10 +156,11 @@ export default function UserProfilePage() {
   const fetchModalComments = async (postId: string) => {
     const { data } = await supabase
       .from('post_comments')
-      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url)`)
+      .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
     if (data) setModalComments(data as any)
+    setShowModalComments(true)
   }
 
   const handleModalComment = async () => {
