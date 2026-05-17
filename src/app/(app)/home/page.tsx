@@ -136,6 +136,7 @@ export default function HomePage() {
         .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`)
         .order('created_at', { ascending: false })
         .limit(30)
+      console.log('Posts profiles:', postData2?.[0]?.profiles)
       if (postData2) setPosts(postData2 as any)
 
       setLoading(false)
