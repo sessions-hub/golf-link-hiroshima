@@ -92,6 +92,9 @@ export default function ProfilePage() {
   const [whoVisited, setWhoVisited] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
   const [myUserId, setMyUserId] = useState('')
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [showAllNotif, setShowAllNotif] = useState(false)
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const [showPostModal, setShowPostModal] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [editPostId, setEditPostId] = useState<string | null>(null)
@@ -113,6 +116,18 @@ export default function ProfilePage() {
 
       const plan = await getUserPlan()
       setUserPlan(plan)
+
+      // 通知取得
+      const { data: notifData } = await supabase
+        .from('post_notifications')
+        .select(`*, actor:profiles!post_notifications_actor_id_fkey(nickname, avatar_url), post:posts!post_notifications_post_id_fkey(photo_url, caption)`)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (notifData) {
+        setNotifications(notifData)
+        setUnreadNotifCount(notifData.filter((n: any) => !n.is_read).length)
+      }
 
       // 投稿取得
       const { data: postData } = await supabase
@@ -145,6 +160,26 @@ export default function ProfilePage() {
     }
     fetchProfile()
   }, [])
+
+  const markAllNotifRead = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('post_notifications')
+      .update({ is_read: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    setUnreadNotifCount(0)
+  }
+
+  const handleNotifClick = async (notif: any) => {
+    // 既読にする
+    await supabase.from('post_notifications').update({ is_read: true }).eq('id', notif.id)
+    setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
+    setUnreadNotifCount(prev => Math.max(0, prev - 1))
+    // 該当投稿の個人ページへ
+    router.push(`/user/${notif.actor_id}?postId=${notif.post_id}`)
+  }
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm('この投稿を削除しますか？')) return
@@ -310,6 +345,69 @@ export default function ProfilePage() {
               プロフィールを編集
             </button>
           </div>
+
+          {/* お知らせ */}
+          {notifications.length > 0 && (
+            <div style={{ margin: '10px 16px 0', background: showAllNotif ? 'white' : '#fffbf5', borderRadius: 12, border: `1px solid ${unreadNotifCount > 0 ? 'rgba(224,80,112,.2)' : 'var(--line)'}`, overflow: 'hidden' }}>
+              {!showAllNotif ? (
+                <>
+                  <div onClick={() => handleNotifClick(notifications[0])} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                      {notifications[0].actor?.avatar_url ? <img src={notifications[0].actor.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : notifications[0].actor?.nickname?.[0] ?? '?'}
+                      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: notifications[0].type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
+                        {notifications[0].type === 'like' ? '❤' : '💬'}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, fontSize: 12, color: 'var(--txt)', lineHeight: 1.4 }}>
+                      <strong style={{ fontWeight: 700 }}>{notifications[0].actor?.nickname ?? 'ゴルファー'}</strong>
+                      {notifications[0].type === 'like' ? 'さんがいいねしました' : `さんがコメント：「${notifications[0].comment_text ?? ''}」`}
+                    </div>
+                    {notifications[0].post?.photo_url && (
+                      <div style={{ width: 34, height: 34, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                        <img src={notifications[0].post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ padding: '8px 14px', borderTop: '1px solid rgba(224,80,112,.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 10, color: '#e05070', fontWeight: 600 }}>
+                      {unreadNotifCount > 1 ? `🔔 他${notifications.length - 1}件のお知らせ` : '🔔 お知らせ'}
+                    </span>
+                    <span onClick={() => setShowAllNotif(true)} style={{ fontSize: 10, color: 'var(--g2)', fontWeight: 600, cursor: 'pointer' }}>全て見る →</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--surf)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>🔔 お知らせ</span>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      {unreadNotifCount > 0 && <span onClick={markAllNotifRead} style={{ fontSize: 10, color: 'var(--mute)', cursor: 'pointer' }}>すべて既読</span>}
+                      <span onClick={() => setShowAllNotif(false)} style={{ fontSize: 10, color: 'var(--g2)', fontWeight: 600, cursor: 'pointer' }}>閉じる</span>
+                    </div>
+                  </div>
+                  {notifications.map((n: any) => (
+                    <div key={n.id} onClick={() => handleNotifClick(n)} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', background: n.is_read ? 'white' : '#fffbf5', borderBottom: '1px solid var(--surf)' }}>
+                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                        {n.actor?.avatar_url ? <img src={n.actor.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : n.actor?.nickname?.[0] ?? '?'}
+                        <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: n.type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
+                          {n.type === 'like' ? '❤' : '💬'}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, fontSize: 12, color: n.is_read ? 'var(--mute)' : 'var(--txt)', lineHeight: 1.4 }}>
+                        <strong style={{ fontWeight: 700, color: n.is_read ? 'var(--mid)' : 'var(--txt)' }}>{n.actor?.nickname ?? 'ゴルファー'}</strong>
+                        {n.type === 'like' ? 'さんがいいねしました' : `さんがコメント：「${n.comment_text ?? ''}」`}
+                      </div>
+                      {n.post?.photo_url && (
+                        <div style={{ width: 34, height: 34, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                          <img src={n.post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                      )}
+                      {!n.is_read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#e05070', flexShrink: 0 }} />}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
 
           {/* 投稿グリッド */}
           <div style={{ padding: '8px 16px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>投稿</div>

@@ -193,6 +193,14 @@ export default function HomePage() {
     if (!error) {
       setCommentInputs(prev => ({ ...prev, [postId]: '' }))
       await fetchComments(postId)
+      // 投稿者に通知
+      const post = posts.find(p => p.id === postId)
+      if (post && post.user_id !== user.id) {
+        await supabase.from('post_notifications').insert({
+          user_id: post.user_id, actor_id: user.id, post_id: postId,
+          type: 'comment', comment_text: content.slice(0, 50)
+        })
+      }
     }
   }
 

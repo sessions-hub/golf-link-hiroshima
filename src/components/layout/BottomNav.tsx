@@ -68,6 +68,7 @@ export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -88,6 +89,19 @@ export default function BottomNav() {
       }
     }
     fetchUnread()
+
+    const fetchUnreadNotif = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { count } = await supabase
+        .from('post_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+      setUnreadNotifCount(count ?? 0)
+    }
+    fetchUnreadNotif()
   }, [pathname])
 
   return (
@@ -113,7 +127,7 @@ export default function BottomNav() {
             }}
           >
             {item.icon(isActive)}
-            {/* 未読バッジ */}
+            {/* チャット未読バッジ */}
             {item.key === 'chat' && unreadCount > 0 && (
               <div style={{
                 position: 'absolute', top: 0, right: '20%',
@@ -125,6 +139,14 @@ export default function BottomNav() {
               }}>
                 {unreadCount > 9 ? '9+' : unreadCount}
               </div>
+            )}
+            {/* マイページ通知赤ぽっち */}
+            {item.key === 'profile' && unreadNotifCount > 0 && (
+              <div style={{
+                position: 'absolute', top: 0, right: '20%',
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#e05070', border: '1.5px solid white',
+              }} />
             )}
             <span style={{
               fontSize: 9, fontWeight: isActive ? 600 : 400,
