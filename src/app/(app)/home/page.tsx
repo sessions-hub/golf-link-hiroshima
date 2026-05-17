@@ -289,7 +289,7 @@ export default function HomePage() {
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>スコア記録</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>スコア記録</span>
               </div>
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter' }}>
                 {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'タップして記録'}
@@ -307,7 +307,7 @@ export default function HomePage() {
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>GPS計測</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>GPS計測</span>
               </div>
               <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)' }}>距離をリアルタイム計測</div>
             </div>
