@@ -67,11 +67,13 @@ export default function ScorePage() {
       user_id: user.id,
       course_name: courseName,
       round_date: roundDate,
+      played_at: roundDate,
       total_score: total,
       out_score: outTotal,
       in_score: inTotal,
       hole_scores: scores,
     })
+    if (error) console.error('Save error:', error)
     if (!error) {
       alert('スコアを保存しました！')
       router.push('/home')
