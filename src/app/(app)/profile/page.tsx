@@ -118,15 +118,32 @@ export default function ProfilePage() {
       setUserPlan(plan)
 
       // 通知取得
-      const { data: notifData } = await supabase
+      const { data: notifData, error: notifError } = await supabase
         .from('post_notifications')
-        .select(`*, actor:profiles!post_notifications_actor_id_fkey(nickname, avatar_url), post:posts!post_notifications_post_id_fkey(photo_url, caption)`)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20)
-      if (notifData) {
-        setNotifications(notifData)
-        setUnreadNotifCount(notifData.filter((n: any) => !n.is_read).length)
+      console.log('notifData:', notifData, 'error:', notifError)
+      if (notifData && notifData.length > 0) {
+        // actorのプロフィールを別途取得
+        const actorIds = [...new Set(notifData.map((n: any) => n.actor_id))]
+        const postIds = [...new Set(notifData.map((n: any) => n.post_id))]
+        const { data: actorData } = await supabase
+          .from('profiles')
+          .select('user_id, nickname, avatar_url')
+          .in('user_id', actorIds)
+        const { data: postData } = await supabase
+          .from('posts')
+          .select('id, photo_url, caption')
+          .in('id', postIds)
+        const enriched = notifData.map((n: any) => ({
+          ...n,
+          actor: actorData?.find((a: any) => a.user_id === n.actor_id) ?? null,
+          post: postData?.find((p: any) => p.id === n.post_id) ?? null,
+        }))
+        setNotifications(enriched)
+        setUnreadNotifCount(enriched.filter((n: any) => !n.is_read).length)
       }
 
       // 投稿取得
