@@ -76,6 +76,9 @@ export default function HomePage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [showComments, setShowComments] = useState<Record<string, boolean>>({})
   const [myId, setMyId] = useState('')
+  const [postMenu, setPostMenu] = useState<string | null>(null)
+  const [editPostId, setEditPostId] = useState<string | null>(null)
+  const [editCaption, setEditCaption] = useState('')
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [myUserId, setMyUserId] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -196,6 +199,21 @@ export default function HomePage() {
   const handleDeleteComment = async (commentId: string, postId: string) => {
     await supabase.from('post_comments').delete().eq('id', commentId)
     await fetchComments(postId)
+  }
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('この投稿を削除しますか？')) return
+    await supabase.from('posts').delete().eq('id', postId)
+    setPosts(prev => prev.filter(p => p.id !== postId))
+    setPostMenu(null)
+  }
+
+  const handleEditPost = async (postId: string) => {
+    if (!editCaption.trim()) return
+    await supabase.from('posts').update({ caption: editCaption }).eq('id', postId)
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, caption: editCaption } : p))
+    setEditPostId(null)
+    setEditCaption('')
   }
 
   const handlePost = async () => {
@@ -493,7 +511,28 @@ export default function HomePage() {
                     <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer' }}>{post.profiles?.nickname ?? 'ゴルファー'}</div>
                     <div style={{ fontSize: 10, color: 'var(--mute)' }}>{new Date(post.created_at).toLocaleDateString('ja-JP')}</div>
                   </div>
+                  {post.user_id === myId && (
+                    <div style={{ position: 'relative' }}>
+                      <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 18, padding: '2px 6px', lineHeight: 1 }}>···</button>
+                      {postMenu === post.id && (
+                        <div style={{ position: 'absolute', right: 0, top: 28, background: 'white', borderRadius: 10, border: '1px solid var(--line)', boxShadow: '0 4px 16px rgba(0,0,0,.1)', zIndex: 10, minWidth: 120, overflow: 'hidden' }}>
+                          <div onClick={() => { setEditPostId(post.id); setEditCaption(post.caption ?? ''); setPostMenu(null) }} style={{ padding: '12px 16px', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}>編集</div>
+                          <div onClick={() => handleDeletePost(post.id)} style={{ padding: '12px 16px', fontSize: 13, color: '#c05050', cursor: 'pointer' }}>削除</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+                {/* 編集モーダル */}
+                {editPostId === post.id && (
+                  <div style={{ padding: '0 16px 12px' }}>
+                    <textarea value={editCaption} onChange={e => setEditCaption(e.target.value)} style={{ width: '100%', border: '1px solid var(--g3)', borderRadius: 8, padding: '10px', fontSize: 13, resize: 'none', outline: 'none', minHeight: 60, marginBottom: 8 }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={() => { setEditPostId(null); setEditCaption('') }} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, padding: '8px', fontSize: 12, color: 'var(--mute)', cursor: 'pointer' }}>キャンセル</button>
+                      <button onClick={() => handleEditPost(post.id)} style={{ flex: 1, background: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px', fontSize: 12, fontWeight: 700, color: 'white', cursor: 'pointer' }}>保存</button>
+                    </div>
+                  </div>
+                )}
                 {post.photo_url && (
                   <img src={post.photo_url} alt="投稿" style={{ width: '100%', maxHeight: 320, objectFit: 'cover' }} />
                 )}
