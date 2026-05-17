@@ -69,7 +69,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島/廿日市', '広島北部', '東広島/呉', '福山', '相性診断', 'お気に入り']
+const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島/廿日市', '広島北部', '東広島/呉', '竹原/三原/尾道', '福山', '相性診断', 'お気に入り']
 
 
 const getPlanBadge = (plan: Plan) => {
@@ -207,6 +207,7 @@ export default function MatchPage() {
       if (f === '広島・廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
       if (f === '広島北') return m.areas?.includes('広島北部エリア') ?? false
       if (f === '東広島・呉') return m.areas?.includes('東広島/呉エリア') ?? false
+      if (f === '竹原/三原/尾道') return m.areas?.includes('竹原/三原/尾道エリア') ?? false
       if (f === '福山') return m.areas?.includes('福山エリア') ?? false
       if (f === 'お気に入り') return favorites.has(m.user_id)
       if (f === '相性診断') {
