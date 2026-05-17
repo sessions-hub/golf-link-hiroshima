@@ -4,9 +4,10 @@ import { Icons } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, canSeeWhoLiked, canSeeWhoVisited, isPremium, type Plan } from '@/lib/plan'
+import { getUserPlan, isPremium, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 
 const SVG_ICONS: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
@@ -20,7 +21,6 @@ const SVG_ICONS: Record<string, React.ReactNode> = {
 }
 
 const MENU_ITEMS = [
-  { icon: 'user', label: 'プロフィール編集', path: '/profile/edit' },
   { icon: 'calendar', label: '予約履歴', path: '/course' },
   { icon: 'trophy', label: '参加コンペ一覧', path: '/comp' },
   { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
@@ -33,42 +33,105 @@ const LEGAL_ITEMS = [
   { icon: 'store', label: '特定商取引法に基づく表記', path: '/legal/tokusho' },
 ]
 
+const AREA_LABELS: Record<string, string> = {
+  '広島/廿日市エリア': '広島/廿日市',
+  '広島北部エリア': '広島北部',
+  '東広島/呉エリア': '東広島/呉',
+  '竹原/三原/尾道エリア': '竹原/三原/尾道',
+  '福山エリア': '福山',
+}
+
+const AGE_DECADE = (birthDate: string) => {
+  const age = new Date().getFullYear() - new Date(birthDate).getFullYear()
+  if (age < 20) return '10代'
+  if (age < 30) return '20代'
+  if (age < 40) return '30代'
+  if (age < 50) return '40代'
+  if (age < 60) return '50代'
+  return '60代以上'
+}
+
 interface Profile {
+  user_id: string
   nickname: string
   handicap: number
   best_score: number | null
   area_id: string | null
+  areas: string[] | null
   plan: string
   created_at: string
   avatar_url: string | null
+  gender: string | null
+  birth_date: string | null
+  blood_type: string | null
+  bio: string | null
 }
 
+interface Post {
+  id: string
+  user_id: string
+  caption: string | null
+  photo_url: string | null
+  created_at: string
+}
 
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
   if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
-  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+  return { label: 'FREE', bg: '#eef3ee', color: 'var(--mute)' }
 }
 
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [email, setEmail] = useState('')
+  const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [whoLiked, setWhoLiked] = useState<any[]>([])
   const [whoVisited, setWhoVisited] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
+  const [myUserId, setMyUserId] = useState('')
 
   useEffect(() => {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      setEmail(user.email ?? '')
+      setMyUserId(user.id)
+
       const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
       if (data) setProfile(data)
+
       const plan = await getUserPlan()
       setUserPlan(plan)
+
+      // 投稿取得
+      const { data: postData } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (postData) setPosts(postData)
+
+      // プレミアム限定
+      if (plan === 'premium') {
+        const { data: visits } = await supabase
+          .from('footprints')
+          .select('visitor_id, created_at, profiles!footprints_visitor_id_fkey(user_id, nickname, avatar_url)')
+          .eq('visited_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        if (visits) setWhoVisited(visits)
+
+        const { data: likes } = await supabase
+          .from('favorites')
+          .select('user_id, created_at, profiles!favorites_user_id_fkey(user_id, nickname, avatar_url)')
+          .eq('target_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        if (likes) setWhoLiked(likes)
+      }
+
       setLoading(false)
     }
     fetchProfile()
@@ -82,10 +145,7 @@ export default function ProfilePage() {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js')
       const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        alert('通知を許可してください')
-        return
-      }
+      if (permission !== 'granted') { alert('通知を許可してください'); return }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY,
@@ -99,7 +159,6 @@ export default function ProfilePage() {
       })
       alert('プッシュ通知を有効にしました！')
     } catch (error) {
-      console.error('Push registration error:', error)
       alert('通知の設定に失敗しました')
     }
   }
@@ -110,173 +169,203 @@ export default function ProfilePage() {
     router.refresh()
   }
 
-  const getMemberDuration = (createdAt: string) => {
-    const months = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
-    if (months < 1) return '今月入会'
-    return `会員歴 ${months}ヶ月`
-  }
-
   if (loading) {
     return <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div></div>
   }
 
+  const planBadge = getPlanBadge(userPlan)
+  const zodiac = profile?.birth_date ? ZODIAC_NAMES_JP[getZodiacSign(profile.birth_date)] : null
+  const areaLabel = profile?.areas && profile.areas.length > 0 ? AREA_LABELS[profile.areas[0]] ?? profile.areas[0] : null
+  const ageDecade = profile?.birth_date ? AGE_DECADE(profile.birth_date) : null
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '48px 20px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Logo variant="screen" />
-          <span style={{
-            background: userPlan === 'premium'
-              ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-              : userPlan === 'standard'
-              ? 'linear-gradient(135deg, var(--g2), var(--g3))'
-              : '#eef3ee',
-            color: userPlan === 'premium' ? 'white'
-              : userPlan === 'standard' ? 'white'
-              : 'var(--mute)',
-            padding: '4px 12px',
-            borderRadius: 4,
-            fontSize: 10,
-            fontWeight: 700,
-            fontFamily: 'Inter',
-            letterSpacing: '.06em',
-            border: userPlan === 'free' ? '1px solid var(--line)' : 'none',
-          }}>
-            {userPlan === 'premium' ? 'PREMIUM' : userPlan === 'standard' ? 'STANDARD' : 'FREE'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-          <div onClick={() => router.push('/profile/edit')} style={{ width: 62, height: 62, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--g1)', border: '2px solid var(--line)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-            {profile?.avatar_url
-              ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : profile?.nickname?.[0] ?? '?'
-            }
-          </div>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'white' }}>{profile?.nickname ?? 'ゴルファー'}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 2 }}>{email} · {profile?.created_at ? getMemberDuration(profile.created_at) : ''}</div>
-          </div>
-        </div>
+
+      {/* ヘッダー */}
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <Logo variant="screen" />
+        <span style={{ background: planBadge.bg, color: planBadge.color, padding: '4px 12px', borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.06em', border: userPlan === 'free' ? '1px solid var(--line)' : 'none' }}>
+          {planBadge.label}
+        </span>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        {[{ v: profile?.handicap?.toString() ?? '-', k: 'Hdcp' }, { v: profile?.best_score?.toString() ?? '-', k: 'ベスト' }, { v: '0', k: 'ラウンド' }].map((s) => (
-          <div key={s.k} style={{ flex: 1, background: 'white', borderRadius: 10, border: '1px solid var(--line)', padding: 11, textAlign: 'center', boxShadow: '0 1px 6px rgba(0,0,0,.04)' }}>
-            <div style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 700, color: 'var(--g2)' }}>{s.v}</div>
-            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{s.k}</div>
-          </div>
+      {/* タブ */}
+      <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+        {(['profile', 'settings'] as const).map(t => (
+          <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: '11px 0', fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: activeTab === t ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
+            {t === 'profile' ? '👤 プロフィール' : '⚙️ 設定・メニュー'}
+          </button>
         ))}
       </div>
 
-      <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 12px', borderRadius: 1 }} />
-
-      <div style={{ flex: 1, paddingBottom: 90 }}>
-        {MENU_ITEMS.map((item) => (
-          <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {SVG_ICONS[item.icon]}
-                </svg>
+      {/* プロフィールタブ */}
+      {activeTab === 'profile' && (
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
+          {/* プロフィールバナー */}
+          <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
+              <div onClick={() => router.push('/profile/edit')} style={{ width: 64, height: 64, borderRadius: 14, background: 'var(--surf)', border: '1.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}>
+                {profile?.avatar_url
+                  ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : profile?.nickname?.[0] ?? '?'
+                }
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </div>
               </div>
-            <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
-            <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)' }}>{profile?.nickname ?? 'ゴルファー'}</span>
+                  {profile?.gender && (
+                    <span style={{ width: 15, height: 15, borderRadius: 3, background: profile.gender === 'male' ? '#3b82f6' : profile.gender === 'female' ? '#ec4899' : '#9ca3af', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {profile.gender === 'male' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="10" cy="14" r="6"/><line x1="14.5" y1="9.5" x2="21" y2="3"/><polyline points="16,3 21,3 21,8"/></svg>}
+                      {profile.gender === 'female' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="9" r="6"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="9" y1="19" x2="15" y2="19"/></svg>}
+                      {profile.gender === 'other' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>}
+                    </span>
+                  )}
+                  <span style={{ marginLeft: 'auto', background: planBadge.bg, color: planBadge.color, padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.06em', border: userPlan === 'free' ? '1px solid var(--line)' : 'none' }}>{planBadge.label}</span>
+                </div>
+                {(areaLabel || ageDecade) && (
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--mid)', marginBottom: 5 }}>
+                    {[areaLabel, ageDecade].filter(Boolean).join(' · ')}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {profile?.blood_type && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{profile.blood_type}型</span>}
+                  {zodiac && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{zodiac}</span>}
+                  {profile?.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>Hdcp {profile.handicap}</span>}
+                </div>
+              </div>
+            </div>
+            {profile?.bio && (
+              <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7, paddingTop: 10, borderTop: '1px solid var(--surf)' }}>{profile.bio}</div>
+            )}
+            <button onClick={() => router.push('/profile/edit')} style={{ marginTop: 12, width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 600, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              プロフィールを編集
+            </button>
           </div>
-        ))}
 
-        {/* 区切り線 */}
-        <div style={{ padding: '10px 20px 4px' }}>
-          {/* プレミアム限定セクション */}
-          {isPremium(userPlan) ? (
-            <>
-              <div style={{ padding: '16px 20px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>プレミアム限定</div>
-
-              {/* 足跡を見た人 */}
-              <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--surf)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>👣</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>足跡を見た人</span>
-                  <span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 'auto' }}>{whoVisited.length}人</span>
-                </div>
-                {whoVisited.length === 0 ? (
-                  <div style={{ padding: '16px', fontSize: 12, color: 'var(--mute)', textAlign: 'center' }}>まだ足跡がありません</div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 10, padding: '12px 16px', overflowX: 'auto' }}>
-                    {whoVisited.map((v: any) => {
-                      const p = v.profiles
-                      return (
-                        <div key={v.visitor_id} onClick={() => router.push(`/user/${v.visitor_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                            {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* お気に入りしてくれた人 */}
-              <div style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', overflow: 'hidden' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--surf)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 16 }}>❤️</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>お気に入りしてくれた人</span>
-                  <span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 'auto' }}>{whoLiked.length}人</span>
-                </div>
-                {whoLiked.length === 0 ? (
-                  <div style={{ padding: '16px', fontSize: 12, color: 'var(--mute)', textAlign: 'center' }}>まだお気に入りがありません</div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 10, padding: '12px 16px', overflowX: 'auto' }}>
-                    {whoLiked.map((l: any) => {
-                      const p = l.profiles
-                      return (
-                        <div key={l.user_id} onClick={() => router.push(`/user/${l.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                            {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
+          {/* 投稿グリッド */}
+          <div style={{ padding: '8px 16px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>投稿</div>
+          {posts.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '30px 20px' }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>📸</div>
+              <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ投稿がありません</div>
+            </div>
           ) : (
-            <div style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+              {posts.map(post => (
+                <div key={post.id} onClick={() => router.push(`/user/${myUserId}?postId=${post.id}`)} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--mute)', padding: 4, textAlign: 'center', lineHeight: 1.4 }}>
+                  {post.photo_url
+                    ? <img src={post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : post.caption?.slice(0, 20)
+                  }
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 設定タブ */}
+      {activeTab === 'settings' && (
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+
+          {/* プレミアム限定 */}
+          {isPremium(userPlan) ? (
+            <div style={{ background: 'white', marginBottom: 8 }}>
+              <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>👑 PREMIUM限定</div>
+              <div style={{ display: 'flex', gap: 12, padding: '8px 16px 4px', overflowX: 'auto' }}>
+                {whoVisited.map((v: any) => {
+                  const p = v.profiles
+                  return (
+                    <div key={v.visitor_id} onClick={() => router.push(`/user/${v.visitor_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                        {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
+                    </div>
+                  )
+                })}
+                {whoLiked.map((l: any) => {
+                  const p = l.profiles
+                  return (
+                    <div key={l.user_id} onClick={() => router.push(`/user/${l.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(200,60,100,.08)', border: '1px solid rgba(200,60,100,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                        {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
+                      </div>
+                      <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
+                    </div>
+                  )
+                })}
+                {whoVisited.length === 0 && whoLiked.length === 0 && (
+                  <div style={{ padding: '8px 0 12px', fontSize: 12, color: 'var(--mute)' }}>まだデータがありません</div>
+                )}
+              </div>
+              <div style={{ padding: '0 16px 12px', fontSize: 10, color: 'var(--mute)' }}>👣 足跡{whoVisited.length}人 · ❤️ お気に入り{whoLiked.length}人</div>
+            </div>
+          ) : (
+            <div style={{ margin: '10px 16px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 プレミアムプランで解放</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 12, lineHeight: 1.6 }}>足跡を見た人・お気に入りしてくれた人<br/>マッチング上位表示など</div>
               <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>プレミアムにアップグレード</button>
             </div>
           )}
 
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>法的情報</div>
-        </div>
+          {/* メニュー */}
+          <div style={{ background: 'white', marginBottom: 8 }}>
+            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>メニュー</div>
+            {MENU_ITEMS.map((item) => (
+              <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
+                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
+              </div>
+            ))}
+          </div>
 
-        {LEGAL_ITEMS.map((item) => (
-          <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-            <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {SVG_ICONS[item.icon]}
+          {/* 法的情報 */}
+          <div style={{ background: 'white', marginBottom: 8 }}>
+            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>法的情報</div>
+            {LEGAL_ITEMS.map((item) => (
+              <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
+                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ログアウト */}
+          <div style={{ background: 'white' }}>
+            <div onClick={handleLogout} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c05050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                  <polyline points="16,17 21,12 16,7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </div>
-            <div style={{ fontSize: 13, color: 'var(--txt)' }}>{item.label}</div>
-            <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
+              <div style={{ fontSize: 13, color: '#c05050', flex: 1 }}>ログアウト</div>
+              <div style={{ color: '#e0a0a0', fontSize: 18 }}>›</div>
+            </div>
           </div>
-        ))}
 
-        <div onClick={handleLogout} style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-          <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c05050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-              <polyline points="16,17 21,12 16,7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-          </div>
-          <div style={{ fontSize: 13, color: '#c05050' }}>ログアウト</div>
-          <div style={{ marginLeft: 'auto', color: 'var(--pale)', fontSize: 18 }}>›</div>
         </div>
-      </div>
+      )}
+
+      {/* 投稿フローティングボタン（プロフィールタブのみ） */}
+      {activeTab === 'profile' && (
+        <div onClick={() => { router.push('/home'); }} style={{ position: 'fixed', bottom: 90, right: 20, width: 50, height: 50, borderRadius: '50%', background: 'var(--g1)', boxShadow: '0 4px 16px rgba(22,101,52,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 50 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   )
