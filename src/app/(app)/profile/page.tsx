@@ -124,7 +124,6 @@ export default function ProfilePage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20)
-      console.log('notifData:', notifData, 'error:', notifError)
       if (notifData && notifData.length > 0) {
         // actorのプロフィールを別途取得
         const actorIds = [...new Set(notifData.map((n: any) => n.actor_id))]

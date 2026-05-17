@@ -275,16 +275,13 @@ export default function HomePage() {
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {
-      const { error: likeError } = await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
-      console.log('like insert error:', likeError)
+      await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
       // 投稿者に通知
       const post = posts.find(p => p.id === postId)
-      console.log('post found:', post, 'myId:', user.id)
       if (post && post.user_id !== user.id) {
-        const { error: notifError } = await supabase.from('post_notifications').insert({
+        await supabase.from('post_notifications').insert({
           user_id: post.user_id, actor_id: user.id, post_id: postId, type: 'like'
         })
-        console.log('notif insert error:', notifError)
       }
     }
     setPosts(prev => prev.map(p => p.id === postId
