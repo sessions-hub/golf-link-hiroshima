@@ -270,11 +270,7 @@ export default function HomePage() {
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {activeTab === 'timeline' && (
-            <button onClick={() => setShowPostModal(true)} style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </button>
-          )}
+
           <div onClick={() => router.push('/profile')} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', cursor: 'pointer', border: '1px solid var(--line)', overflow: 'hidden' }}>
             {profile?.avatar_url
               ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -452,7 +448,11 @@ export default function HomePage() {
 
       {/* タイムラインタブ */}
       {activeTab === 'timeline' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', position: 'relative' }}>
+          {/* フローティング投稿ボタン */}
+          <div onClick={() => setShowPostModal(true)} style={{ position: 'fixed', bottom: 90, right: 20, width: 50, height: 50, borderRadius: '50%', background: 'var(--g1)', boxShadow: '0 4px 16px rgba(22,101,52,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 50 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
 
           {/* 検索バー */}
           <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>

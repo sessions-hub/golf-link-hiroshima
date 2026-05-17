@@ -92,6 +92,12 @@ export default function ProfilePage() {
   const [whoVisited, setWhoVisited] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
   const [myUserId, setMyUserId] = useState('')
+  const [showPostModal, setShowPostModal] = useState(false)
+  const [caption, setCaption] = useState('')
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [posting, setPosting] = useState(false)
+  const fileRef = React.useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -136,6 +142,46 @@ export default function ProfilePage() {
     }
     fetchProfile()
   }, [])
+
+  const handlePost = async () => {
+    if (!caption.trim() && !photo) return
+    setPosting(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    let photoUrl: string | null = null
+    if (photo) {
+      const fileName = `${user.id}/${Date.now()}_${photo.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('user-photos')
+        .upload(fileName, photo, { contentType: photo.type, upsert: true })
+      if (!uploadError) {
+        const { data } = supabase.storage.from('user-photos').getPublicUrl(fileName)
+        photoUrl = data.publicUrl
+      }
+    }
+
+    await supabase.from('posts').insert({
+      user_id: user.id,
+      caption: caption.trim() || null,
+      photo_url: photoUrl,
+      post_type: photo ? 'round_photo' : 'text',
+    })
+
+    // 投稿一覧を再取得
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+    if (postData) setPosts(postData)
+
+    setCaption('')
+    setPhoto(null)
+    setPhotoPreview(null)
+    setShowPostModal(false)
+    setPosting(false)
+  }
 
   const registerPush = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -361,8 +407,47 @@ export default function ProfilePage() {
 
       {/* 投稿フローティングボタン（プロフィールタブのみ） */}
       {activeTab === 'profile' && (
-        <div onClick={() => { router.push('/home'); }} style={{ position: 'fixed', bottom: 90, right: 20, width: 50, height: 50, borderRadius: '50%', background: 'var(--g1)', boxShadow: '0 4px 16px rgba(22,101,52,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 50 }}>
+        <div onClick={() => setShowPostModal(true)} style={{ position: 'fixed', bottom: 90, right: 20, width: 50, height: 50, borderRadius: '50%', background: 'var(--g1)', boxShadow: '0 4px 16px rgba(22,101,52,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 50 }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+      )}
+
+      {/* 投稿モーダル */}
+      {showPostModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>新規投稿</div>
+              <button onClick={() => { setShowPostModal(false); setCaption(''); setPhoto(null); setPhotoPreview(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+            </div>
+            {photoPreview && (
+              <div style={{ position: 'relative', marginBottom: 12 }}>
+                <img src={photoPreview} alt="preview" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 10 }} />
+                <button onClick={() => { setPhoto(null); setPhotoPreview(null) }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,.5)', border: 'none', borderRadius: '50%', width: 24, height: 24, color: 'white', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+              </div>
+            )}
+            <textarea
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              placeholder="今日のラウンドはどうでしたか？"
+              style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 10, padding: '12px', fontSize: 14, resize: 'none', outline: 'none', marginBottom: 12, minHeight: 80 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => fileRef.current?.click()} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--mid)', cursor: 'pointer' }}>📷 写真を追加</button>
+              <button onClick={handlePost} disabled={posting || (!caption.trim() && !photo)} style={{ flex: 1, background: posting || (!caption.trim() && !photo) ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontSize: 13, fontWeight: 700, cursor: posting ? 'not-allowed' : 'pointer' }}>
+                {posting ? '投稿中...' : '投稿する'}
+              </button>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) {
+                setPhoto(file)
+                const reader = new FileReader()
+                reader.onload = () => setPhotoPreview(reader.result as string)
+                reader.readAsDataURL(file)
+              }
+            }} style={{ display: 'none' }} />
+          </div>
         </div>
       )}
 
