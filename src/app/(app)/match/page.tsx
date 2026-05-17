@@ -204,9 +204,9 @@ export default function MatchPage() {
       if (f === '初心者') return m.handicap >= 30
       if (f === '中級者') return m.handicap >= 13 && m.handicap < 30
       if (f === '上級者') return m.handicap < 13
-      if (f === '広島・廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
-      if (f === '広島北') return m.areas?.includes('広島北部エリア') ?? false
-      if (f === '東広島・呉') return m.areas?.includes('東広島/呉エリア') ?? false
+      if (f === '広島/廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
+      if (f === '広島北部') return m.areas?.includes('広島北部エリア') ?? false
+      if (f === '東広島/呉') return m.areas?.includes('東広島/呉エリア') ?? false
       if (f === '竹原/三原/尾道') return m.areas?.includes('竹原/三原/尾道エリア') ?? false
       if (f === '福山') return m.areas?.includes('福山エリア') ?? false
       if (f === 'お気に入り') return favorites.has(m.user_id)
