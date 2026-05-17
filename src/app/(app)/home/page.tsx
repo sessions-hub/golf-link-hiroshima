@@ -64,6 +64,10 @@ export default function HomePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [posting, setPosting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [comments, setComments] = useState<Record<string, Comment[]>>({})
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const [showComments, setShowComments] = useState<Record<string, boolean>>({})
+  const [myId, setMyId] = useState('')
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [myUserId, setMyUserId] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -79,6 +83,7 @@ export default function HomePage() {
         .eq('user_id', user.id)
         .single()
       if (prof) setProfile(prof)
+      setMyId(user.id)
       const plan = await getUserPlan()
       setUserPlan(plan)
 
@@ -136,7 +141,6 @@ export default function HomePage() {
         .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`)
         .order('created_at', { ascending: false })
         .limit(30)
-      console.log('Posts profiles:', postData2?.[0]?.profiles)
       if (postData2) setPosts(postData2 as any)
 
       setLoading(false)
@@ -149,6 +153,41 @@ export default function HomePage() {
     if (!file) return
     setPhoto(file)
     setPhotoPreview(URL.createObjectURL(file))
+  }
+
+  const fetchComments = async (postId: string) => {
+    const { data } = await supabase
+      .from('post_comments')
+      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url)`)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (data) setComments(prev => ({ ...prev, [postId]: data as any }))
+  }
+
+  const handleToggleComments = async (postId: string) => {
+    if (!showComments[postId]) await fetchComments(postId)
+    setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }))
+  }
+
+  const handleAddComment = async (postId: string) => {
+    const content = commentInputs[postId]?.trim()
+    if (!content) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { error } = await supabase.from('post_comments').insert({
+      post_id: postId,
+      user_id: user.id,
+      content,
+    })
+    if (!error) {
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }))
+      await fetchComments(postId)
+    }
+  }
+
+  const handleDeleteComment = async (commentId: string, postId: string) => {
+    await supabase.from('post_comments').delete().eq('id', commentId)
+    await fetchComments(postId)
   }
 
   const handlePost = async () => {
