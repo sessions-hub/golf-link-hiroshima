@@ -289,7 +289,7 @@ export default function ProfileEditPage() {
         {/* 活動エリア */}
         <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>主な活動エリア（1つ選択）</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-          {['広島・廿日市エリア', '広島北エリア', '東広島・呉エリア', '竹原・三原・尾道エリア', '福山エリア'].map((a) => (
+          {['広島/廿日市エリア', '広島北部エリア', '東広島/呉エリア', '竹原/三原/尾道エリア', '福山エリア'].map((a) => (
             <button key={a} onClick={() => setArea(a)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: `1px solid ${area === a ? 'var(--g3)' : 'var(--line)'}`, color: area === a ? 'var(--g2)' : 'var(--mid)', background: area === a ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: area === a ? 600 : 400 }}>{a}</button>
           ))}
         </div>
