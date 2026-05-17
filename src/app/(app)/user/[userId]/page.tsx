@@ -302,11 +302,45 @@ export default function UserProfilePage() {
             {featuredPost.caption && (
               <div style={{ padding: '10px 16px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.6 }}>{featuredPost.caption}</div>
             )}
-            <div style={{ padding: '4px 16px 10px', display: 'flex', gap: 14 }}>
+            <div style={{ padding: '4px 16px', display: 'flex', gap: 14, borderBottom: '1px solid var(--surf)' }}>
               <button onClick={() => toggleLike(featuredPost.id, featuredPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: featuredPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
                 {featuredPost.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {featuredPost.likes_count}
               </button>
+              <button onClick={() => {
+                if (!showModalComments) {
+                  fetchModalComments(featuredPost.id)
+                } else {
+                  setShowModalComments(false)
+                }
+              }} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: showModalComments ? 'var(--g2)' : 'var(--mute)' }}>
+                💬 コメント
+              </button>
             </div>
+            {showModalComments && (
+              <div style={{ padding: '8px 16px 12px' }}>
+                {modalComments.map((c: any) => (
+                  <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
+                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <input
+                    value={modalCommentInput}
+                    onChange={e => setModalCommentInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleModalComment() }}
+                    placeholder="コメントを入力..."
+                    style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }}
+                  />
+                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
