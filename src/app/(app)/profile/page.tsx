@@ -194,7 +194,7 @@ export default function ProfilePage() {
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
     setUnreadNotifCount(prev => Math.max(0, prev - 1))
     // 自分の個人ページの該当投稿へ
-    router.push(`/user/${notif.user_id}?postId=${notif.post_id}`)
+    router.push(`/user/${notif.user_id}?postId=${notif.post_id}&from=notif`)
   }
 
   const handleDeletePost = async (postId: string) => {

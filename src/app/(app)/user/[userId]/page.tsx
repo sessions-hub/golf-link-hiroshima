@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { Icons } from '@/components/icons'
+import BottomNav from '@/components/layout/BottomNav'
 
 interface Profile {
   user_id: string
@@ -397,6 +398,7 @@ export default function UserProfilePage() {
           </div>
         </div>
       )}
+      <BottomNav />
     </div>
   )
 }
