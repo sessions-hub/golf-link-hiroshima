@@ -288,7 +288,7 @@ export default function MatchPage() {
                   {filters.includes('お気に入り') ? 'お気に入りがまだいません' : filters.includes('相性診断') ? '相性の良いゴルファーがまだいません' : 'まだゴルファーがいません'}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
-                  {filters.includes('お気に入り') ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してマッチングを始めましょう！'}
+                  {filters.includes('お気に入り') ? 'ゴルファーカードの♡をタップして\nお気に入り登録しましょう' : '友達を招待してフレンドを探しましょう！'}
                 </div>
               </div>
             )}

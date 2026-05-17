@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   },
   {
     key: 'match',
-    label: 'マッチング',
+    label: 'フレンド',
     path: '/match',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" width={22} height={22}>

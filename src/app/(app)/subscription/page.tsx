@@ -12,7 +12,7 @@ const PLANS = [
     price: 490,
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
-      'ゴルファー検索・マッチング',
+      'ゴルファー検索・フレンド',
       'メッセージ送受信',
       'コンペ参加',
       'GPS距離計測',

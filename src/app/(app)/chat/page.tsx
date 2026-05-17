@@ -107,7 +107,7 @@ export default function ChatListPage() {
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ marginBottom: 16, color: "var(--mute)" }}>{Icons.chat(48, "var(--mute)")}</div>
             <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', marginBottom: 8 }}>チャットがまだありません</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 24 }}>マッチングした相手と<br/>チャットを始めましょう</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 24 }}>フレンドと<br/>チャットを始めましょう</div>
             <button onClick={() => router.push('/match')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '12px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>マッチングを探す</button>
           </div>
         )}
