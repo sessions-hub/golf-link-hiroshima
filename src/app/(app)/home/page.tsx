@@ -3,7 +3,7 @@ import { Icons } from '@/components/icons'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, type Plan } from '@/lib/plan'
+import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -55,6 +55,8 @@ export default function HomePage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
+  const [lastScore, setLastScore] = useState<number | null>(null)
+  const [roundCount, setRoundCount] = useState(0)
   const [activeTab, setActiveTab] = useState<'home' | 'timeline'>('home')
   const [showPostModal, setShowPostModal] = useState(false)
   const [caption, setCaption] = useState('')
@@ -79,6 +81,18 @@ export default function HomePage() {
       if (prof) setProfile(prof)
       const plan = await getUserPlan()
       setUserPlan(plan)
+
+      // スコア履歴取得
+      const { data: scoreData } = await supabase
+        .from('scorecards')
+        .select('total_score')
+        .eq('user_id', user.id)
+        .order('round_date', { ascending: false })
+        .limit(10)
+      if (scoreData && scoreData.length > 0) {
+        setLastScore(scoreData[0].total_score)
+        setRoundCount(scoreData.length)
+      }
       setMyUserId(user.id)
 
       // チャット一覧取得（未読あり・最新3件）
@@ -261,17 +275,41 @@ export default function HomePage() {
             <button style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 6, padding: '7px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>マッチングを見る →</button>
           </div>
 
-          {/* GPS カード */}
-          <div onClick={() => router.push('/gps')} style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 14, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 9, background: 'rgba(168,224,99,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(168,224,99,.25)', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+          {/* スコア + GPS 横並び */}
+          <div style={{ margin: '0 16px 10px', display: 'flex', gap: 8 }}>
+            {/* スコアカード */}
+            <div onClick={() => {
+              if (!canUseGPS(userPlan)) {
+                alert('スコア記録はスタンダードプラン以上が必要です。\nマイページからアップグレードできます。')
+                return
+              }
+              router.push('/score')
+            }} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>スコア記録</span>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'white', marginBottom: 2 }}>GPS距離計測</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>グリーンまでの距離をリアルタイム計測</div>
+              <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter' }}>
+                {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'タップして記録'}
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(168,224,99,.5)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+            </div>
+            {/* GPSカード */}
+            <div onClick={() => {
+              if (!canUseGPS(userPlan)) {
+                alert('GPS計測はスタンダードプラン以上が必要です。\nマイページからアップグレードできます。')
+                return
+              }
+              router.push('/gps')
+            }} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'white' }}>GPS計測</span>
+              </div>
+              <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)' }}>距離をリアルタイム計測</div>
             </div>
           </div>
 
