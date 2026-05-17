@@ -177,8 +177,8 @@ export default function ProfilePage() {
     await supabase.from('post_notifications').update({ is_read: true }).eq('id', notif.id)
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
     setUnreadNotifCount(prev => Math.max(0, prev - 1))
-    // 該当投稿の個人ページへ
-    router.push(`/user/${notif.actor_id}?postId=${notif.post_id}`)
+    // 自分の個人ページの該当投稿へ
+    router.push(`/user/${notif.user_id}?postId=${notif.post_id}`)
   }
 
   const handleDeletePost = async (postId: string) => {
