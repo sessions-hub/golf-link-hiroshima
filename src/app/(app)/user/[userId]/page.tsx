@@ -70,6 +70,7 @@ export default function UserProfilePage() {
   const [myId, setMyId] = useState('')
   const [loading, setLoading] = useState(true)
   const [isFav, setIsFav] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -295,7 +296,7 @@ export default function UserProfilePage() {
             )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
               {otherPosts.map(post => (
-                <div key={post.id} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'var(--mute)' }}>
+                <div key={post.id} onClick={() => setSelectedPost(post)} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: 'var(--mute)' }}>
                   {post.photo_url
                     ? <img src={post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <div style={{ padding: 8, fontSize: 11, color: 'var(--mute)', textAlign: 'center', lineHeight: 1.4 }}>{post.caption?.slice(0, 20)}</div>
@@ -313,6 +314,32 @@ export default function UserProfilePage() {
           </div>
         )}
       </div>
+
+      {/* 投稿詳細モーダル */}
+      {selectedPost && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '85vh', overflow: 'auto', paddingBottom: 40 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 16px 12px', borderBottom: '1px solid var(--surf)' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>投稿</div>
+              <button onClick={() => setSelectedPost(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+            </div>
+            {selectedPost.photo_url && (
+              <img src={selectedPost.photo_url} alt="" style={{ width: '100%', maxHeight: 320, objectFit: 'cover' }} />
+            )}
+            {selectedPost.caption && (
+              <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7 }}>{selectedPost.caption}</div>
+            )}
+            <div style={{ padding: '4px 16px 10px', fontSize: 10, color: 'var(--mute)' }}>
+              {new Date(selectedPost.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}
+            </div>
+            <div style={{ padding: '0 16px', display: 'flex', gap: 14 }}>
+              <button onClick={() => toggleLike(selectedPost.id, selectedPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: selectedPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
+                {selectedPost.liked_by_me ? '❤️' : '♡'} {selectedPost.likes_count}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
