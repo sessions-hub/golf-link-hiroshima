@@ -305,7 +305,7 @@ export default function MatchPage() {
               return (
                 <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isFav ? 'rgba(200,60,100,.2)' : 'var(--line)'}`, padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                    <div style={{ position: 'relative' }}>
+                    <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => router.push(`/user/${m.user_id}`)}>
                       <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0, overflow: 'hidden' }}>
                         {m.avatar_url
                           ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

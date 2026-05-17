@@ -121,8 +121,8 @@ export default function ChatListPage() {
               style={{ background: unread > 0 ? '#fffbf5' : 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative', borderLeft: unread > 0 ? '3px solid #e05070' : '3px solid transparent' }}
             >
               {/* アバター */}
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); router.push(`/user/${room.other_user.user_id}`) }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden', cursor: 'pointer' }}>
                   {room.other_user.avatar_url
                     ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : room.other_user.nickname?.[0] ?? '?'
