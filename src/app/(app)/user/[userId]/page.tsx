@@ -93,7 +93,7 @@ export default function UserProfilePage() {
           .from('subscriptions')
           .select('plan')
           .eq('user_id', userId)
-          .single()
+          .maybeSingle()
         setProfile({ ...prof, plan: subData?.plan ?? 'free' })
       }
 
