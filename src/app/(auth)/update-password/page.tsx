@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -10,6 +10,31 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    // URLのハッシュからトークンを取得してセッションを確立
+    const supabase = createClient()
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(() => setReady(true))
+          .catch(() => setError('リンクが無効です。再度パスワードリセットをお試しください'))
+      } else {
+        setError('リンクが無効です。再度パスワードリセットをお試しください')
+      }
+    } else {
+      // セッションが既にある場合
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) setReady(true)
+        else setError('リンクが無効です。再度パスワードリセットをお試しください')
+      })
+    }
+  }, [])
 
   const handleUpdate = async () => {
     if (!password.trim()) { setError('パスワードを入力してください'); return }
@@ -20,7 +45,7 @@ export default function UpdatePasswordPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password })
     if (error) {
-      setError('パスワードの更新に失敗しました')
+      setError('パスワードの更新に失敗しました: ' + error.message)
     } else {
       setDone(true)
     }
@@ -57,24 +82,37 @@ export default function UpdatePasswordPage() {
             {error && (
               <div style={{ background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050', marginBottom: 16 }}>
                 {error}
+                {error.includes('無効') && (
+                  <div onClick={() => router.push('/reset-password')} style={{ marginTop: 8, color: 'var(--g2)', cursor: 'pointer', fontWeight: 600 }}>
+                    → 再度リセットメールを送る
+                  </div>
+                )}
               </div>
             )}
 
-            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>新しいパスワード</div>
-            <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="6文字以上" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: 'var(--txt)', background: 'transparent' }} />
-            </div>
+            {ready && (
+              <>
+                <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>新しいパスワード</div>
+                <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="6文字以上" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: 'var(--txt)', background: 'transparent' }} />
+                </div>
 
-            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>パスワード（確認）</div>
-            <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="もう一度入力" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: 'var(--txt)', background: 'transparent' }} />
-            </div>
+                <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>パスワード（確認）</div>
+                <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="もう一度入力" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: 'var(--txt)', background: 'transparent' }} />
+                </div>
 
-            <button onClick={handleUpdate} disabled={loading} style={{ width: '100%', background: loading ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? '更新中...' : 'パスワードを更新する'}
-            </button>
+                <button onClick={handleUpdate} disabled={loading} style={{ width: '100%', background: loading ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
+                  {loading ? '更新中...' : 'パスワードを更新する'}
+                </button>
+              </>
+            )}
+
+            {!ready && !error && (
+              <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>
+            )}
           </>
         )}
       </div>
