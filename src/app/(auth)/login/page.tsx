@@ -79,6 +79,10 @@ export default function LoginPage() {
           {loading ? 'ログイン中...' : 'ログイン'}
         </button>
 
+        <div onClick={() => router.push('/reset-password')} style={{ textAlign: 'center', marginTop: 4, marginBottom: 8, fontSize: 13, color: 'var(--g2)', cursor: 'pointer', fontWeight: 600 }}>
+          パスワードを忘れた方はこちら
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
           <div style={{ flex: 1, height: .5, background: 'var(--line)' }} />
           <span style={{ fontSize: 11, color: 'var(--mute)' }}>または</span>
