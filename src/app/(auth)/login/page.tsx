@@ -70,7 +70,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--g3)', marginBottom: 20, cursor: 'pointer' }}>パスワードをお忘れの方</div>
+
 
         <button
           onClick={handleLogin}
