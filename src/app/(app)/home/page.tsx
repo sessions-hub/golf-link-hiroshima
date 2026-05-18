@@ -144,12 +144,12 @@ export default function HomePage() {
 
       const { data: postData } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`)
+        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
       const { data: postData2 } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`)
+        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
       if (postData2) setPosts(postData2 as any)
@@ -247,7 +247,7 @@ export default function HomePage() {
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
-    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`).single()
+    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`).single()
     if (postError) {
       console.error('Post error:', postError)
       setPosting(false)
@@ -257,7 +257,7 @@ export default function HomePage() {
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
-      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id)`)
+      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
       .order('created_at', { ascending: false })
       .limit(30)
     if (refreshedPosts) setPosts(refreshedPosts as any)

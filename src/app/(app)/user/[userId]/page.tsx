@@ -95,10 +95,16 @@ export default function UserProfilePage() {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       if (postData) {
+        // liked_by_me を確認
+        const { data: myLikes } = await supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+        const likedPostIds = new Set(myLikes?.map((l: any) => l.post_id) ?? [])
         const postsWithLikes = (postData as any[]).map((p) => ({
           ...p,
           likes_count: Number(p.post_likes?.[0]?.count ?? 0),
-          liked_by_me: false,
+          liked_by_me: likedPostIds.has(p.id),
         }))
         setPosts(postsWithLikes as any)
         if (postId) {
