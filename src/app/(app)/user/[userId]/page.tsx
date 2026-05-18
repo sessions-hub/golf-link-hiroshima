@@ -87,7 +87,15 @@ export default function UserProfilePage() {
         .select('*')
         .eq('user_id', userId)
         .single()
-      if (prof) setProfile(prof)
+      if (prof) {
+        // subscriptionsからプランを取得
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('plan')
+          .eq('user_id', userId)
+          .single()
+        setProfile({ ...prof, plan: subData?.plan ?? 'free' })
+      }
 
       const { data: postData } = await supabase
         .from('posts')
