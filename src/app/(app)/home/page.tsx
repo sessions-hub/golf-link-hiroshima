@@ -338,20 +338,6 @@ export default function HomePage() {
       {activeTab === 'home' && (
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
 
-          {/* 統計 */}
-          <div style={{ display: 'flex', gap: 8, padding: '10px 16px 10px' }}>
-            {[
-              { v: profile?.handicap?.toString() ?? '-', k: 'ハンデ' },
-              { v: profile?.best_score?.toString() ?? '-', k: 'ベスト' },
-              { v: '0', k: 'マッチ済み' },
-            ].map((s) => (
-              <div key={s.k} style={{ flex: 1, background: 'white', borderRadius: 10, border: '1px solid var(--line)', padding: 10, textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)' }}>{s.v}</div>
-                <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{s.k}</div>
-              </div>
-            ))}
-          </div>
-
           {/* マッチング待ちカード */}
           <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: 16, position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(13,61,43,.2)', cursor: 'pointer' }}>
             <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.18) 0%,transparent 70%)' }}/>

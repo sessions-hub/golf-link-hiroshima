@@ -18,6 +18,17 @@ export default function ScorePage() {
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [view, setView] = useState<'input' | 'history'>('input')
+  const [bestScore, setBestScore] = useState<number | null>(null)
+  const [lastScore, setLastScore] = useState<number | null>(null)
+  const [roundCount, setRoundCount] = useState(0)
+
+  const calcStats = (data: any[]) => {
+    if (data.length === 0) return
+    const s = data.map((d: any) => d.total_score).filter(Boolean)
+    setBestScore(s.length > 0 ? Math.min(...s) : null)
+    setLastScore(data[0]?.total_score ?? null)
+    setRoundCount(data.length)
+  }
 
   useEffect(() => {
     const init = async () => {
@@ -31,7 +42,7 @@ export default function ScorePage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20)
-      if (data) setHistory(data)
+      if (data) { setHistory(data); calcStats(data) }
     }
     init()
   }, [])
@@ -73,15 +84,45 @@ export default function ScorePage() {
       in_score: inTotal,
       hole_scores: scores,
     })
-    if (error) console.error('Save error:', error)
     if (!error) {
+      // 統計を更新
+      const { data: newHistory } = await supabase
+        .from('scorecards')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (newHistory) { setHistory(newHistory); calcStats(newHistory) }
+      setScores(Array(18).fill(0))
+      setCourseName('')
+      setView('history')
       alert('スコアを保存しました！')
-      router.push('/home')
     } else {
       alert('保存に失敗しました')
     }
     setSaving(false)
   }
+
+  // 統計バナー
+  const StatsBanner = () => (
+    <div style={{ background: 'linear-gradient(135deg,#0d3d2b,#1a4a2a)', borderRadius: 14, padding: 16, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.15) 0%,transparent 70%)' }}/>
+      <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.12em', fontFamily: 'Inter', marginBottom: 12 }}>MY GOLF STATS</div>
+      <div style={{ display: 'flex' }}>
+        {[
+          { v: bestScore ?? '-', label: 'BEST', sub: '自己ベスト' },
+          { v: lastScore ?? '-', label: 'LAST', sub: '直近スコア' },
+          { v: roundCount, label: 'ROUNDS', sub: '累計ラウンド' },
+        ].map((s, i) => (
+          <div key={s.label} style={{ flex: 1, textAlign: 'center', borderRight: i < 2 ? '1px solid rgba(255,255,255,.1)' : 'none' }}>
+            <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: '#4ade80', lineHeight: 1, marginBottom: 4 }}>{s.v}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.5)', letterSpacing: '.08em' }}>{s.label}</div>
+            <div style={{ fontSize: 8, color: 'rgba(168,224,99,.6)', marginTop: 2, fontWeight: 600 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   if (!canUseGPS(userPlan)) {
     return (
@@ -102,6 +143,7 @@ export default function ScorePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div onClick={() => router.push('/home')} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
@@ -112,14 +154,17 @@ export default function ScorePage() {
         <div style={{ display: 'flex', gap: 0 }}>
           {(['input', 'history'] as const).map(t => (
             <button key={t} onClick={() => setView(t)} style={{ flex: 1, padding: '8px 0', fontSize: 12, fontWeight: view === t ? 700 : 500, color: view === t ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: view === t ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
-              {t === 'input' ? '📝 スコア入力' : '📊 履歴'}
+              {t === 'input' ? '📝 スコア入力' : '📊 履歴・統計'}
             </button>
           ))}
         </div>
       </div>
 
+      {/* スコア入力タブ */}
       {view === 'input' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+          <StatsBanner />
+
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 6 }}>コース名</div>
             <input value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="例：東広島カントリークラブ" style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
@@ -168,12 +213,49 @@ export default function ScorePage() {
         </div>
       )}
 
+      {/* 履歴・統計タブ */}
       {view === 'history' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+          <StatsBanner />
+
+          {/* スコア推移バー */}
+          {history.length > 0 && (
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '12px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 }}>直近5ラウンドの推移</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 56 }}>
+                {(() => {
+                  const recent = history.slice(0, 5).reverse()
+                  const scores2 = recent.map((h: any) => h.total_score).filter(Boolean)
+                  if (scores2.length === 0) return null
+                  const maxS = Math.max(...scores2)
+                  const minS = Math.min(...scores2)
+                  const range = maxS - minS || 1
+                  return recent.map((h: any, i: number) => {
+                    const s = h.total_score
+                    const heightPct = 30 + ((s - minS) / range) * 70
+                    const isBest = s === minS
+                    return (
+                      <div key={h.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: '100%', height: `${heightPct}%`, borderRadius: 4, background: isBest ? 'var(--g2)' : 'var(--g3)', opacity: isBest ? 1 : 0.7, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 3 }}>
+                          <span style={{ fontSize: 8, color: 'white', fontWeight: 700, fontFamily: 'Inter' }}>{s}</span>
+                        </div>
+                        <div style={{ fontSize: 7, color: 'var(--mute)', whiteSpace: 'nowrap' }}>
+                          {h.round_date ? new Date(h.round_date).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : ''}
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* 履歴一覧 */}
           {history.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
               <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだスコアの記録がありません</div>
+              <button onClick={() => setView('input')} style={{ marginTop: 12, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>スコアを記録する</button>
             </div>
           ) : history.map((h: any) => (
             <div key={h.id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 10 }}>
@@ -183,17 +265,17 @@ export default function ScorePage() {
                   <div style={{ fontSize: 10, color: 'var(--mute)' }}>{h.round_date ? new Date(h.round_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date(h.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 700, color: 'var(--g1)', lineHeight: 1 }}>{h.total_score}</div>
+                  <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: 'var(--g1)', lineHeight: 1 }}>{h.total_score}</div>
                   <div style={{ fontSize: 9, color: 'var(--mute)' }}>TOTAL</div>
                 </div>
               </div>
               {(h.out_score || h.in_score) && (
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: '6px', textAlign: 'center' }}>
+                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.out_score}</div>
                     <div style={{ fontSize: 9, color: 'var(--mute)' }}>OUT</div>
                   </div>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: '6px', textAlign: 'center' }}>
+                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.in_score}</div>
                     <div style={{ fontSize: 9, color: 'var(--mute)' }}>IN</div>
                   </div>
