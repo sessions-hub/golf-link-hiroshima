@@ -101,9 +101,19 @@ export default function GpsPage() {
     }
   }, [])
 
-  // コース一覧取得
+  // コース一覧取得（GPS取得後に実行）
   useEffect(() => {
-    fetchCourses('広島県')
+    if (position) {
+      fetchCourses('広島県')
+    }
+  }, [position?.lat])
+
+  // GPS取得に失敗してもコースを表示
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (courses.length === 0) fetchCourses('広島県')
+    }, 5000)
+    return () => clearTimeout(timer)
   }, [])
 
   // 現在地が取得できたら距離を計算してソート
@@ -118,12 +128,18 @@ export default function GpsPage() {
     setCourses(updated)
   }, [position])
 
-  const fetchCourses = async (keyword: string) => {
+  const fetchCourses = async (keyword: string, retryCount = 0) => {
     setLoadingCourses(true)
     try {
-      const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
+      const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`, {
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      if (data.Items) {
+      if (data.Items && data.Items.length > 0) {
         const list = data.Items.map((item: any) => ({
           ...item.Item,
           distKm: position && item.Item.latitude && item.Item.longitude
@@ -131,8 +147,18 @@ export default function GpsPage() {
             : 999,
         })).sort((a: any, b: any) => a.distKm - b.distKm)
         setCourses(list)
+      } else if (retryCount < 2) {
+        // データが空の場合リトライ
+        setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
+        return
       }
-    } catch (e) {}
+    } catch (e: any) {
+      if (retryCount < 2 && e.name !== 'AbortError') {
+        // エラー時は2秒後にリトライ
+        setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
+        return
+      }
+    }
     setLoadingCourses(false)
   }
 
