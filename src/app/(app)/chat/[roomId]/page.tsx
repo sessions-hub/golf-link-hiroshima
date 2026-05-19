@@ -251,7 +251,7 @@ export default function ChatRoomPage() {
         </div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{otherProfile?.nickname ?? 'チャット'}</div>
-          <div style={{ fontSize: 10, color: 'var(--lime)', marginTop: 1 }}>● オンライン</div>
+
         </div>
       </div>
 
