@@ -73,6 +73,8 @@ interface Post {
   caption: string | null
   photo_url: string | null
   created_at: string
+  likes_count: number
+  liked_by_me: boolean
 }
 
 const getPlanBadge = (plan: Plan) => {
@@ -96,6 +98,9 @@ export default function ProfilePage() {
   const [showAllNotif, setShowAllNotif] = useState(false)
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const [showPostModal, setShowPostModal] = useState(false)
+  const [modalComments, setModalComments] = useState<any[]>([])
+  const [modalCommentInput, setModalCommentInput] = useState('')
+  const [showModalComments, setShowModalComments] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [editPostId, setEditPostId] = useState<string | null>(null)
   const [editCaption, setEditCaption] = useState('')
@@ -148,10 +153,17 @@ export default function ProfilePage() {
       // 投稿取得
       const { data: postData } = await supabase
         .from('posts')
-        .select('*')
+        .select('*, post_likes(count)')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-      if (postData) setPosts(postData)
+      if (postData) {
+        const postsWithLikes = (postData as any[]).map(p => ({
+          ...p,
+          likes_count: Number(p.post_likes?.[0]?.count ?? 0),
+          liked_by_me: false,
+        }))
+        setPosts(postsWithLikes as any)
+      }
 
       // プレミアム限定
       if (plan === 'premium') {
@@ -195,6 +207,47 @@ export default function ProfilePage() {
     setUnreadNotifCount(prev => Math.max(0, prev - 1))
     // 自分の個人ページの該当投稿へ
     router.push(`/user/${notif.user_id}?postId=${notif.post_id}&from=notif`)
+  }
+
+  const toggleLike = async (postId: string, liked: boolean) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    if (liked) {
+      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+    } else {
+      await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+    }
+    setPosts(prev => prev.map(p => p.id === postId
+      ? { ...p, liked_by_me: !liked, likes_count: liked ? p.likes_count - 1 : p.likes_count + 1 }
+      : p
+    ))
+    setSelectedPost(prev => prev?.id === postId
+      ? { ...prev, liked_by_me: !liked, likes_count: liked ? prev.likes_count - 1 : prev.likes_count + 1 }
+      : prev
+    )
+  }
+
+  const fetchModalComments = async (postId: string) => {
+    const { data } = await supabase
+      .from('post_comments')
+      .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url, user_id)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (data) setModalComments(data as any)
+    setShowModalComments(true)
+  }
+
+  const handleModalComment = async () => {
+    if (!modalCommentInput.trim() || !selectedPost) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('post_comments').insert({
+      post_id: selectedPost.id,
+      user_id: user.id,
+      content: modalCommentInput.trim(),
+    })
+    setModalCommentInput('')
+    await fetchModalComments(selectedPost.id)
   }
 
   const handleDeletePost = async (postId: string) => {
@@ -593,7 +646,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button onClick={() => { setEditPostId(selectedPost.id); setEditCaption(selectedPost.caption ?? '') }} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>編集</button>
                 <button onClick={() => handleDeletePost(selectedPost.id)} style={{ background: 'none', border: '1px solid rgba(200,60,60,.3)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: '#c05050', cursor: 'pointer', fontWeight: 600 }}>削除</button>
-                <button onClick={() => { setSelectedPost(null); setEditPostId(null); setEditCaption('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+                <button onClick={() => { setSelectedPost(null); setEditPostId(null); setEditCaption(''); setModalComments([]); setModalCommentInput(''); setShowModalComments(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
               </div>
             </div>
             {selectedPost.photo_url && (
@@ -612,9 +665,36 @@ export default function ProfilePage() {
                 <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7 }}>{selectedPost.caption}</div>
               )
             )}
-            <div style={{ padding: '4px 16px', fontSize: 10, color: 'var(--mute)' }}>
+            <div style={{ padding: '4px 16px 10px', fontSize: 10, color: 'var(--mute)' }}>
               {new Date(selectedPost.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}
             </div>
+            <div style={{ padding: '8px 16px', display: 'flex', gap: 14, borderBottom: '1px solid var(--surf)' }}>
+              <button onClick={() => toggleLike(selectedPost.id, selectedPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: selectedPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
+                {selectedPost.liked_by_me ? '❤️' : '♡'} {selectedPost.likes_count}
+              </button>
+              <button onClick={() => showModalComments ? setShowModalComments(false) : fetchModalComments(selectedPost.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: showModalComments ? 'var(--g2)' : 'var(--mute)' }}>
+                💬 コメント
+              </button>
+            </div>
+            {showModalComments && (
+              <div style={{ padding: '8px 16px' }}>
+                {modalComments.map((c: any) => (
+                  <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                    <div onClick={() => c.profiles?.user_id && router.push(`/user/${c.profiles.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <input value={modalCommentInput} onChange={e => setModalCommentInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleModalComment() }} placeholder="コメントを入力..." style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }} />
+                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

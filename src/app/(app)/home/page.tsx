@@ -142,17 +142,26 @@ export default function HomePage() {
         setChatRooms(roomsWithProfiles)
       }
 
-      const { data: postData } = await supabase
-        .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
-        .order('created_at', { ascending: false })
-        .limit(30)
       const { data: postData2 } = await supabase
         .from('posts')
         .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
-      if (postData2) setPosts(postData2 as any)
+
+      if (postData2) {
+        // 自分のいいね一覧を取得
+        const { data: myLikes } = await supabase
+          .from('post_likes')
+          .select('post_id')
+          .eq('user_id', user.id)
+        const likedPostIds = new Set(myLikes?.map((l: any) => l.post_id) ?? [])
+        const postsWithLikes = (postData2 as any[]).map(p => ({
+          ...p,
+          likes_count: Number(p.post_likes?.[0]?.count ?? 0),
+          liked_by_me: likedPostIds.has(p.id),
+        }))
+        setPosts(postsWithLikes as any)
+      }
 
       setLoading(false)
     }
