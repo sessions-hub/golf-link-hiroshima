@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 
 const HDCP_OPTIONS = [
   { label: '初心者', value: 36 },
-  { label: '初級', value: 28 },
-  { label: '中級', value: 18 },
-  { label: '上級', value: 8 },
+  { label: '初級者', value: 28 },
+  { label: '中級者', value: 18 },
+  { label: '上級者', value: 8 },
 ]
 const BLOOD_TYPES = ['A', 'B', 'O', 'AB']
 const DAYS = ['月', '火', '水', '木', '金', '土', '日']

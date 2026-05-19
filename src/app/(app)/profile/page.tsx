@@ -77,6 +77,13 @@ interface Post {
   liked_by_me: boolean
 }
 
+const getHdcpLabel = (handicap: number) => {
+  if (handicap >= 30) return '初心者'
+  if (handicap >= 19) return '初級者'
+  if (handicap >= 9) return '中級者'
+  return '上級者'
+}
+
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
   if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }

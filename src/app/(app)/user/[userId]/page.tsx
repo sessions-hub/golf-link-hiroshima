@@ -43,6 +43,13 @@ const AGE_DECADE = (birthDate: string) => {
   return '60代以上'
 }
 
+const getHdcpLabel = (handicap: number) => {
+  if (handicap >= 30) return '初心者'
+  if (handicap >= 19) return '初級者'
+  if (handicap >= 9) return '中級者'
+  return '上級者'
+}
+
 const AREA_LABELS: Record<string, string> = {
   '広島/廿日市エリア': '広島/廿日市',
   '広島北部エリア': '広島北部',
@@ -284,7 +291,7 @@ export default function UserProfilePage() {
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               {profile.blood_type && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{profile.blood_type}型</span>}
               {zodiac && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{zodiac}</span>}
-              {profile.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>Hdcp {profile.handicap}</span>}
+              {profile.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getHdcpLabel(profile.handicap)}</span>}
             </div>
           </div>
         </div>

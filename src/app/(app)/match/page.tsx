@@ -202,8 +202,9 @@ export default function MatchPage() {
       if (f === '男性') return m.gender === 'male'
       if (f === '女性') return m.gender === 'female'
       if (f === '初心者') return m.handicap >= 30
-      if (f === '中級者') return m.handicap >= 13 && m.handicap < 30
-      if (f === '上級者') return m.handicap < 13
+      if (f === '初級者') return m.handicap >= 19 && m.handicap < 30
+      if (f === '中級者') return m.handicap >= 9 && m.handicap < 19
+      if (f === '上級者') return m.handicap < 9
       if (f === '広島/廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
       if (f === '広島北部') return m.areas?.includes('広島北部エリア') ?? false
       if (f === '東広島/呉') return m.areas?.includes('東広島/呉エリア') ?? false

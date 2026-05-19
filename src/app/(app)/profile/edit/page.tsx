@@ -7,9 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 
 const HDCP_OPTIONS = [
   { label: '初心者', value: 36 },
-  { label: '初級', value: 28 },
-  { label: '中級', value: 18 },
-  { label: '上級', value: 8 },
+  { label: '初級者', value: 28 },
+  { label: '中級者', value: 18 },
+  { label: '上級者', value: 8 },
 ]
 
 const FREQ_OPTIONS = [
@@ -260,8 +260,7 @@ export default function ProfileEditPage() {
         <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
           {HDCP_OPTIONS.map((h) => (
             <button key={h.value} onClick={() => setHandicap(h.value)} style={{ flex: 1, background: handicap === h.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1px solid ${handicap === h.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '9px 4px', textAlign: 'center', cursor: 'pointer' }}>
-              <div style={{ fontSize: 10, color: handicap === h.value ? 'var(--g2)' : 'var(--mute)' }}>{h.label}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: handicap === h.value ? 'var(--g2)' : 'var(--txt)', marginTop: 2 }}>{h.value}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: handicap === h.value ? 'var(--g2)' : 'var(--txt)' }}>{h.label}</div>
             </button>
           ))}
         </div>
