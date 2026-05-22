@@ -37,6 +37,14 @@ const PLANS = [
   },
 ]
 
+const CANCEL_REASONS = [
+  { value: 'price', label: '料金が高い' },
+  { value: 'usability', label: '機能が使いにくい' },
+  { value: 'low_usage', label: '使う機会が少ない' },
+  { value: 'switched', label: '別のサービスに移った' },
+  { value: 'other', label: 'その他' },
+]
+
 export default function SubscriptionPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -44,6 +52,14 @@ export default function SubscriptionPage() {
   const [userEmail, setUserEmail] = useState('')
   const [userId, setUserId] = useState('')
   const [currentPlan, setCurrentPlan] = useState('free')
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
+
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelOtherText, setCancelOtherText] = useState('')
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [cancelDone, setCancelDone] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
@@ -53,12 +69,22 @@ export default function SubscriptionPage() {
         setUserId(user.id)
       }
       if (user) {
-        const { data } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
           .select('plan')
           .eq('user_id', user.id)
           .single()
-        if (data) setCurrentPlan(data.plan)
+        if (profileData) setCurrentPlan(profileData.plan)
+
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('cancel_at_period_end, current_period_end')
+          .eq('user_id', user.id)
+          .single()
+        if (subData) {
+          setCancelAtPeriodEnd(subData.cancel_at_period_end ?? false)
+          setCurrentPeriodEnd(subData.current_period_end ?? null)
+        }
       }
     }
     getUser()
@@ -88,6 +114,35 @@ export default function SubscriptionPage() {
     setLoading(null)
   }
 
+  const handleCancelSubmit = async () => {
+    if (!cancelReason) return
+    if (cancelReason === 'other' && !cancelOtherText.trim()) return
+    setCancelLoading(true)
+    try {
+      const res = await fetch('/api/stripe/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          reason: cancelReason,
+          otherText: cancelReason === 'other' ? cancelOtherText.trim() : null,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCancelAtPeriodEnd(true)
+        if (data.current_period_end) setCurrentPeriodEnd(data.current_period_end)
+        setCancelDone(true)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    setCancelLoading(false)
+  }
+
+  const formatPeriodEnd = (iso: string) =>
+    new Date(iso).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -102,6 +157,13 @@ export default function SubscriptionPage() {
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--txt)', marginBottom: 6 }}>プランを選択</div>
           <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7 }}>ゴルフライフをもっと充実させましょう</div>
         </div>
+
+        {/* 解約予定バナー */}
+        {cancelAtPeriodEnd && currentPeriodEnd && (
+          <div style={{ background: '#fff8f0', border: '1px solid rgba(200,100,0,.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#a05000', lineHeight: 1.6 }}>
+            解約手続き済み。{formatPeriodEnd(currentPeriodEnd)}までご利用いただけます。
+          </div>
+        )}
 
         {/* 無料プラン */}
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--line)', padding: '16px 18px', marginBottom: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
@@ -156,6 +218,15 @@ export default function SubscriptionPage() {
               style={{ width: '100%', background: currentPlan === plan.id ? 'rgba(255,255,255,.1)' : plan.recommended ? 'var(--lime)' : 'var(--g1)', color: currentPlan === plan.id ? 'rgba(255,255,255,.4)' : plan.recommended ? 'var(--g1)' : 'white', border: 'none', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: loading === plan.id || currentPlan === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? 0.7 : 1 }}>
               {loading === plan.id ? '処理中...' : currentPlan === plan.id ? '契約中' : `${plan.name}に申し込む`}
             </button>
+
+            {/* 解約ボタン */}
+            {currentPlan === plan.id && !cancelAtPeriodEnd && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                style={{ width: '100%', marginTop: 10, background: 'transparent', color: plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)', border: `1px solid ${plan.recommended ? 'rgba(255,255,255,.2)' : 'var(--line)'}`, borderRadius: 8, padding: '10px', fontSize: 12, cursor: 'pointer' }}>
+                解約する
+              </button>
+            )}
           </div>
         ))}
 
@@ -164,6 +235,74 @@ export default function SubscriptionPage() {
           決済はStripeの安全な環境で処理されます。
         </div>
       </div>
+
+      {/* 解約モーダル */}
+      {showCancelModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '24px 20px 40px' }}>
+            {cancelDone ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ fontSize: 28, marginBottom: 12 }}>✓</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>解約手続きが完了しました</div>
+                {currentPeriodEnd && (
+                  <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7 }}>
+                    {formatPeriodEnd(currentPeriodEnd)}までご利用いただけます。
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  style={{ marginTop: 20, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 32px', fontSize: 14, fontWeight: 600, color: 'var(--mid)', cursor: 'pointer' }}>
+                  閉じる
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>解約理由をお聞かせください</div>
+                  <button onClick={() => setShowCancelModal(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--mute)', cursor: 'pointer' }}>×</button>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  {CANCEL_REASONS.map((r) => (
+                    <label key={r.value} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="cancel_reason"
+                        value={r.value}
+                        checked={cancelReason === r.value}
+                        onChange={() => setCancelReason(r.value)}
+                        style={{ width: 18, height: 18, accentColor: 'var(--g2)', cursor: 'pointer', flexShrink: 0 }}
+                      />
+                      <span style={{ fontSize: 14, color: 'var(--txt)' }}>{r.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {cancelReason === 'other' && (
+                  <textarea
+                    value={cancelOtherText}
+                    onChange={e => setCancelOtherText(e.target.value)}
+                    placeholder="その他の理由をご記入ください"
+                    style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 10, padding: '12px', fontSize: 13, resize: 'none', outline: 'none', marginBottom: 16, minHeight: 80, boxSizing: 'border-box' }}
+                  />
+                )}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => setShowCancelModal(false)}
+                    style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, fontSize: 13, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handleCancelSubmit}
+                    disabled={cancelLoading || !cancelReason || (cancelReason === 'other' && !cancelOtherText.trim())}
+                    style={{ flex: 1, background: cancelLoading || !cancelReason ? 'var(--mute)' : '#c05050', color: 'white', border: 'none', borderRadius: 10, padding: 14, fontSize: 13, fontWeight: 700, cursor: cancelLoading || !cancelReason ? 'not-allowed' : 'pointer', opacity: cancelLoading ? 0.7 : 1 }}>
+                    {cancelLoading ? '処理中...' : '解約する'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   )

@@ -101,6 +101,8 @@ export default function ProfilePage() {
   const [whoVisited, setWhoVisited] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
   const [myUserId, setMyUserId] = useState('')
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<any[]>([])
   const [showAllNotif, setShowAllNotif] = useState(false)
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
@@ -128,6 +130,16 @@ export default function ProfilePage() {
 
       const plan = await getUserPlan()
       setUserPlan(plan)
+
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('cancel_at_period_end, current_period_end')
+        .eq('user_id', user.id)
+        .single()
+      if (subData) {
+        setCancelAtPeriodEnd(subData.cancel_at_period_end ?? false)
+        setCurrentPeriodEnd(subData.current_period_end ?? null)
+      }
 
       // 通知取得
       const { data: notifData, error: notifError } = await supabase
@@ -549,6 +561,17 @@ export default function ProfilePage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 プレミアムプランで解放</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 12, lineHeight: 1.6 }}>足跡を見た人・お気に入りしてくれた人<br/>マッチング上位表示など</div>
               <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>プレミアムにアップグレード</button>
+            </div>
+          )}
+
+          {/* 解約予定日 */}
+          {cancelAtPeriodEnd && currentPeriodEnd && (
+            <div style={{ margin: '0 0 8px', background: '#fff8f0', borderTop: '1px solid rgba(200,100,0,.15)', borderBottom: '1px solid rgba(200,100,0,.15)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a05000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{ fontSize: 12, color: '#a05000', lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 700 }}>解約予定：</span>
+                {new Date(currentPeriodEnd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}まで利用可能
+              </div>
             </div>
           )}
 

@@ -65,12 +65,19 @@ export async function POST(request: NextRequest) {
 
         if (profileError) console.error('Profile update error:', profileError)
 
+        const periodEndUnix: number | undefined = sub.items?.data?.[0]?.current_period_end
+        const currentPeriodEnd = periodEndUnix
+          ? new Date(periodEndUnix * 1000).toISOString()
+          : null
+
         const { error: subError } = await supabase.from('subscriptions').upsert({
           user_id: user.id,
           stripe_customer_id: customerId,
           stripe_subscription_id: sub.id,
           plan,
           status: sub.status,
+          cancel_at_period_end: sub.cancel_at_period_end ?? false,
+          current_period_end: currentPeriodEnd,
         }, { onConflict: 'user_id' })
 
         if (subError) console.error('Subscription upsert error:', subError)
