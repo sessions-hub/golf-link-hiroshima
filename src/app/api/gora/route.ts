@@ -18,9 +18,9 @@ const FILTER_MAP: Record<string, { keywords: string[]; addressMatch: string }> =
 
 const ORIGIN = 'https://golflink-hiroshima.com'
 
-// キャッシュ（5分間）
+// キャッシュ（30分間）
 const cache = new Map<string, { data: any; timestamp: number }>()
-const CACHE_TTL = 5 * 60 * 1000
+const CACHE_TTL = 30 * 60 * 1000
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -69,7 +69,7 @@ async function fetchAllPages(
   if (firstData.Items) allItems.push(...firstData.Items)
 
   for (let page = 2; page <= pageCount; page++) {
-    await sleep(400)
+    await sleep(150)
     try {
       const data = await fetchWithRetry(buildGoraUrl(appId, affiliateId, accessKey, keyword, page))
       if (data.Items) allItems.push(...data.Items)
@@ -160,15 +160,18 @@ export async function GET(request: NextRequest) {
     let allItems: any[] = []
 
     if (isTabFilter) {
-      // 各キーワードを順次取得してマージ（レート制限対策で間隔を空ける）
-      for (const kw of filter.keywords) {
-        try {
-          const items = await fetchAllPages(appId, affiliateId, accessKey, kw, filter.addressMatch)
-          allItems = [...allItems, ...items]
-          await sleep(500)
-        } catch (e) {
-          console.error(`[GORA] キーワード失敗 kw="${kw}":`, e)
-        }
+      // 3件並列でキーワードを取得してマージ
+      const batchSize = 3
+      for (let i = 0; i < filter.keywords.length; i += batchSize) {
+        const batch = filter.keywords.slice(i, i + batchSize)
+        const results = await Promise.all(
+          batch.map(kw =>
+            fetchAllPages(appId, affiliateId, accessKey, kw, filter.addressMatch)
+              .catch(e => { console.error(`[GORA] キーワード失敗 kw="${kw}":`, e); return [] as any[] })
+          )
+        )
+        allItems.push(...results.flat())
+        if (i + batchSize < filter.keywords.length) await sleep(200)
       }
       allItems = dedup(allItems)
       console.log(`[GORA] キーワード検索マージ後: ${allItems.length}件`)
@@ -188,7 +191,9 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[GORA] 最終結果: keyword=${keyword} count=${allItems.length}`)
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600' },
+    })
   } catch (error) {
     console.error('[GORA] API error:', error)
     if (cached) return NextResponse.json(cached.data)
