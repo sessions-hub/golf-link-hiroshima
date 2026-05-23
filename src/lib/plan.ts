@@ -17,9 +17,6 @@ export async function getUserPlan(): Promise<Plan> {
   return (data.plan as Plan) ?? 'free'
 }
 
-export function canCreateChat(plan: Plan) {
-  return plan === 'standard' || plan === 'premium'
-}
 
 export function canUseGPS(plan: Plan) {
   return plan === 'standard' || plan === 'premium'

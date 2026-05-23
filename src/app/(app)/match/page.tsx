@@ -3,7 +3,7 @@ import { Icons } from '@/components/icons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, canCreateChat, type Plan } from '@/lib/plan'
+import { getUserPlan, type Plan } from '@/lib/plan'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
@@ -367,13 +367,7 @@ export default function MatchPage() {
                         </div>
                       </div>
                       <button
-                        onClick={() => {
-                          if (!canCreateChat(userPlan)) {
-                            alert('チャットの新規作成はスタンダードプラン以上が必要です。\n\n受信したチャットへの返信は無料プランでも可能です。\n\nマイページからアップグレードできます。')
-                            return
-                          }
-                          handleChat(m.user_id)
-                        }}
+                        onClick={() => handleChat(m.user_id)}
                         disabled={chatLoading === m.user_id}
                         style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === m.user_id ? 0.6 : 1 }}>
                         {chatLoading === m.user_id ? '...' : '💬 チャット'}
