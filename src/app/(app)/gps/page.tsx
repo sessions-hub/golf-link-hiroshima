@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
@@ -236,7 +237,7 @@ export default function GpsPage() {
             </div>
           )}
           {loadingCourses && (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>コースを読み込み中...</div>
+            <SectionLoading text="コースを読み込み中" />
           )}
           {!loadingCourses && (
             <div style={{ padding: '4px 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>

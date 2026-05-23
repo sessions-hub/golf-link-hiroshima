@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -257,7 +258,7 @@ export default function ChatRoomPage() {
 
       {/* メッセージ一覧 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loading && <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13, marginTop: 40 }}>読み込み中...</div>}
+        {loading && <SectionLoading />}
         {!loading && messages.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.chat(32, "var(--mute)")}</div>

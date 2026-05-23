@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { PageLoading } from '@/components/LoadingDots'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { useRouter } from 'next/navigation'
@@ -133,13 +134,7 @@ export default function ProfileEditPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div>
-      </div>
-    )
-  }
+  if (loading) return <PageLoading />
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>

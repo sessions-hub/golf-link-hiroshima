@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -299,7 +300,7 @@ export default function MatchPage() {
 
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
             <div style={{ height: 8 }} />
-            {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>マッチングを検索中...</div>}
+            {loading && <SectionLoading text="マッチングを検索中" />}
             {!loading && filteredMatches.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>

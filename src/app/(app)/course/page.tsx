@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -293,9 +294,7 @@ export default function CoursePage() {
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
-            {courseLoading && (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>コースを検索中...</div>
-            )}
+            {courseLoading && <SectionLoading text="コースを検索中" />}
             {!courseLoading && goraCourses.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.golf(32, "var(--mute)")}</div>
@@ -343,7 +342,7 @@ export default function CoursePage() {
       {/* コンペタブ */}
       {activeTab === 'comp' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
-          {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>}
+          {loading && <SectionLoading />}
 
           {!loading && competitions.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>

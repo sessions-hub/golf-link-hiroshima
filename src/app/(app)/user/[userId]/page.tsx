@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { Icons } from '@/components/icons'
+import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 
 interface Profile {
@@ -242,11 +243,7 @@ export default function UserProfilePage() {
     ))
   }
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div>
-    </div>
-  )
+  if (loading) return <PageLoading />
 
   if (!profile) return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -368,7 +365,7 @@ export default function UserProfilePage() {
               </span>
             </div>
             <div style={{ padding: '8px 16px 12px' }}>
-              {commentsLoading && <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>読み込み中...</div>}
+              {commentsLoading && <InlineLoading />}
               {!commentsLoading && modalComments.length === 0 && (
                 <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
               )}
@@ -456,7 +453,7 @@ export default function UserProfilePage() {
               </span>
             </div>
             <div style={{ padding: '8px 16px' }}>
-              {commentsLoading && <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>読み込み中...</div>}
+              {commentsLoading && <InlineLoading />}
               {!commentsLoading && modalComments.length === 0 && (
                 <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
               )}

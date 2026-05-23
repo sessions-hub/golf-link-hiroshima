@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -101,7 +102,7 @@ export default function ChatListPage() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
-        {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>}
+        {loading && <SectionLoading />}
 
         {!loading && rooms.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>

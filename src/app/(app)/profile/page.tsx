@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { Icons } from '@/components/icons'
+import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -375,7 +376,7 @@ export default function ProfilePage() {
   }
 
   if (loading) {
-    return <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div></div>
+    return <PageLoading />
   }
 
   const planBadge = getPlanBadge(userPlan)
@@ -739,7 +740,7 @@ export default function ProfilePage() {
               </span>
             </div>
             <div style={{ padding: '8px 16px' }}>
-              {commentsLoading && <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>読み込み中...</div>}
+              {commentsLoading && <InlineLoading />}
               {!commentsLoading && modalComments.length === 0 && (
                 <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
               )}

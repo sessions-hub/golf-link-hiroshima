@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { PageLoading } from '@/components/LoadingDots'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -63,13 +64,7 @@ export default function DeleteAccountPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--mute)', fontSize: 14 }}>読み込み中...</div>
-      </div>
-    )
-  }
+  if (loading) return <PageLoading />
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>

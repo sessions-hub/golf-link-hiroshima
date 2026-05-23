@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { LoadingDots } from '@/components/LoadingDots'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -111,7 +112,7 @@ export default function UpdatePasswordPage() {
             )}
 
             {!ready && !error && (
-              <div style={{ textAlign: 'center', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>
+              <div style={{ textAlign: 'center' }}><LoadingDots /></div>
             )}
           </>
         )}

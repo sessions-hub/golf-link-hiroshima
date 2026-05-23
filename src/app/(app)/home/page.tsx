@@ -1,5 +1,6 @@
 'use client'
 import { Icons } from '@/components/icons'
+import { SectionLoading } from '@/components/LoadingDots'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -483,7 +484,7 @@ export default function HomePage() {
             <span onClick={() => setActiveTab('timeline')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
           </div>
 
-          {loading && <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>}
+          {loading && <SectionLoading padding="16px 0" />}
 
           {!loading && posts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -543,7 +544,7 @@ export default function HomePage() {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
-            {loading && <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>読み込み中...</div>}
+            {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
