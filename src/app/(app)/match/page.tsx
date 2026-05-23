@@ -69,7 +69,7 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
   AB: { A: '○', B: '○', O: '△', AB: '◎' },
 }
 
-const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島/廿日市', '広島北部', '東広島/呉', '竹原/三原/尾道', '福山', '相性診断', 'お気に入り']
+const FILTERS = ['全員', '男性', '女性', '初心者', '初級者', '中級者', '上級者', '広島/廿日市', '広島北部', '東広島/呉', '竹原/三原/尾道', '福山', '相性診断', 'お気に入り']
 
 const getHdcpLabel = (handicap: number) => {
   if (handicap >= 30) return '初心者'
