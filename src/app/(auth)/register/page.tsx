@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -42,6 +42,16 @@ export default function RegisterPage() {
   const [hdcp, setHdcp] = useState(18)
   const [bestScore, setBestScore] = useState('')
   const [bloodType, setBloodType] = useState('A')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const avatarRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
 
   // Step 3
   const [days, setDays] = useState<string[]>(['sat', 'sun'])
@@ -76,6 +86,17 @@ export default function RegisterPage() {
     }
 
     if (data.user) {
+      let avatarUrl: string | null = null
+      if (avatarFile) {
+        const fileName = `${data.user.id}/avatar`
+        const { error: uploadError } = await supabase.storage
+          .from('user-photos')
+          .upload(fileName, avatarFile, { contentType: avatarFile.type, upsert: true })
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('user-photos').getPublicUrl(fileName)
+          avatarUrl = urlData.publicUrl
+        }
+      }
       await supabase.from('profiles').update({
         nickname: nickname || `${lastName}${firstName}`,
         birth_date: birthDate || '1990-01-01',
@@ -84,6 +105,7 @@ export default function RegisterPage() {
         best_score: bestScore ? parseInt(bestScore) : null,
         preferred_days: days,
         gender,
+        ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       }).eq('user_id', data.user.id)
     }
 
@@ -159,12 +181,16 @@ export default function RegisterPage() {
       {step === 1 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           {/* アバター */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
-            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)' }}>
-              {nickname?.[0] || '?'}
+          <div onClick={() => avatarRef.current?.click()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18, cursor: 'pointer' }}>
+            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)', overflow: 'hidden', border: avatarPreview ? '2px solid var(--g3)' : 'none' }}>
+              {avatarPreview
+                ? <img src={avatarPreview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (nickname?.[0] || '?')
+              }
             </div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を登録（任意）</div>
           </div>
+          <input ref={avatarRef} type="file" accept="image/*" onChange={handleAvatarSelect} style={{ display: 'none' }} />
 
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ニックネーム</div>
           <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="ニックネーム" style={{ width: '100%', background: 'white', border: '1.5px solid var(--g3)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, boxShadow: '0 0 0 3px rgba(46,125,85,.08)' }} />
