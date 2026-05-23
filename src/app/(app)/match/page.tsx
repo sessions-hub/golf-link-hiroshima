@@ -203,30 +203,42 @@ export default function MatchPage() {
     })
   }
 
+  const CATEGORY_GENDER = ['男性', '女性']
+  const CATEGORY_HDCP = ['初心者', '初級者', '中級者', '上級者']
+  const CATEGORY_AREA = ['広島/廿日市', '広島北部', '東広島/呉', '竹原/三原/尾道', '福山']
+  const CATEGORY_SPECIAL = ['相性診断', 'お気に入り']
+
+  const matchSingle = (f: string, m: MatchProfile): boolean => {
+    if (f === '男性') return m.gender === 'male'
+    if (f === '女性') return m.gender === 'female'
+    if (f === '初心者') return m.handicap >= 30
+    if (f === '初級者') return m.handicap >= 19 && m.handicap < 30
+    if (f === '中級者') return m.handicap >= 9 && m.handicap < 19
+    if (f === '上級者') return m.handicap < 9
+    if (f === '広島/廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
+    if (f === '広島北部') return m.areas?.includes('広島北部エリア') ?? false
+    if (f === '東広島/呉') return m.areas?.includes('東広島/呉エリア') ?? false
+    if (f === '竹原/三原/尾道') return m.areas?.includes('竹原/三原/尾道エリア') ?? false
+    if (f === '福山') return m.areas?.includes('福山エリア') ?? false
+    if (f === 'お気に入り') return favorites.has(m.user_id)
+    if (f === '相性診断') {
+      if (!myProfile || !m.blood_type || !m.birth_date) return false
+      const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
+      const mySign = getZodiacSign(myProfile.birth_date)
+      const otherSign = getZodiacSign(m.birth_date)
+      const zodiacOk = getZodiacCompat(mySign, otherSign) !== '△'
+      return bloodOk && zodiacOk
+    }
+    return true
+  }
+
   const filteredMatches = matches.filter(m => {
     if (filters.includes('全員')) return true
-    return filters.every(f => {
-      if (f === '男性') return m.gender === 'male'
-      if (f === '女性') return m.gender === 'female'
-      if (f === '初心者') return m.handicap >= 30
-      if (f === '初級者') return m.handicap >= 19 && m.handicap < 30
-      if (f === '中級者') return m.handicap >= 9 && m.handicap < 19
-      if (f === '上級者') return m.handicap < 9
-      if (f === '広島/廿日市') return m.areas?.includes('広島/廿日市エリア') ?? false
-      if (f === '広島北部') return m.areas?.includes('広島北部エリア') ?? false
-      if (f === '東広島/呉') return m.areas?.includes('東広島/呉エリア') ?? false
-      if (f === '竹原/三原/尾道') return m.areas?.includes('竹原/三原/尾道エリア') ?? false
-      if (f === '福山') return m.areas?.includes('福山エリア') ?? false
-      if (f === 'お気に入り') return favorites.has(m.user_id)
-      if (f === '相性診断') {
-        if (!myProfile || !m.blood_type || !m.birth_date) return false
-        const bloodOk = BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] !== '△'
-        const mySign = getZodiacSign(myProfile.birth_date)
-        const otherSign = getZodiacSign(m.birth_date)
-        const zodiacOk = getZodiacCompat(mySign, otherSign) !== '△'
-        return bloodOk && zodiacOk
-      }
-      return true
+    // 同カテゴリはOR、カテゴリ間はAND
+    const cats = [CATEGORY_GENDER, CATEGORY_HDCP, CATEGORY_AREA, CATEGORY_SPECIAL]
+    return cats.every(cat => {
+      const active = filters.filter(f => cat.includes(f))
+      return active.length === 0 || active.some(f => matchSingle(f, m))
     })
   })
 
