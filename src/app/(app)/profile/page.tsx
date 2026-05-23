@@ -622,9 +622,9 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* ログアウト */}
+          {/* ログアウト・退会 */}
           <div style={{ background: 'white' }}>
-            <div onClick={handleLogout} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+            <div onClick={handleLogout} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}>
               <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.08)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.2)', flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c05050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
@@ -633,6 +633,19 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <div style={{ fontSize: 13, color: '#c05050', flex: 1 }}>ログアウト</div>
+              <div style={{ color: '#e0a0a0', fontSize: 18 }}>›</div>
+            </div>
+            <div onClick={() => router.push('/profile/delete')} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <div style={{ width: 30, height: 30, background: 'rgba(200,60,60,.04)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,60,60,.12)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c05050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="M19,6l-1,14H6L5,6"/>
+                  <path d="M10,11v6"/>
+                  <path d="M14,11v6"/>
+                  <path d="M9,6V4h6v2"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 13, color: '#c05050', flex: 1 }}>退会する</div>
               <div style={{ color: '#e0a0a0', fontSize: 18 }}>›</div>
             </div>
           </div>
