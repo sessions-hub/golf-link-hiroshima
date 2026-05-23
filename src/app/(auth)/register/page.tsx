@@ -16,10 +16,12 @@ const AREAS = ['広島/廿日市エリア', '広島北部エリア', '東広島/
 const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
 
 const GENDER_OPTIONS = [
-  { label: "男性", value: "male", icon: "♂" },
-  { label: "女性", value: "female", icon: "♀" },
-  { label: "その他", value: "other", icon: "⚧" },
+  { label: '男性', value: 'male', icon: '♂' },
+  { label: '女性', value: 'female', icon: '♀' },
+  { label: 'その他', value: 'other', icon: '−' },
 ]
+
+const STEP_LABELS = ['基本情報', 'ゴルフ情報', 'エリア設定']
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -33,9 +35,9 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [birthDate, setBirthDate] = useState('')
-  const [gender, setGender] = useState('male')
 
   // Step 2
+  const [gender, setGender] = useState('male')
   const [nickname, setNickname] = useState('')
   const [hdcp, setHdcp] = useState(18)
   const [bestScore, setBestScore] = useState('')
@@ -92,26 +94,30 @@ export default function RegisterPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
-      {/* グリーンヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: 'calc(env(safe-area-inset-top) + 22px) 22px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <img src="/GL白抜きロゴ.png" alt="GLH." style={{ height: 52, width: 'auto', mixBlendMode: 'screen' }} />
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter', letterSpacing: '.1em' }}>STEP {step + 1} / 3</div>
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.8)', marginTop: 2 }}>{['基本情報', 'ゴルフ情報', 'エリア設定'][step]}</div>
+      {/* ヘッダー（loginと同デザイン＋右上ステップドット） */}
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/グリーン.png" alt="GLH." style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <div style={{ borderLeft: '1px solid #111814', paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>GOLF LINK</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>HIROSHIMA</div>
+          </div>
         </div>
-      </div>
-
-      {/* プログレスバー */}
-      <div style={{ padding: '10px 20px 12px' }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 5 }}>
-          {[0,1,2].map((i) => (
-            <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= step ? 'var(--g2)' : 'var(--line)' }} />
-          ))}
+        {/* ステップドット */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: i <= step ? 'var(--g2)' : 'var(--line)', transition: 'background .2s' }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter', letterSpacing: '.05em' }}>
+            STEP {step + 1} / 3 &nbsp;{STEP_LABELS[step]}
+          </div>
         </div>
       </div>
 
       {error && (
-        <div style={{ margin: '0 22px', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050', marginBottom: 8 }}>
+        <div style={{ margin: '10px 22px 0', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050' }}>
           {error}
         </div>
       )}
@@ -119,17 +125,9 @@ export default function RegisterPage() {
       {/* Step 1: 基本情報 */}
       {step === 0 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 16 }}>アカウント作成</div>
-
-          {/* 性別 */}
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>性別</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-            {GENDER_OPTIONS.map((g) => (
-              <button key={g.value} onClick={() => setGender(g.value)} style={{ flex: 1, background: gender === g.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1.5px solid ${gender === g.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '10px 4px', textAlign: 'center', cursor: 'pointer' }}>
-                <div style={{ fontSize: 20, marginBottom: 3 }}>{g.icon}</div>
-                <div style={{ fontSize: 11, fontWeight: gender === g.value ? 700 : 400, color: gender === g.value ? 'var(--g2)' : 'var(--mute)' }}>{g.label}</div>
-              </button>
-            ))}
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>アカウント作成</div>
+          <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 16, background: 'var(--surf)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--line)' }}>
+            ※ 氏名・メールアドレス・生年月日は外部に公開されません
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
@@ -160,15 +158,27 @@ export default function RegisterPage() {
       {/* Step 2: ゴルフ情報 */}
       {step === 1 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+          {/* アバター */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
             <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)' }}>
-              {nickname?.[0] || (gender === 'male' ? '👨' : gender === 'female' ? '👩' : '🧑')}
+              {nickname?.[0] || '?'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を変更</div>
+            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を登録（任意）</div>
           </div>
 
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ニックネーム</div>
           <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="ニックネーム" style={{ width: '100%', background: 'white', border: '1.5px solid var(--g3)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, boxShadow: '0 0 0 3px rgba(46,125,85,.08)' }} />
+
+          {/* 性別（step 1から移動） */}
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>性別</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {GENDER_OPTIONS.map((g) => (
+              <button key={g.value} onClick={() => setGender(g.value)} style={{ flex: 1, background: gender === g.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1.5px solid ${gender === g.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '10px 4px', textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: 18, marginBottom: 3, color: gender === g.value ? 'var(--g2)' : 'var(--mute)' }}>{g.icon}</div>
+                <div style={{ fontSize: 11, fontWeight: gender === g.value ? 700 : 400, color: gender === g.value ? 'var(--g2)' : 'var(--mute)' }}>{g.label}</div>
+              </button>
+            ))}
+          </div>
 
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>血液型</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
@@ -183,9 +193,8 @@ export default function RegisterPage() {
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ハンデキャップ</div>
           <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
             {HDCP_OPTIONS.map((h) => (
-              <button key={h.value} onClick={() => setHdcp(h.value)} style={{ flex: 1, background: hdcp === h.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1px solid ${hdcp === h.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '9px 4px', textAlign: 'center', cursor: 'pointer' }}>
-                <div style={{ fontSize: 10, color: hdcp === h.value ? 'var(--g2)' : 'var(--mute)' }}>{h.label}</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: hdcp === h.value ? 'var(--g2)' : 'var(--txt)', marginTop: 2 }}>{h.value}</div>
+              <button key={h.value} onClick={() => setHdcp(h.value)} style={{ flex: 1, background: hdcp === h.value ? 'rgba(46,125,85,.1)' : 'var(--surf)', border: `1px solid ${hdcp === h.value ? 'var(--g3)' : 'var(--line)'}`, borderRadius: 10, padding: '10px 4px', textAlign: 'center', cursor: 'pointer' }}>
+                <div style={{ fontSize: 11, fontWeight: hdcp === h.value ? 700 : 400, color: hdcp === h.value ? 'var(--g2)' : 'var(--mute)' }}>{h.label}</div>
               </button>
             ))}
           </div>
