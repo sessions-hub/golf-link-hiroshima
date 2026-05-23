@@ -69,6 +69,23 @@ export default function BottomNav() {
   const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
+  const [activeKey, setActiveKey] = useState<string | null>(null)
+
+  // 全ナビルートをマウント時にプリフェッチ
+  useEffect(() => {
+    NAV_ITEMS.forEach(item => router.prefetch(item.path))
+  }, [])
+
+  // 遷移完了後に楽観的状態をリセット
+  useEffect(() => {
+    setActiveKey(null)
+  }, [pathname])
+
+  const handleNav = (key: string, path: string) => {
+    if (pathname.startsWith(path)) return
+    setActiveKey(key)
+    router.push(path)
+  }
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -113,17 +130,20 @@ export default function BottomNav() {
       boxShadow: '0 -2px 16px rgba(13,61,43,.07)',
     }}>
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname.startsWith(item.path)
+        const isActive = activeKey ? activeKey === item.key : pathname.startsWith(item.path)
         return (
           <button
             key={item.key}
-            onClick={() => router.push(item.path)}
+            onPointerDown={() => handleNav(item.key, item.path)}
             style={{
               flex: 1, display: 'flex', flexDirection: 'column',
               alignItems: 'center', gap: 3, background: 'none', border: 'none',
               cursor: 'pointer', color: isActive ? 'var(--g2)' : 'var(--mute)',
-              opacity: isActive ? 1 : 0.45, transition: 'opacity 0.18s',
+              opacity: isActive ? 1 : 0.45, transition: 'opacity 0.1s',
               position: 'relative',
+              touchAction: 'manipulation',
+              WebkitTapHighlightColor: 'transparent',
+              userSelect: 'none',
             }}
           >
             {item.icon(isActive)}
