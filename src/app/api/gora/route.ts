@@ -11,9 +11,9 @@ const FILTER_MAP: Record<string, { keywords: string[]; addressMatch: string }> =
     ],
     addressMatch: '広島',
   },
-  '山口県': { keywords: ['山口', '下関', '宇部', '周南', '岩国', '萩'], addressMatch: '山口' },
-  '岡山県': { keywords: ['岡山', '倉敷', '津山', '備前'], addressMatch: '岡山' },
-  '島根県': { keywords: ['島根', '松江', '出雲', '浜田', '益田'], addressMatch: '島根' },
+  '山口県': { keywords: ['山口', '下関', '宇部', '周南', '岩国', '萩', '防府', '光', '下松', '山陽小野田', '柳井', '長門'], addressMatch: '山口' },
+  '岡山県': { keywords: ['岡山', '倉敷', '津山', '備前', '総社', '真庭', '美作', '赤磐', '玉野', '笠岡', '井原', '高梁'], addressMatch: '岡山' },
+  '島根県': { keywords: ['島根', '松江', '出雲', '浜田', '益田', '大田', '安来', '雲南', '江津'], addressMatch: '島根' },
 }
 
 const ORIGIN = 'https://golflink-hiroshima.com'
