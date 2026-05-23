@@ -72,12 +72,14 @@ export default function GpsPage() {
   const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
   const [searchText, setSearchText] = useState('')
   const watchRef = useRef<number | null>(null)
+  const lastPositionRef = useRef<GPSPosition | null>(null)
+  const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     getUserPlan().then(setUserPlan)
   }, [])
 
-  // GPS取得
+  // GPS取得（大きく動いたか精度が改善したときだけ state 更新）
   useEffect(() => {
     if (!navigator.geolocation) {
       setGpsError('このデバイスはGPSに対応していません')
@@ -85,14 +87,21 @@ export default function GpsPage() {
     }
     watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setPosition({
+        const next: GPSPosition = {
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
           accuracy: Math.round(pos.coords.accuracy),
-        })
+        }
+        const prev = lastPositionRef.current
+        const moved = prev ? calcDistance(prev.lat, prev.lng, next.lat, next.lng) : 999
+        const accuracyImproved = !prev || prev.accuracy - next.accuracy > 5
+        if (moved > 0.03 || accuracyImproved) {
+          lastPositionRef.current = next
+          setPosition(next)
+        }
         setGpsError('')
       },
-      (err) => {
+      () => {
         setGpsError('GPS取得に失敗しました。位置情報を許可してください。')
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
@@ -102,31 +111,26 @@ export default function GpsPage() {
     }
   }, [])
 
-  // コース一覧取得（GPS取得後に実行）
+  // コース一覧はマウント時に1回だけ取得
   useEffect(() => {
-    if (position) {
-      fetchCourses('広島県')
-    }
-  }, [position?.lat])
-
-  // GPS取得に失敗してもコースを表示
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (courses.length === 0) fetchCourses('広島県')
-    }, 5000)
-    return () => clearTimeout(timer)
+    fetchCourses('広島県')
   }, [])
 
-  // 現在地が取得できたら距離を計算してソート
+  // 位置が100m以上変わったときだけ距離を再ソート
   useEffect(() => {
-    if (!position || courses.length === 0) return
-    const updated = courses.map(c => ({
-      ...c,
-      distKm: c.latitude && c.longitude
-        ? calcDistance(position.lat, position.lng, c.latitude, c.longitude)
-        : 999,
-    })).sort((a, b) => a.distKm - b.distKm)
-    setCourses(updated)
+    if (!position) return
+    const last = lastSortRef.current
+    if (last && calcDistance(last.lat, last.lng, position.lat, position.lng) < 0.1) return
+    lastSortRef.current = { lat: position.lat, lng: position.lng }
+    setCourses(prev => {
+      if (prev.length === 0) return prev
+      return [...prev.map(c => ({
+        ...c,
+        distKm: c.latitude && c.longitude
+          ? calcDistance(position.lat, position.lng, c.latitude, c.longitude)
+          : 999,
+      }))].sort((a, b) => a.distKm - b.distKm)
+    })
   }, [position])
 
   const fetchCourses = async (keyword: string, retryCount = 0) => {
@@ -141,21 +145,21 @@ export default function GpsPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.Items && data.Items.length > 0) {
+        const pos = lastPositionRef.current
         const list = data.Items.map((item: any) => ({
           ...item.Item,
-          distKm: position && item.Item.latitude && item.Item.longitude
-            ? calcDistance(position.lat, position.lng, item.Item.latitude, item.Item.longitude)
+          distKm: pos && item.Item.latitude && item.Item.longitude
+            ? calcDistance(pos.lat, pos.lng, item.Item.latitude, item.Item.longitude)
             : 999,
         })).sort((a: any, b: any) => a.distKm - b.distKm)
         setCourses(list)
+        if (pos) lastSortRef.current = { lat: pos.lat, lng: pos.lng }
       } else if (retryCount < 2) {
-        // データが空の場合リトライ
         setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
         return
       }
     } catch (e: any) {
       if (retryCount < 2 && e.name !== 'AbortError') {
-        // エラー時は2秒後にリトライ
         setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
         return
       }
