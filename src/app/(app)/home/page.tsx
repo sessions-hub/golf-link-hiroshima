@@ -7,6 +7,8 @@ import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
+const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed'
+
 interface Profile {
   nickname: string
   handicap: number
@@ -82,6 +84,51 @@ export default function HomePage() {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [myUserId, setMyUserId] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const [showInstallBubble, setShowInstallBubble] = useState(false)
+  const [isIOS, setIsIOS] = useState(false)
+  const deferredPromptRef = useRef<any>(null)
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as any).standalone === true
+    if (isStandalone) return
+    if (localStorage.getItem(INSTALL_DISMISSED_KEY)) return
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    setIsIOS(ios)
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault()
+      deferredPromptRef.current = e
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
+
+    const timer = setTimeout(() => {
+      setShowInstallBubble(true)
+    }, 3000)
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
+    }
+  }, [])
+
+  const handleInstallDismiss = () => {
+    setShowInstallBubble(false)
+    localStorage.setItem(INSTALL_DISMISSED_KEY, '1')
+  }
+
+  const handleInstallClick = async () => {
+    if (deferredPromptRef.current) {
+      deferredPromptRef.current.prompt()
+      const { outcome } = await deferredPromptRef.current.userChoice
+      deferredPromptRef.current = null
+      if (outcome === 'accepted') {
+        setShowInstallBubble(false)
+        localStorage.setItem(INSTALL_DISMISSED_KEY, '1')
+      }
+    }
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -624,6 +671,44 @@ export default function HomePage() {
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: 'none' }} />
           </div>
+        </div>
+      )}
+
+      {/* PWAインストールバブル */}
+      {showInstallBubble && (
+        <div style={{
+          position: 'fixed', bottom: 80, left: 16, right: 16, zIndex: 200,
+          background: 'white', borderRadius: 16, padding: '14px 16px',
+          boxShadow: '0 8px 32px rgba(13,61,43,.22)',
+          border: '1px solid rgba(168,224,99,.3)',
+          animation: 'slideUp .3s ease',
+        }}>
+          <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}</style>
+          <button
+            onClick={handleInstallDismiss}
+            style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--mute)', lineHeight: 1, padding: 4 }}
+            aria-label="閉じる"
+          >×</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <img src="/icon-192.png" alt="GLH." style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>ホーム画面に追加</div>
+              <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>いつでもすぐ開けます</div>
+            </div>
+          </div>
+          {isIOS ? (
+            <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7, background: 'var(--surf)', borderRadius: 8, padding: '8px 12px' }}>
+              Safari の <span style={{ fontWeight: 700 }}>共有ボタン</span>（□↑）をタップ →<br />
+              「<span style={{ fontWeight: 700 }}>ホーム画面に追加</span>」を選択
+            </div>
+          ) : (
+            <button
+              onClick={handleInstallClick}
+              style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >
+              インストールする
+            </button>
+          )}
         </div>
       )}
 
