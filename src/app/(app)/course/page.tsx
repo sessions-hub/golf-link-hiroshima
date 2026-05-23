@@ -84,17 +84,15 @@ export default function CoursePage() {
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
 
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('plan')
-        .eq('user_id', user.id)
-        .single()
-      if (prof) setMyPlan(prof.plan)
-
-      const plan = await getUserPlan()
-    setUserPlan(plan)
-    await fetchCompetitions(user.id)
-      await fetchCourses('広島県')
+      // プラン・プロフィール・コンペ・コース を並列取得
+      const [plan] = await Promise.all([
+        getUserPlan(),
+        supabase.from('profiles').select('plan').eq('user_id', user.id).single()
+          .then(({ data: prof }) => { if (prof) setMyPlan(prof.plan) }),
+        fetchCompetitions(user.id),
+        fetchCourses('広島県'),
+      ])
+      setUserPlan(plan)
       setLoading(false)
     }
     init()
@@ -135,26 +133,18 @@ export default function CoursePage() {
   }
 
   const fetchCompetitions = async (userId: string) => {
-    const { data } = await supabase
-      .from('competitions')
-      .select('*, comp_entries(count)')
-      .order('comp_date', { ascending: true })
-
+    // コンペ一覧と自分の参加状況を並列取得（N+1を解消）
+    const [{ data }, { data: myEntries }] = await Promise.all([
+      supabase.from('competitions').select('*, comp_entries(count)').order('comp_date', { ascending: true }),
+      supabase.from('comp_entries').select('comp_id').eq('user_id', userId),
+    ])
     if (data) {
-      const comps = await Promise.all(data.map(async (c: any) => {
-        const { data: entry } = await supabase
-          .from('comp_entries')
-          .select('id')
-          .eq('comp_id', c.id)
-          .eq('user_id', userId)
-          .single()
-        return {
-          ...c,
-          entries_count: Number(c.comp_entries?.[0]?.count ?? 0),
-          is_entered: !!entry,
-        }
-      }))
-      setCompetitions(comps)
+      const enteredSet = new Set(myEntries?.map((e: any) => e.comp_id) ?? [])
+      setCompetitions(data.map((c: any) => ({
+        ...c,
+        entries_count: Number(c.comp_entries?.[0]?.count ?? 0),
+        is_entered: enteredSet.has(c.id),
+      })))
     }
   }
 
