@@ -71,6 +71,13 @@ const BLOOD_COMPAT: Record<string, Record<string, string>> = {
 
 const FILTERS = ['全員', '男性', '女性', '初心者', '中級者', '上級者', '広島/廿日市', '広島北部', '東広島/呉', '竹原/三原/尾道', '福山', '相性診断', 'お気に入り']
 
+const getHdcpLabel = (handicap: number) => {
+  if (handicap >= 30) return '初心者'
+  if (handicap >= 19) return '初級者'
+  if (handicap >= 9) return '中級者'
+  return '上級者'
+}
+
 
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
@@ -333,6 +340,7 @@ export default function MatchPage() {
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                         {m.blood_type && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{m.blood_type}型 {bloodCompat ?? ''}</span>}
                         {otherZodiac && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{otherZodiac} {zodiacCompat ?? ''}</span>}
+                        {m.handicap != null && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getHdcpLabel(m.handicap)}</span>}
                         {(m.preferred_days?.includes('sat') || m.preferred_days?.includes('sun')) && <span style={{ padding: '2px 7px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>週末希望</span>}
                       </div>
                     </div>

@@ -58,6 +58,20 @@ const AREA_LABELS: Record<string, string> = {
   '福山エリア': '福山',
 }
 
+const FREQ_LABEL: Record<string, string> = {
+  weekly_2plus: '週2回以上',
+  weekly_1: '週1回',
+  monthly_2_3: '月2〜3回',
+  monthly_1: '月1回',
+  rarely: 'たまに',
+}
+
+const DAY_LABEL: Record<string, string> = {
+  mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日',
+}
+
+const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
 const getPlanBadge = (plan: string) => {
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
   if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, #15803d, #16a34a)', color: 'white' }
@@ -296,6 +310,8 @@ export default function UserProfilePage() {
               {profile.blood_type && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{profile.blood_type}型</span>}
               {zodiac && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{zodiac}</span>}
               {profile.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getHdcpLabel(profile.handicap)}</span>}
+              {profile.round_freq && FREQ_LABEL[profile.round_freq] && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{FREQ_LABEL[profile.round_freq]}</span>}
+              {profile.preferred_days && profile.preferred_days.length > 0 && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{DAY_ORDER.filter(d => profile.preferred_days.includes(d)).map(d => DAY_LABEL[d]).join('・')}</span>}
             </div>
           </div>
         </div>
