@@ -1,19 +1,19 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import { type CourseEntry, searchVenues, getVenueCourses } from '@/lib/courses'
 
-const PARS = [4,3,5,4,4,3,5,4,4, 4,3,5,4,4,3,5,4,4]
+const DEFAULT_PARS = [4,3,5,4,4,3,5,4,4,4,3,5,4,4,3,5,4,4]
 
 export default function ScorePage() {
   const router = useRouter()
   const supabase = createClient()
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [scores, setScores] = useState<number[]>(Array(18).fill(0))
-  const [courseName, setCourseName] = useState('')
   const [roundDate, setRoundDate] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
@@ -21,6 +21,18 @@ export default function ScorePage() {
   const [bestScore, setBestScore] = useState<number | null>(null)
   const [lastScore, setLastScore] = useState<number | null>(null)
   const [roundCount, setRoundCount] = useState(0)
+
+  // コース検索
+  const [courseSearch, setCourseSearch] = useState('')
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [selectedVenueName, setSelectedVenueName] = useState<string | null>(null)
+  const [subCourseOptions, setSubCourseOptions] = useState<CourseEntry[]>([])
+  const [selectedCourse, setSelectedCourse] = useState<CourseEntry | null>(null)
+  const searchRef = useRef<HTMLDivElement>(null)
+
+  const pars = selectedCourse ? selectedCourse.pars : DEFAULT_PARS
+  const holeCount = selectedCourse?.holes ?? 18
 
   const calcStats = (data: any[]) => {
     if (data.length === 0) return
@@ -47,16 +59,65 @@ export default function ScorePage() {
     init()
   }, [])
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSearchChange = (val: string) => {
+    setCourseSearch(val)
+    setSelectedVenueName(null)
+    setSelectedCourse(null)
+    setSubCourseOptions([])
+    if (!val.trim()) { setSuggestions([]); setShowSuggestions(false); return }
+    setSuggestions(searchVenues(val))
+    setShowSuggestions(true)
+  }
+
+  const handleSelectVenue = (venueName: string) => {
+    setSelectedVenueName(venueName)
+    setCourseSearch(venueName)
+    setShowSuggestions(false)
+    const courses = getVenueCourses(venueName)
+    if (courses.length === 1) {
+      setSelectedCourse(courses[0])
+      setSubCourseOptions([])
+      setScores(Array(18).fill(0))
+    } else {
+      setSelectedCourse(null)
+      setSubCourseOptions(courses)
+    }
+  }
+
+  const handleSelectSubCourse = (course: CourseEntry) => {
+    setSelectedCourse(course)
+    setScores(Array(18).fill(0))
+  }
+
+  const handleClearCourse = () => {
+    setCourseSearch('')
+    setSelectedVenueName(null)
+    setSelectedCourse(null)
+    setSubCourseOptions([])
+    setSuggestions([])
+    setScores(Array(18).fill(0))
+  }
+
   const updateScore = (hole: number, val: number) => {
     if (val < 1 || val > 15) return
     setScores(prev => { const n = [...prev]; n[hole] = val; return n })
   }
 
   const outTotal = scores.slice(0, 9).reduce((a, b) => a + b, 0)
-  const inTotal = scores.slice(9, 18).reduce((a, b) => a + b, 0)
+  const inTotal = holeCount === 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : 0
   const total = outTotal + inTotal
-  const outPar = PARS.slice(0, 9).reduce((a, b) => a + b, 0)
-  const inPar = PARS.slice(9, 18).reduce((a, b) => a + b, 0)
+  const outPar = pars.slice(0, 9).reduce((a, b) => a + b, 0)
+  const inPar = holeCount === 18 ? pars.slice(9, 18).reduce((a, b) => a + b, 0) : 0
   const totalPar = outPar + inPar
 
   const scoreColor = (score: number, par: number) => {
@@ -70,22 +131,21 @@ export default function ScorePage() {
   }
 
   const handleSave = async () => {
-    if (!courseName.trim()) { alert('コース名を入力してください'); return }
+    if (!selectedCourse) { alert('コースを選択してください'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { error } = await supabase.from('scorecards').insert({
       user_id: user.id,
-      course_name: courseName,
+      course_name: selectedCourse.name,
       round_date: roundDate,
       played_at: roundDate,
       total_score: total,
       out_score: outTotal,
-      in_score: inTotal,
-      hole_scores: scores,
+      in_score: holeCount === 18 ? inTotal : null,
+      hole_scores: scores.slice(0, holeCount),
     })
     if (!error) {
-      // 統計を更新
       const { data: newHistory } = await supabase
         .from('scorecards')
         .select('*')
@@ -94,7 +154,7 @@ export default function ScorePage() {
         .limit(20)
       if (newHistory) { setHistory(newHistory); calcStats(newHistory) }
       setScores(Array(18).fill(0))
-      setCourseName('')
+      handleClearCourse()
       setView('history')
       alert('スコアを保存しました！')
     } else {
@@ -103,7 +163,6 @@ export default function ScorePage() {
     setSaving(false)
   }
 
-  // 統計バナー
   const StatsBanner = () => (
     <div style={{ background: 'linear-gradient(135deg,#0d3d2b,#1a4a2a)', borderRadius: 14, padding: 16, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.15) 0%,transparent 70%)' }}/>
@@ -143,7 +202,6 @@ export default function ScorePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div onClick={() => router.push('/home')} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
@@ -160,32 +218,83 @@ export default function ScorePage() {
         </div>
       </div>
 
-      {/* スコア入力タブ */}
       {view === 'input' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
           <StatsBanner />
 
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 6 }}>コース名</div>
-            <input value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="例：東広島カントリークラブ" style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }} />
+
+            {selectedCourse ? (
+              <div>
+                <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedCourse.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{selectedCourse.holes}ホール / Par {selectedCourse.par}</div>
+                  </div>
+                  <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>コースを変更する</button>
+                </div>
+              </div>
+            ) : (
+              <div ref={searchRef} style={{ position: 'relative', marginBottom: 10 }}>
+                <input
+                  value={courseSearch}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  onFocus={() => courseSearch && setShowSuggestions(true)}
+                  placeholder="コース名で検索..."
+                  style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--line)', borderRadius: 8, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,.1)', marginTop: 2, overflow: 'hidden' }}>
+                    {suggestions.map(name => (
+                      <div key={name} onMouseDown={() => handleSelectVenue(name)} style={{ padding: '10px 14px', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'white')}
+                      >{name}</div>
+                    ))}
+                  </div>
+                )}
+
+                {selectedVenueName && subCourseOptions.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 4 }}>コースを選択</div>
+                    <select
+                      defaultValue=""
+                      onChange={e => {
+                        const c = subCourseOptions.find(o => o.id === e.target.value)
+                        if (c) handleSelectSubCourse(c)
+                      }}
+                      style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', background: 'white', outline: 'none', boxSizing: 'border-box' }}
+                    >
+                      <option value="" disabled>コースを選んでください</option>
+                      {subCourseOptions.map(c => (
+                        <option key={c.id} value={c.id}>{c.subCourse}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 6 }}>ラウンド日</div>
             <input type="date" value={roundDate} onChange={e => setRoundDate(e.target.value)} style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
-          {['OUT (1-9H)', 'IN (10-18H)'].map((label, half) => (
+          {(['OUT (1-9H)', ...(holeCount === 18 ? ['IN (10-18H)'] : [])] as string[]).map((label, half) => (
             <div key={half}>
               <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>{label}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
                 {Array.from({ length: 9 }, (_, i) => {
                   const hole = half * 9 + i
+                  const holePar = pars[hole] ?? 4
                   return (
                     <div key={hole} style={{ background: 'white', borderRadius: 10, border: `1px solid ${scores[hole] > 0 ? 'rgba(22,101,52,.2)' : 'var(--line)'}`, padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter', marginBottom: 2 }}>HOLE {hole + 1}</div>
-                      <div style={{ fontSize: 8, color: 'var(--mute)', marginBottom: 6 }}>Par {PARS[hole]}</div>
+                      <div style={{ fontSize: 8, color: 'var(--mute)', marginBottom: 6 }}>Par {holePar}</div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                         <button onClick={() => updateScore(hole, scores[hole] - 1)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', fontSize: 14, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                        <span style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: scoreColor(scores[hole], PARS[hole]), minWidth: 28, textAlign: 'center' }}>{scores[hole] === 0 ? '-' : scores[hole]}</span>
-                        <button onClick={() => updateScore(hole, scores[hole] === 0 ? PARS[hole] : scores[hole] + 1)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', fontSize: 14, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                        <span style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: scoreColor(scores[hole], holePar), minWidth: 28, textAlign: 'center' }}>{scores[hole] === 0 ? '-' : scores[hole]}</span>
+                        <button onClick={() => updateScore(hole, scores[hole] === 0 ? holePar : scores[hole] + 1)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', fontSize: 14, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                       </div>
                     </div>
                   )
@@ -195,7 +304,11 @@ export default function ScorePage() {
           ))}
 
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 14 }}>
-            {[{ label: 'OUT', score: outTotal, par: outPar }, { label: 'IN', score: inTotal, par: inPar }, { label: 'TOTAL', score: total, par: totalPar }].map(r => (
+            {[
+              { label: 'OUT', score: outTotal, par: outPar },
+              ...(holeCount === 18 ? [{ label: 'IN', score: inTotal, par: inPar }] : []),
+              { label: 'TOTAL', score: total, par: totalPar },
+            ].map(r => (
               <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: r.label !== 'TOTAL' ? '1px solid var(--surf)' : 'none' }}>
                 <span style={{ fontSize: 11, color: 'var(--mute)', fontFamily: 'Inter', fontWeight: 600 }}>{r.label}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -213,12 +326,10 @@ export default function ScorePage() {
         </div>
       )}
 
-      {/* 履歴・統計タブ */}
       {view === 'history' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
           <StatsBanner />
 
-          {/* スコア推移バー */}
           {history.length > 0 && (
             <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '12px 14px', marginBottom: 12 }}>
               <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 10 }}>直近5ラウンドの推移</div>
@@ -230,7 +341,7 @@ export default function ScorePage() {
                   const maxS = Math.max(...scores2)
                   const minS = Math.min(...scores2)
                   const range = maxS - minS || 1
-                  return recent.map((h: any, i: number) => {
+                  return recent.map((h: any) => {
                     const s = h.total_score
                     const heightPct = 30 + ((s - minS) / range) * 70
                     const isBest = s === minS
@@ -250,7 +361,6 @@ export default function ScorePage() {
             </div>
           )}
 
-          {/* 履歴一覧 */}
           {history.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
@@ -275,10 +385,12 @@ export default function ScorePage() {
                     <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.out_score}</div>
                     <div style={{ fontSize: 9, color: 'var(--mute)' }}>OUT</div>
                   </div>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.in_score}</div>
-                    <div style={{ fontSize: 9, color: 'var(--mute)' }}>IN</div>
-                  </div>
+                  {h.in_score && (
+                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
+                      <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.in_score}</div>
+                      <div style={{ fontSize: 9, color: 'var(--mute)' }}>IN</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

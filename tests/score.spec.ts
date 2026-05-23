@@ -44,7 +44,7 @@ test.describe('/score スコアページ', () => {
     await page.goto('/score')
 
     await expect(
-      page.locator('input[placeholder*="東広島カントリークラブ"]')
+      page.locator('input[placeholder*="コース名で検索"]')
     ).toBeVisible({ timeout: 10_000 })
   })
 
