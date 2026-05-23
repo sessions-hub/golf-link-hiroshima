@@ -109,7 +109,7 @@ export default function ProfilePage() {
   const [showPostModal, setShowPostModal] = useState(false)
   const [modalComments, setModalComments] = useState<any[]>([])
   const [modalCommentInput, setModalCommentInput] = useState('')
-  const [showModalComments, setShowModalComments] = useState(false)
+  const [commentsLoading, setCommentsLoading] = useState(false)
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [editPostId, setEditPostId] = useState<string | null>(null)
   const [editCaption, setEditCaption] = useState('')
@@ -247,13 +247,14 @@ export default function ProfilePage() {
   }
 
   const fetchModalComments = async (postId: string) => {
+    setCommentsLoading(true)
     const { data } = await supabase
       .from('post_comments')
       .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url, user_id)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
     if (data) setModalComments(data as any)
-    setShowModalComments(true)
+    setCommentsLoading(false)
   }
 
   const handleModalComment = async () => {
@@ -507,7 +508,7 @@ export default function ProfilePage() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
               {posts.map(post => (
-                <div key={post.id} onClick={() => setSelectedPost(post)} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--mute)', padding: 4, textAlign: 'center', lineHeight: 1.4 }}>
+                <div key={post.id} onClick={() => { setModalComments([]); setSelectedPost(post); fetchModalComments(post.id) }} style={{ aspectRatio: '1', background: post.photo_url ? 'transparent' : 'var(--surf)', overflow: 'hidden', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: 'var(--mute)', padding: 4, textAlign: 'center', lineHeight: 1.4 }}>
                   {post.photo_url
                     ? <img src={post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : post.caption?.slice(0, 20)
@@ -676,7 +677,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button onClick={() => { setEditPostId(selectedPost.id); setEditCaption(selectedPost.caption ?? '') }} style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>編集</button>
                 <button onClick={() => handleDeletePost(selectedPost.id)} style={{ background: 'none', border: '1px solid rgba(200,60,60,.3)', borderRadius: 7, padding: '5px 12px', fontSize: 12, color: '#c05050', cursor: 'pointer', fontWeight: 600 }}>削除</button>
-                <button onClick={() => { setSelectedPost(null); setEditPostId(null); setEditCaption(''); setModalComments([]); setModalCommentInput(''); setShowModalComments(false) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+                <button onClick={() => { setSelectedPost(null); setEditPostId(null); setEditCaption(''); setModalComments([]); setModalCommentInput('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
               </div>
             </div>
             {selectedPost.photo_url && (
@@ -700,31 +701,33 @@ export default function ProfilePage() {
             </div>
             <div style={{ padding: '8px 16px', display: 'flex', gap: 14, borderBottom: '1px solid var(--surf)' }}>
               <button onClick={() => toggleLike(selectedPost.id, selectedPost.liked_by_me)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: selectedPost.liked_by_me ? '#e05070' : 'var(--mute)' }}>
-                {selectedPost.liked_by_me ? '❤️' : '♡'} {selectedPost.likes_count}
+                {selectedPost.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {selectedPost.likes_count}
               </button>
-              <button onClick={() => showModalComments ? setShowModalComments(false) : fetchModalComments(selectedPost.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: showModalComments ? 'var(--g2)' : 'var(--mute)' }}>
-                💬 コメント
-              </button>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--mute)' }}>
+                💬 {modalComments.length}
+              </span>
             </div>
-            {showModalComments && (
-              <div style={{ padding: '8px 16px' }}>
-                {modalComments.map((c: any) => (
-                  <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                    <div onClick={() => c.profiles?.user_id && router.push(`/user/${c.profiles.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                    </div>
-                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
-                      <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
-                    </div>
+            <div style={{ padding: '8px 16px' }}>
+              {commentsLoading && <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>読み込み中...</div>}
+              {!commentsLoading && modalComments.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
+              )}
+              {modalComments.map((c: any) => (
+                <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                  <div onClick={() => c.profiles?.user_id && router.push(`/user/${c.profiles.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                    {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
                   </div>
-                ))}
-                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                  <input value={modalCommentInput} onChange={e => setModalCommentInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleModalComment() }} placeholder="コメントを入力..." style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }} />
-                  <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
+                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                  </div>
                 </div>
+              ))}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <input value={modalCommentInput} onChange={e => setModalCommentInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleModalComment() }} placeholder="コメントを入力..." style={{ flex: 1, border: '1px solid var(--line)', borderRadius: 20, padding: '7px 12px', fontSize: 12, outline: 'none', background: 'var(--surf)' }} />
+                <button onClick={handleModalComment} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 20, padding: '7px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>送信</button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
