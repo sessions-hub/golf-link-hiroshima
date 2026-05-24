@@ -1,11 +1,11 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import Logo from '@/components/layout/Logo'
 
-export default function SubscriptionSuccessPage() {
+function SuccessInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -38,6 +38,14 @@ export default function SubscriptionSuccessPage() {
   }, [])
 
   return (
+    <button onClick={() => router.push('/home')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '13px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+      ホームへ →
+    </button>
+  )
+}
+
+export default function SubscriptionSuccessPage() {
+  return (
     <div style={{ minHeight: '100vh', background: 'var(--g1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center' }}>
       <Logo variant="screen" height={80} />
       <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '28px auto 20px' }}>
@@ -49,9 +57,13 @@ export default function SubscriptionSuccessPage() {
         プレミアム機能をお楽しみください！<br/>
         3秒後にホームへ移動します...
       </div>
-      <button onClick={() => router.push('/home')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '13px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-        ホームへ →
-      </button>
+      <Suspense fallback={
+        <button style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '13px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          ホームへ →
+        </button>
+      }>
+        <SuccessInner />
+      </Suspense>
     </div>
   )
 }
