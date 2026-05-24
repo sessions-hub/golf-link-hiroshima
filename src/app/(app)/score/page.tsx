@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
+import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { type CourseEntry, searchVenues, getVenueCourses } from '@/lib/courses'
@@ -23,6 +24,7 @@ export default function ScorePage() {
   const [lastScore, setLastScore] = useState<number | null>(null)
   const [roundCount, setRoundCount] = useState(0)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [toastPts, setToastPts] = useState<number | null>(null)
 
   // コース検索
   const [courseSearch, setCourseSearch] = useState('')
@@ -151,6 +153,7 @@ export default function ScorePage() {
     })
     if (!error) {
       addPoints(supabase, user.id, 50)
+      setToastPts(50)
       const { data: newHistory } = await supabase
         .from('scorecards')
         .select('*')
@@ -190,6 +193,7 @@ export default function ScorePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div onClick={() => router.push('/home')} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>

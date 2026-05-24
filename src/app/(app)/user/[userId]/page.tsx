@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
+import PointToast from '@/components/PointToast'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
@@ -95,6 +96,7 @@ export default function UserProfilePage() {
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [profilePts, setProfilePts] = useState(0)
+  const [toastPts, setToastPts] = useState<number | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -180,11 +182,13 @@ export default function UserProfilePage() {
     } else {
       await supabase.from('favorites').insert({ user_id: myId, target_id: userId })
       addPoints(supabase, myId, 5)
+      setToastPts(5)
       const { data: reverse } = await supabase.from('favorites')
         .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
       if (reverse) {
         addPoints(supabase, myId, 20)
         addPoints(supabase, userId, 20)
+        setToastPts(20)
       }
     }
     setIsFav(!isFav)
@@ -281,6 +285,7 @@ export default function UserProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

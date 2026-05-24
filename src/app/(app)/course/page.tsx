@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canJoinComp, canHostComp, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
+import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -72,6 +73,8 @@ export default function CoursePage() {
   const [myPlan, setMyPlan] = useState('free')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+
+  const [toastPts, setToastPts] = useState<number | null>(null)
 
   // コンペ作成フォーム
   const [title, setTitle] = useState('')
@@ -200,6 +203,7 @@ export default function CoursePage() {
 
     if (!error) {
       addPoints(supabase, myId, 200)
+      setToastPts(200)
       await fetchCompetitions(myId)
       setShowCreateModal(false)
       setTitle('')
@@ -225,6 +229,7 @@ export default function CoursePage() {
         status: 'confirmed',
       })
       addPoints(supabase, myId, 50)
+      setToastPts(50)
       // 主催者にプッシュ通知
       const comp = competitions.find(c => c.id === compId)
       if (comp?.organizer_id) {
@@ -245,6 +250,7 @@ export default function CoursePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
