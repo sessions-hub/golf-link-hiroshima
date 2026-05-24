@@ -108,6 +108,7 @@ export default function MatchPage() {
   const [favoritingList, setFavoritingList] = useState<any[]>([])
   const [favoritedByIds, setFavoritedByIds] = useState<Set<string>>(new Set())
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
+  const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -128,16 +129,22 @@ export default function MatchPage() {
       })
       if (!error) setMatches(data ?? [])
 
-      // お気に入り一覧
-      const [{ data: favData }, { data: favMeData }] = await Promise.all([
+      // お気に入り・ブロック一覧
+      const [{ data: favData }, { data: favMeData }, { data: iBlockData }, { data: blockedByData }] = await Promise.all([
         supabase.from('favorites').select('target_id').eq('user_id', user.id),
         supabase.from('favorites').select('user_id').eq('target_id', user.id),
+        supabase.from('blocks').select('blocked_id').eq('blocker_id', user.id),
+        supabase.from('blocks').select('blocker_id').eq('blocked_id', user.id),
       ])
       if (favData) setFavorites(new Set(favData.map(f => f.target_id)))
       if (favData && favMeData) {
         const favMeSet = new Set(favMeData.map(f => f.user_id))
         setFriendIds(new Set(favData.filter(f => favMeSet.has(f.target_id)).map(f => f.target_id)))
       }
+      setBlockedUserIds(new Set([
+        ...(iBlockData?.map((b: any) => b.blocked_id) ?? []),
+        ...(blockedByData?.map((b: any) => b.blocker_id) ?? []),
+      ]))
 
       // 足跡を記録
       await supabase.from('footprints').insert({
@@ -320,6 +327,7 @@ export default function MatchPage() {
   }
 
   const filteredMatches = matches.filter(m => {
+    if (blockedUserIds.has(m.user_id)) return false
     if (filters.includes('全員')) return true
     // 同カテゴリはOR、カテゴリ間はAND
     const cats = [CATEGORY_GENDER, CATEGORY_HDCP, CATEGORY_AREA, CATEGORY_SPECIAL]

@@ -91,6 +91,7 @@ export default function HomePage() {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [myUserId, setMyUserId] = useState('')
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
+  const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set())
   const fileRef = useRef<HTMLInputElement>(null)
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
@@ -168,15 +169,21 @@ export default function HomePage() {
       }
       setMyUserId(user.id)
 
-      // 相互お気に入り（フレンド）
-      const [{ data: myFavs }, { data: favMe }] = await Promise.all([
+      // 相互お気に入り（フレンド）・ブロック
+      const [{ data: myFavs }, { data: favMe }, { data: iBlockData }, { data: blockedByData }] = await Promise.all([
         supabase.from('favorites').select('target_id').eq('user_id', user.id),
         supabase.from('favorites').select('user_id').eq('target_id', user.id),
+        supabase.from('blocks').select('blocked_id').eq('blocker_id', user.id),
+        supabase.from('blocks').select('blocker_id').eq('blocked_id', user.id),
       ])
       if (myFavs && favMe) {
         const favMeSet = new Set(favMe.map((f: any) => f.user_id))
         setFriendIds(new Set(myFavs.filter((f: any) => favMeSet.has(f.target_id)).map((f: any) => f.target_id)))
       }
+      setBlockedUserIds(new Set([
+        ...(iBlockData?.map((b: any) => b.blocked_id) ?? []),
+        ...(blockedByData?.map((b: any) => b.blocker_id) ?? []),
+      ]))
 
       // ポイント取得 + ログインボーナス
       const today = new Date().toISOString().split('T')[0]
@@ -440,9 +447,11 @@ export default function HomePage() {
   }
 
   const filteredPosts = posts.filter(p =>
-    !searchQuery ||
-    p.caption?.includes(searchQuery) ||
-    p.profiles?.nickname?.includes(searchQuery)
+    !blockedUserIds.has(p.user_id) && (
+      !searchQuery ||
+      p.caption?.includes(searchQuery) ||
+      p.profiles?.nickname?.includes(searchQuery)
+    )
   )
 
   const levelInfo = getLevelInfo(totalPts)

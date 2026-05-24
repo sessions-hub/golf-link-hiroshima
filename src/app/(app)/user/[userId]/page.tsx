@@ -102,6 +102,9 @@ export default function UserProfilePage() {
   const [commentReactions, setCommentReactions] = useState<Record<string, Record<string, string[]>>>({})
   const [commentReactionPaletteId, setCommentReactionPaletteId] = useState<string | null>(null)
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
+  const [isBlocked, setIsBlocked] = useState(false)
+  const [isBlockedByThem, setIsBlockedByThem] = useState(false)
+  const [showBlockModal, setShowBlockModal] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -169,6 +172,14 @@ export default function UserProfilePage() {
         const favMeSet = new Set(favMeAll.map((f: any) => f.user_id))
         setFriendIds(new Set(myFavsAll.filter((f: any) => favMeSet.has(f.target_id)).map((f: any) => f.target_id)))
       }
+
+      // ブロック状態
+      const [{ data: blockData }, { data: blockedByData }] = await Promise.all([
+        supabase.from('blocks').select('id').eq('blocker_id', user.id).eq('blocked_id', userId).maybeSingle(),
+        supabase.from('blocks').select('id').eq('blocker_id', userId).eq('blocked_id', user.id).maybeSingle(),
+      ])
+      setIsBlocked(!!blockData)
+      setIsBlockedByThem(!!blockedByData)
 
       if (user.id !== userId) {
         await supabase.from('footprints').insert({
@@ -274,9 +285,21 @@ export default function UserProfilePage() {
     setCommentReactionPaletteId(null)
   }
 
+  const handleBlock = async () => {
+    if (!myId) return
+    if (isBlocked) {
+      await supabase.from('blocks').delete().eq('blocker_id', myId).eq('blocked_id', userId)
+      setIsBlocked(false)
+    } else {
+      await supabase.from('blocks').insert({ blocker_id: myId, blocked_id: userId })
+      setIsBlocked(true)
+    }
+    setShowBlockModal(false)
+  }
+
   const handleModalComment = async (postId?: string) => {
     const targetPostId = postId ?? selectedPost?.id
-    if (!modalCommentInput.trim() || !myId || !targetPostId) return
+    if (!modalCommentInput.trim() || !myId || !targetPostId || isBlockedByThem) return
     const commentText = modalCommentInput.trim()
     await supabase.from('post_comments').insert({
       post_id: targetPostId,
@@ -298,7 +321,7 @@ export default function UserProfilePage() {
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
-    if (!myId) return
+    if (!myId || isBlockedByThem) return
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId)
     } else {
@@ -408,20 +431,38 @@ export default function UserProfilePage() {
 
         {/* アクションボタン */}
         {!isMe && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button onClick={handleChat} style={{ flex: 1, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-              チャットする
-            </button>
-            <button onClick={toggleFav} style={{ width: 42, height: 42, borderRadius: 10, border: '1px solid var(--line)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-              {isFav ? Icons.heart(17, '#e05070', true) : Icons.heart(17, 'var(--mute)')}
-            </button>
+          <div style={{ marginTop: 12 }}>
+            {isBlocked && (
+              <div style={{ marginBottom: 8, textAlign: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#c05050', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 5, padding: '3px 10px' }}>ブロック中</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={isBlocked ? undefined : handleChat}
+                disabled={isBlocked}
+                style={{ flex: 1, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'not-allowed' : 'pointer', opacity: isBlocked ? .4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                チャットする
+              </button>
+              <button
+                onClick={isBlocked ? undefined : toggleFav}
+                disabled={isBlocked}
+                style={{ width: 42, height: 42, borderRadius: 10, border: '1px solid var(--line)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBlocked ? 'not-allowed' : 'pointer', flexShrink: 0, opacity: isBlocked ? .4 : 1 }}>
+                {isFav ? Icons.heart(17, '#e05070', true) : Icons.heart(17, 'var(--mute)')}
+              </button>
+              <button
+                onClick={() => setShowBlockModal(true)}
+                style={{ width: 42, height: 42, borderRadius: 10, border: `1px solid ${isBlocked ? 'rgba(200,60,60,.4)' : 'var(--line)'}`, background: isBlocked ? 'rgba(200,60,60,.08)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 18 }}>
+                🚫
+              </button>
+            </div>
           </div>
         )}
       </div>
 
       {/* コンテンツ */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90, ...(isBlocked ? { filter: 'blur(3px)', opacity: .3, pointerEvents: 'none' } : {}) }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (
@@ -605,6 +646,40 @@ export default function UserProfilePage() {
             onSelect={(emoji) => toggleCommentReaction(commentReactionPaletteId, emoji)}
             onClose={() => setCommentReactionPaletteId(null)}
           />
+        </div>
+      )}
+
+      {/* ブロック確認モーダル */}
+      {showBlockModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+          <div style={{ background: 'white', borderRadius: 18, padding: '24px 20px', width: '100%', maxWidth: 380 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 14, textAlign: 'center' }}>
+              {isBlocked ? `${profile.nickname}さんのブロックを解除` : `${profile.nickname}さんをブロック`}
+            </div>
+            {!isBlocked ? (
+              <>
+                <div style={{ fontSize: 13, color: 'var(--mid)', lineHeight: 1.9, marginBottom: 10 }}>
+                  ブロックすると以下の操作ができなくなります：<br/>
+                  ・チャット・いいね・コメント<br/>
+                  ・マッチング一覧に表示されなくなります
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.8, background: 'var(--surf)', borderRadius: 9, padding: '10px 12px', marginBottom: 18 }}>
+                  ・相手には通知されません<br/>
+                  ・いつでも解除できます
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--mid)', lineHeight: 1.9, marginBottom: 18 }}>
+                ブロックを解除すると、このユーザーと再度チャットやいいねができるようになります。
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowBlockModal(false)} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px', fontSize: 13, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>キャンセル</button>
+              <button onClick={handleBlock} style={{ flex: 1, background: isBlocked ? 'var(--g2)' : '#c05050', border: 'none', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, color: 'white', cursor: 'pointer' }}>
+                {isBlocked ? 'ブロック解除' : 'ブロックする'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

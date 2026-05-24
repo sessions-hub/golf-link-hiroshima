@@ -41,6 +41,7 @@ export default function ChatRoomPage() {
   const [messageReactions, setMessageReactions] = useState<Record<string, Record<string, string[]>>>({})
   const [paletteMessageId, setPaletteMessageId] = useState<string | null>(null)
   const [isFriend, setIsFriend] = useState(false)
+  const [isBlockedByThem, setIsBlockedByThem] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -62,13 +63,15 @@ export default function ChatRoomPage() {
 
       const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
 
-      const [{ data: profile }, { data: myFav }, { data: theirFav }] = await Promise.all([
+      const [{ data: profile }, { data: myFav }, { data: theirFav }, { data: blockedByData }] = await Promise.all([
         supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single(),
         supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', otherUserId).maybeSingle(),
         supabase.from('favorites').select('id').eq('user_id', otherUserId).eq('target_id', user.id).maybeSingle(),
+        supabase.from('blocks').select('id').eq('blocker_id', otherUserId).eq('blocked_id', user.id).maybeSingle(),
       ])
       if (profile) setOtherProfile(profile)
       setIsFriend(!!(myFav && theirFav))
+      setIsBlockedByThem(!!blockedByData)
 
       const { data: msgs } = await supabase
         .from('messages')
@@ -188,7 +191,7 @@ export default function ChatRoomPage() {
   }
 
   const sendMsg = async () => {
-    if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
+    if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending || isBlockedByThem) return
     setSending(true)
 
     const content = input.trim()
@@ -404,8 +407,15 @@ export default function ChatRoomPage() {
         </div>
       )}
 
+      {/* ブロックバナー */}
+      {isBlockedByThem && (
+        <div style={{ padding: '10px 16px', background: 'rgba(200,60,60,.08)', borderTop: '1px solid rgba(200,60,60,.15)', textAlign: 'center', fontSize: 12, color: '#c05050', flexShrink: 0 }}>
+          このユーザーにはメッセージを送れません
+        </div>
+      )}
+
       {/* 入力エリア */}
-      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, opacity: isBlockedByThem ? .5 : 1 }}>
         {/* 画像ボタン */}
         <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>{Icons.camera(16, 'var(--mid)')}</button>
         {/* ファイルボタン */}
@@ -420,7 +430,7 @@ export default function ChatRoomPage() {
           placeholder="メッセージを入力..."
           style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
         />
-        <button onClick={sendMsg} disabled={sending} style={{ width: 38, height: 38, borderRadius: '50%', background: sending ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+        <button onClick={sendMsg} disabled={sending || isBlockedByThem} style={{ width: 38, height: 38, borderRadius: '50%', background: sending || isBlockedByThem ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22,2 15,22 11,13 2,9"/>
