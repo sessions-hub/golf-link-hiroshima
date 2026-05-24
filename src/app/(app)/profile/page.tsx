@@ -520,7 +520,9 @@ export default function ProfilePage() {
           <div style={{ padding: '8px 16px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>投稿</div>
           {posts.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '30px 20px' }}>
-              <div style={{ fontSize: 28, marginBottom: 10 }}>📸</div>
+              <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
               <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ投稿がありません</div>
             </div>
           ) : (

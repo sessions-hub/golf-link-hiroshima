@@ -512,9 +512,6 @@ export default function HomePage() {
                       </div>
                     )
                   }
-                  {post.likes_count > 0 && (
-                    <div style={{ position: 'absolute', bottom: 3, right: 4, fontSize: 9, color: 'white', background: 'rgba(0,0,0,.4)', borderRadius: 4, padding: '1px 4px' }}>❤️ {post.likes_count}</div>
-                  )}
                 </div>
               ))}
             </div>
