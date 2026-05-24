@@ -4,15 +4,15 @@ import { useRouter } from 'next/navigation'
 const ITEMS = [
   {
     label: '販売業者',
-    value: 'Golf Link Hiroshima 運営事務局',
+    value: 'Golf Link Hiroshima',
   },
   {
     label: '運営責任者',
-    value: '澤田 朋治（Tomoharu Sawada）',
+    value: 'Tomoharu Sawada',
   },
   {
     label: '所在地',
-    value: '広島県広島市\nHiroshima City, Hiroshima Prefecture, Japan\n（詳細はメールにてお問い合わせください）',
+    value: 'Hiroshima City, Hiroshima Prefecture, Japan\n（詳細はメールにてお問い合わせください）',
   },
   {
     label: '電話番号',
@@ -92,11 +92,16 @@ export default function TokushoPage() {
           </div>
         ))}
 
-        <div style={{ marginTop: 16, padding: '12px 14px', background: '#f0f7f0', borderRadius: 10, border: '1px solid rgba(13,61,43,.1)' }}>
-          <div style={{ fontSize: 11, color: 'var(--g1)', lineHeight: 1.8 }}>
-            ご不明な点はお気軽にお問い合わせください。{'\n'}
-            <strong>info@golflink-hiroshima.com</strong>
+        <div style={{ marginTop: 16, padding: '14px 16px', background: '#f0f7f0', borderRadius: 10, border: '1px solid rgba(13,61,43,.1)' }}>
+          <div style={{ fontSize: 12, color: 'var(--g1)', lineHeight: 2 }}>
+            ご不明な点はお気軽にお問い合わせください。
           </div>
+          <a
+            href="mailto:info@golflink-hiroshima.com"
+            style={{ display: 'block', marginTop: 4, fontSize: 13, fontWeight: 700, color: 'var(--g2)', textDecoration: 'none', wordBreak: 'break-all' }}
+          >
+            info@golflink-hiroshima.com
+          </a>
         </div>
       </div>
     </div>

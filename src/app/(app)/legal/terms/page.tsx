@@ -129,12 +129,19 @@ export default function TermsPage() {
           </div>
         ))}
 
-        <p style={{ color: 'var(--mute)', fontSize: 11, marginTop: 32, lineHeight: 1.8 }}>
-          Golf Link Hiroshima 運営事務局{'\n'}
-          運営責任者：澤田 朋治（Tomoharu Sawada）{'\n'}
-          お問い合わせ：info@golflink-hiroshima.com{'\n'}
-          https://golflink-hiroshima.com
-        </p>
+        <div style={{ marginTop: 32, lineHeight: 2 }}>
+          <p style={{ color: 'var(--mute)', fontSize: 11, marginBottom: 4 }}>
+            Golf Link Hiroshima / Tomoharu Sawada{'\n'}
+            https://golflink-hiroshima.com
+          </p>
+          <p style={{ color: 'var(--mute)', fontSize: 11, marginBottom: 4 }}>お問い合わせ</p>
+          <a
+            href="mailto:info@golflink-hiroshima.com"
+            style={{ fontSize: 13, fontWeight: 700, color: 'var(--g2)', textDecoration: 'none', wordBreak: 'break-all' }}
+          >
+            info@golflink-hiroshima.com
+          </a>
+        </div>
       </div>
     </div>
   )
