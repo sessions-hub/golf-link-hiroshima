@@ -355,8 +355,8 @@ export default function HomePage() {
   )
 
   // MOCK: ポイントDBが実装されたら実際の値に差し替え
-  const MOCK_PTS = 320
-  const TODAY_PTS = 15
+  const MOCK_PTS = 3240
+  const TODAY_PTS = 65
   const levelInfo = getLevelInfo(MOCK_PTS)
 
   return (
@@ -393,41 +393,45 @@ export default function HomePage() {
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
 
           {/* レベルカード */}
-          <div style={{ margin: '8px 16px 10px', background: 'linear-gradient(135deg,#0a1f0a,#162a16)', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(168,224,99,.2)', boxShadow: '0 4px 16px rgba(13,61,43,.18)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-                  <span style={{ fontSize: 9, fontFamily: 'Inter', fontWeight: 700, color: 'rgba(168,224,99,.45)', letterSpacing: '.14em' }}>GLH</span>
-                  <span style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 700, color: 'var(--lime)', lineHeight: 1 }}>Lv.{levelInfo.level}</span>
+          {(() => {
+            const lv = levelInfo
+            const lvColor = lv.color
+            const lvBorder = `${lvColor}4d`
+            const lvBg = `${lvColor}0a`
+            return (
+              <div onClick={() => router.push('/level')} style={{ margin: '8px 16px 10px', background: 'white', border: '1px solid var(--line)', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 6px rgba(0,0,0,.04)', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}>
+                {/* 左：Lvブロック */}
+                <div style={{ border: `1.5px solid ${lvBorder}`, borderRadius: 10, padding: '8px 12px', background: lvBg, minWidth: 68, textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', lineHeight: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>Lv</span>
+                    <span style={{ fontSize: 8, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>.</span>
+                    <span style={{ fontSize: 30, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>{lv.level}</span>
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: lvColor, fontFamily: 'Inter', marginTop: 5 }}>{lv.name}</div>
                 </div>
-                <div style={{ fontSize: 10, fontFamily: 'Inter', fontWeight: 700, color: 'rgba(168,224,99,.5)', letterSpacing: '.16em', marginTop: 3 }}>{levelInfo.name}</div>
-              </div>
-              <div style={{ background: 'rgba(168,224,99,.09)', border: '1px solid rgba(168,224,99,.18)', borderRadius: 10, padding: '7px 13px', textAlign: 'right' }}>
-                <div style={{ fontSize: 9, color: 'rgba(168,224,99,.4)', fontFamily: 'Inter', letterSpacing: '.1em', marginBottom: 2 }}>本日</div>
-                <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--lime)' }}>+{TODAY_PTS}pt</div>
-              </div>
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 10 }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 36, fontWeight: 700, color: 'white', lineHeight: 1 }}>{MOCK_PTS.toLocaleString()}</span>
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontFamily: 'Inter' }}>pt</span>
-            </div>
-
-            <div style={{ marginBottom: 7 }}>
-              <div style={{ height: 5, background: 'rgba(255,255,255,.07)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${levelInfo.progress * 100}%`, background: 'linear-gradient(90deg,rgba(168,224,99,.5),var(--lime))', borderRadius: 3 }} />
+                {/* 右：ポイント＋プログレス */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+                    <span style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 500, color: 'var(--txt)', lineHeight: 1 }}>
+                      {MOCK_PTS.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 3 }}>pt</span>
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--g2)', fontFamily: 'Inter', lineHeight: 1 }}>本日 +{TODAY_PTS}pt</span>
+                  </div>
+                  <div style={{ height: 5, background: 'var(--surf)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
+                    <div style={{ height: '100%', width: `${lv.progress * 100}%`, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 3 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{lv.name}</span>
+                    {lv.next
+                      ? <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{lv.next.name}まで {lv.ptToNext.toLocaleString()}pt</span>
+                      : <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter', fontWeight: 700 }}>MAX LEVEL</span>
+                    }
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.28)', letterSpacing: '.1em' }}>{levelInfo.name}</span>
-              {levelInfo.next
-                ? <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.45)' }}>次のLvまで <span style={{ fontWeight: 700, color: 'rgba(168,224,99,.75)' }}>{levelInfo.ptToNext}pt</span></span>
-                : <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.6)', fontWeight: 700 }}>MAX LEVEL</span>
-              }
-              <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.28)', letterSpacing: '.1em' }}>{levelInfo.next?.name ?? ''}</span>
-            </div>
-          </div>
+            )
+          })()}
 
           {/* マッチング待ちカード */}
           <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: 16, position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(13,61,43,.2)', cursor: 'pointer' }}>

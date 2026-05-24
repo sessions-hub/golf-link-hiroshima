@@ -1,14 +1,15 @@
 export const LEVELS = [
-  { level: 1, name: 'PUBLIC',   minPt: 0    },
-  { level: 2, name: 'MEMBER',   minPt: 250  },
-  { level: 3, name: 'CLASSIC',  minPt: 500  },
-  { level: 4, name: 'CHAMPION', minPt: 2000 },
-  { level: 5, name: 'LEGEND',   minPt: 5000 },
+  { level: 1, name: 'PUBLIC',   minPt: 0,    color: '#64748b' },
+  { level: 2, name: 'MEMBER',   minPt: 250,  color: '#15803d' },
+  { level: 3, name: 'CLASSIC',  minPt: 500,  color: '#3b82f6' },
+  { level: 4, name: 'CHAMPION', minPt: 2000, color: '#f59e0b' },
+  { level: 5, name: 'LEGEND',   minPt: 5000, color: '#dc2626' },
 ] as const
 
 export interface LevelInfo {
   level: number
   name: string
+  color: string
   next: { level: number; name: string; minPt: number } | null
   progress: number
   ptToNext: number
@@ -25,5 +26,5 @@ export function getLevelInfo(points: number): LevelInfo {
     ? Math.min(1, (points - current.minPt) / (next.minPt - current.minPt))
     : 1
   const ptToNext = next ? next.minPt - points : 0
-  return { level: current.level, name: current.name, next, progress, ptToNext }
+  return { level: current.level, name: current.name, color: current.color, next, progress, ptToNext }
 }
