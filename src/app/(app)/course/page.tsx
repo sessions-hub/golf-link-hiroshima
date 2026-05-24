@@ -55,9 +55,11 @@ export default function CoursePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'course' | 'comp'>(
-    searchParams.get('tab') === 'comp' ? 'comp' : 'course'
-  )
+  const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'comp') setActiveTab('comp')
+  }, [searchParams])
   const [courseFilter, setCourseFilter] = useState('広島県')
   const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
