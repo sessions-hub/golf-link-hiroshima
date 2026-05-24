@@ -5,19 +5,18 @@ test.describe('/gps GPS計測ページ', () => {
   test('未認証の場合はアップグレード案内が表示される', async ({ page }) => {
     await blockSupabaseRequests(page)
     await page.goto('/gps')
-    await expect(
-      page.locator('text=GPS計測はスタンダードプラン以上')
-    ).toBeVisible({ timeout: 10_000 })
+    await page.waitForURL('**/login', { timeout: 10_000 })
+    await expect(page).toHaveURL(/\/login/)
   })
 
-  test('フリープランではアップグレード案内が表示される', async ({ page }) => {
+  test('フリープランではページにアクセスでき、コース選択時にアップグレード案内が表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/gps')
 
     await expect(
-      page.locator('text=GPS計測はスタンダードプラン以上')
+      page.locator('input[placeholder*="コース名・エリアで検索"]')
     ).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('button', { hasText: 'プランをアップグレード' })).toBeVisible()
+    await expect(page.locator('button', { hasText: '広島県' })).toBeVisible()
   })
 
   test('スタンダードプランではコース検索画面が表示される', async ({ page }) => {

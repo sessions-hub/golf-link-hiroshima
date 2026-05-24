@@ -9,13 +9,17 @@ test.describe('/score スコアページ', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('フリープランではアップグレード案内が表示される', async ({ page }) => {
+  test('フリープランではページにアクセスでき、スコア操作時にアップグレード案内が表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/score')
 
+    await expect(page.locator('text=MY GOLF STATS')).toBeVisible({ timeout: 10_000 })
+    const plusBtn = page.locator('button', { hasText: '+' }).first()
+    await plusBtn.waitFor({ timeout: 5_000 })
+    await plusBtn.click()
     await expect(
       page.locator('text=スコア記録はスタンダードプラン以上')
-    ).toBeVisible({ timeout: 10_000 })
+    ).toBeVisible({ timeout: 3_000 })
     await expect(page.locator('button', { hasText: 'プランをアップグレード' })).toBeVisible()
   })
 

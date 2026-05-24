@@ -21,6 +21,7 @@ export default function ScorePage() {
   const [bestScore, setBestScore] = useState<number | null>(null)
   const [lastScore, setLastScore] = useState<number | null>(null)
   const [roundCount, setRoundCount] = useState(0)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   // コース検索
   const [courseSearch, setCourseSearch] = useState('')
@@ -109,6 +110,7 @@ export default function ScorePage() {
   }
 
   const updateScore = (hole: number, val: number) => {
+    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     if (val < 1 || val > 15) return
     setScores(prev => { const n = [...prev]; n[hole] = val; return n })
   }
@@ -131,6 +133,7 @@ export default function ScorePage() {
   }
 
   const handleSave = async () => {
+    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     if (!selectedCourse) { alert('コースを選択してください'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -182,23 +185,6 @@ export default function ScorePage() {
       </div>
     </div>
   )
-
-  if (!canUseGPS(userPlan)) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px' }}>
-          <Logo />
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 48, marginBottom: 20 }}>📋</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', marginBottom: 10 }}>スコア記録はスタンダードプラン以上</div>
-          <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スコア記録機能を使うには<br/>スタンダードプランへのアップグレードが必要です</div>
-          <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>プランをアップグレード</button>
-        </div>
-        <BottomNav />
-      </div>
-    )
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -399,6 +385,21 @@ export default function ScorePage() {
       )}
 
       <BottomNav />
+
+      {/* プランアップグレードモーダル */}
+      {showUpgradeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--g1),var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>スコア記録はスタンダードプラン以上</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、スコア記録・GPS計測・コース予約など全機能が使えます。</div>
+            <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
+            <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -71,12 +71,19 @@ export default function GpsPage() {
   const [hole, setHole] = useState(1)
   const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
   const [searchText, setSearchText] = useState('')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
   const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
-    getUserPlan().then(setUserPlan)
+    const init = async () => {
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      getUserPlan().then(setUserPlan)
+    }
+    init()
   }, [])
 
   // GPS取得（大きく動いたか精度が改善したときだけ state 更新）
@@ -169,6 +176,7 @@ export default function GpsPage() {
 
   // コース選択時にグリーン距離を計算
   const selectCourse = (course: GoraCourse & { distKm: number }) => {
+    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     setSelected(course)
     setHole(1)
     if (position && course.latitude && course.longitude) {
@@ -181,24 +189,6 @@ export default function GpsPage() {
   const filteredCourses = courses.filter(c =>
     c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
   )
-
-  // プラン制限
-  if (!canUseGPS(userPlan)) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center' }}>
-          <Logo />
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center' }}>
-          <div style={{ marginBottom: 20, color: "var(--mute)" }}>{Icons.pin(48, "var(--mute)")}</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', marginBottom: 10 }}>GPS計測はスタンダードプラン以上</div>
-          <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>GPS距離計測機能を使うには<br/>スタンダードプランへのアップグレードが必要です</div>
-          <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>プランをアップグレード</button>
-        </div>
-        <BottomNav />
-      </div>
-    )
-  }
 
   // コース選択画面
   if (!selected) {
@@ -364,6 +354,21 @@ export default function GpsPage() {
         </div>
       </div>
       <BottomNav />
+
+      {/* プランアップグレードモーダル */}
+      {showUpgradeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--g1),var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              {Icons.pin(26, 'white')}
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>GPS計測はスタンダードプラン以上</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コース予約など全機能が使えます。</div>
+            <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
+            <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

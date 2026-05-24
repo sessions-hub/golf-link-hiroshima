@@ -398,13 +398,7 @@ export default function HomePage() {
           {/* スコア + GPS 横並び */}
           <div style={{ margin: '0 16px 10px', display: 'flex', gap: 8 }}>
             {/* スコアカード */}
-            <div onClick={() => {
-              if (!canUseGPS(userPlan)) {
-                alert('スコア記録はスタンダードプラン以上が必要です。\nマイページからアップグレードできます。')
-                return
-              }
-              router.push('/score')
-            }} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
+            <div onClick={() => router.push('/score')} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -416,13 +410,7 @@ export default function HomePage() {
               </div>
             </div>
             {/* GPSカード */}
-            <div onClick={() => {
-              if (!canUseGPS(userPlan)) {
-                alert('GPS計測はスタンダードプラン以上が必要です。\nマイページからアップグレードできます。')
-                return
-              }
-              router.push('/gps')
-            }} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
+            <div onClick={() => router.push('/gps')} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
                 <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
