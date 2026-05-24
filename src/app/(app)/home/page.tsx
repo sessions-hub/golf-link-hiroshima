@@ -274,9 +274,10 @@ export default function HomePage() {
       addPoints(supabase, user.id, 2)
       setTotalPts(p => p + 2)
       setTodayPts(p => p + 2)
-      // 投稿者に通知
+      // 投稿者に通知・ポイント
       const post = posts.find(p => p.id === postId)
       if (post && post.user_id !== user.id) {
+        addPoints(supabase, post.user_id, 5)
         await supabase.from('post_notifications').insert({
           user_id: post.user_id, actor_id: user.id, post_id: postId,
           type: 'comment', comment_text: content.slice(0, 50)
@@ -364,9 +365,10 @@ export default function HomePage() {
       addPoints(supabase, user.id, 2)
       setTotalPts(p => p + 2)
       setTodayPts(p => p + 2)
-      // 投稿者に通知
+      // 投稿者に通知・ポイント
       const post = posts.find(p => p.id === postId)
       if (post && post.user_id !== user.id) {
+        addPoints(supabase, post.user_id, 3)
         await supabase.from('post_notifications').insert({
           user_id: post.user_id, actor_id: user.id, post_id: postId, type: 'like'
         })

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { addPoints } from '@/lib/points'
 import { PageLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 
@@ -84,6 +85,7 @@ export default function CompDetailPage() {
     } else {
       await supabase.from('comp_entries').insert({ comp_id: comp.id, user_id: myId, status: 'confirmed' })
       setIsEntered(true)
+      addPoints(supabase, myId, 100)
       if (comp.organizer_id) {
         await fetch('/api/push/send', {
           method: 'POST',

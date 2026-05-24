@@ -167,6 +167,12 @@ export default function MatchPage() {
         target_id: targetId,
       })
       addPoints(supabase, myId, 5)
+      const { data: reverse } = await supabase.from('favorites')
+        .select('id').eq('user_id', targetId).eq('target_id', myId).maybeSingle()
+      if (reverse) {
+        addPoints(supabase, myId, 20)
+        addPoints(supabase, targetId, 20)
+      }
     }
     setFavorites(newFavs)
   }
@@ -190,7 +196,10 @@ export default function MatchPage() {
       .select('id')
       .single()
 
-    if (newRoom) router.push(`/chat/${newRoom.id}`)
+    if (newRoom) {
+      addPoints(supabase, myId, 10)
+      router.push(`/chat/${newRoom.id}`)
+    }
     setChatLoading(null)
   }
 

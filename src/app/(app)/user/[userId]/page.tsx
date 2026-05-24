@@ -4,6 +4,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { getLevelInfo } from '@/lib/level'
+import { addPoints } from '@/lib/points'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
@@ -178,6 +179,13 @@ export default function UserProfilePage() {
         .eq('user_id', myId).eq('target_id', userId)
     } else {
       await supabase.from('favorites').insert({ user_id: myId, target_id: userId })
+      addPoints(supabase, myId, 5)
+      const { data: reverse } = await supabase.from('favorites')
+        .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
+      if (reverse) {
+        addPoints(supabase, myId, 20)
+        addPoints(supabase, userId, 20)
+      }
     }
     setIsFav(!isFav)
   }
@@ -194,7 +202,10 @@ export default function UserProfilePage() {
       .from('chat_rooms')
       .insert({ user1_id: myId, user2_id: userId })
       .select('id').single()
-    if (newRoom) router.push(`/chat/${newRoom.id}`)
+    if (newRoom) {
+      addPoints(supabase, myId, 10)
+      router.push(`/chat/${newRoom.id}`)
+    }
   }
 
   const fetchModalComments = async (postId: string) => {
@@ -211,19 +222,22 @@ export default function UserProfilePage() {
   const handleModalComment = async (postId?: string) => {
     const targetPostId = postId ?? selectedPost?.id
     if (!modalCommentInput.trim() || !myId || !targetPostId) return
+    const commentText = modalCommentInput.trim()
     await supabase.from('post_comments').insert({
       post_id: targetPostId,
       user_id: myId,
-      content: modalCommentInput.trim(),
+      content: commentText,
     })
+    addPoints(supabase, myId, 2)
     setModalCommentInput('')
     await fetchModalComments(targetPostId)
-    // 通知
+    // 通知・投稿者ポイント
     const targetPost = posts.find(p => p.id === targetPostId) ?? featuredPost
     if (targetPost && targetPost.user_id !== myId) {
+      addPoints(supabase, targetPost.user_id, 5)
       await supabase.from('post_notifications').insert({
         user_id: targetPost.user_id, actor_id: myId, post_id: targetPostId,
-        type: 'comment', comment_text: modalCommentInput.trim().slice(0, 50)
+        type: 'comment', comment_text: commentText.slice(0, 50)
       })
     }
   }
@@ -234,9 +248,11 @@ export default function UserProfilePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: myId })
-      // 投稿者に通知
+      addPoints(supabase, myId, 2)
+      // 投稿者に通知・ポイント
       const targetPost = posts.find(p => p.id === postId) ?? (featuredPost?.id === postId ? featuredPost : null)
       if (targetPost && targetPost.user_id !== myId) {
+        addPoints(supabase, targetPost.user_id, 3)
         await supabase.from('post_notifications').insert({
           user_id: targetPost.user_id, actor_id: myId, post_id: postId, type: 'like'
         })

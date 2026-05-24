@@ -1,12 +1,39 @@
 'use client'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { addPoints } from '@/lib/points'
 import Logo from '@/components/layout/Logo'
 
 export default function SubscriptionSuccessPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const supabase = createClient()
 
   useEffect(() => {
+    const awardPlanPoints = async () => {
+      const sessionId = searchParams.get('session_id')
+      if (!sessionId) return
+      const storageKey = `plan_pts_${sessionId}`
+      if (localStorage.getItem(storageKey)) return
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('plan')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (sub?.plan === 'premium') {
+        addPoints(supabase, user.id, 100)
+      } else if (sub?.plan === 'standard') {
+        addPoints(supabase, user.id, 50)
+      }
+      localStorage.setItem(storageKey, '1')
+    }
+    awardPlanPoints()
     setTimeout(() => router.push('/home'), 3000)
   }, [])
 
