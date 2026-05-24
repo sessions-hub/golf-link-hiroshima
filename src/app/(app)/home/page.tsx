@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -81,6 +82,8 @@ export default function HomePage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [showComments, setShowComments] = useState<Record<string, boolean>>({})
   const [myId, setMyId] = useState('')
+  const [commentReactions, setCommentReactions] = useState<Record<string, Record<string, string[]>>>({})
+  const [commentReactionPaletteId, setCommentReactionPaletteId] = useState<string | null>(null)
   const [postMenu, setPostMenu] = useState<string | null>(null)
   const [editPostId, setEditPostId] = useState<string | null>(null)
   const [editCaption, setEditCaption] = useState('')
@@ -250,7 +253,46 @@ export default function HomePage() {
       .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
-    if (data) setComments(prev => ({ ...prev, [postId]: data as any }))
+    if (data) {
+      setComments(prev => ({ ...prev, [postId]: data as any }))
+      const commentIds = data.map((c: any) => c.id)
+      if (commentIds.length > 0) {
+        const { data: rxnData } = await supabase
+          .from('comment_reactions')
+          .select('comment_id, user_id, emoji')
+          .in('comment_id', commentIds)
+        if (rxnData) {
+          const rxns: Record<string, Record<string, string[]>> = {}
+          rxnData.forEach((r: any) => {
+            if (!rxns[r.comment_id]) rxns[r.comment_id] = {}
+            if (!rxns[r.comment_id][r.emoji]) rxns[r.comment_id][r.emoji] = []
+            rxns[r.comment_id][r.emoji].push(r.user_id)
+          })
+          setCommentReactions(prev => ({ ...prev, ...rxns }))
+        }
+      }
+    }
+  }
+
+  const toggleCommentReaction = async (commentId: string, emoji: string) => {
+    if (!myId) return
+    const existing = commentReactions[commentId]?.[emoji] ?? []
+    const hasReacted = existing.includes(myId)
+    if (hasReacted) {
+      await supabase.from('comment_reactions')
+        .delete().eq('comment_id', commentId).eq('user_id', myId).eq('emoji', emoji)
+      setCommentReactions(prev => ({
+        ...prev,
+        [commentId]: { ...prev[commentId], [emoji]: (prev[commentId]?.[emoji] ?? []).filter(id => id !== myId) },
+      }))
+    } else {
+      await supabase.from('comment_reactions').insert({ comment_id: commentId, user_id: myId, emoji })
+      setCommentReactions(prev => ({
+        ...prev,
+        [commentId]: { ...prev[commentId], [emoji]: [...(prev[commentId]?.[emoji] ?? []), myId] },
+      }))
+    }
+    setCommentReactionPaletteId(null)
   }
 
   const handleToggleComments = async (postId: string) => {
@@ -675,20 +717,28 @@ export default function HomePage() {
                 {showComments[post.id] && (
                   <div style={{ borderTop: '1px solid var(--surf)', padding: '8px 16px' }}>
                     {(comments[post.id] ?? []).map(c => (
-                      <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                        <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                          {c.profiles?.avatar_url
-                            ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : c.profiles?.nickname?.[0] ?? '?'
-                          }
+                      <div key={c.id} style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                          <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                            {c.profiles?.avatar_url
+                              ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : c.profiles?.nickname?.[0] ?? '?'
+                            }
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                              <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                            </div>
+                            <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />
+                          </div>
+                          <div style={{ display: 'flex', flexShrink: 0, alignItems: 'flex-start', gap: 2 }}>
+                            <button onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
+                            {c.user_id === myId && (
+                              <button onClick={() => handleDeleteComment(c.id, post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 11, padding: '4px', flexShrink: 0 }}>✕</button>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
-                          <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
-                        </div>
-                        {c.user_id === myId && (
-                          <button onClick={() => handleDeleteComment(c.id, post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 11, padding: '4px', flexShrink: 0 }}>✕</button>
-                        )}
                       </div>
                     ))}
                     <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -776,6 +826,17 @@ export default function HomePage() {
               インストールする
             </button>
           )}
+        </div>
+      )}
+
+      {/* コメントリアクションパレット */}
+      {commentReactionPaletteId && (
+        <div style={{ position: 'fixed', bottom: 110, left: '50%', transform: 'translateX(-50%)', zIndex: 150 }}>
+          <ReactionPalette
+            myEmoji={Object.entries(commentReactions[commentReactionPaletteId] ?? {}).find(([, ids]) => ids.includes(myId))?.[0] ?? null}
+            onSelect={(emoji) => toggleCommentReaction(commentReactionPaletteId, emoji)}
+            onClose={() => setCommentReactionPaletteId(null)}
+          />
         </div>
       )}
 

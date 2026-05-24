@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -36,9 +37,12 @@ export default function ChatRoomPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [messageReactions, setMessageReactions] = useState<Record<string, Record<string, string[]>>>({})
+  const [paletteMessageId, setPaletteMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -71,6 +75,23 @@ export default function ChatRoomPage() {
 
       if (msgs) {
         setMessages(msgs)
+        // リアクション読み込み
+        const msgIds = msgs.map((m: any) => m.id)
+        if (msgIds.length > 0) {
+          const { data: rxnData } = await supabase
+            .from('message_reactions')
+            .select('message_id, user_id, emoji')
+            .in('message_id', msgIds)
+          if (rxnData) {
+            const rxns: Record<string, Record<string, string[]>> = {}
+            rxnData.forEach((r: any) => {
+              if (!rxns[r.message_id]) rxns[r.message_id] = {}
+              if (!rxns[r.message_id][r.emoji]) rxns[r.message_id][r.emoji] = []
+              rxns[r.message_id][r.emoji].push(r.user_id)
+            })
+            setMessageReactions(rxns)
+          }
+        }
         setTimeout(() => {
           bottomRef.current?.scrollIntoView({ behavior: 'auto' })
         }, 100)
@@ -118,6 +139,50 @@ export default function ChatRoomPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const startPress = (msgId: string) => {
+    pressTimer.current = setTimeout(() => {
+      setPaletteMessageId(msgId)
+    }, 600)
+  }
+
+  const cancelPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+
+  const toggleMessageReaction = async (messageId: string, emoji: string) => {
+    if (!myId) return
+    const existing = messageReactions[messageId]?.[emoji] ?? []
+    const hasReacted = existing.includes(myId)
+    if (hasReacted) {
+      await supabase.from('message_reactions')
+        .delete()
+        .eq('message_id', messageId)
+        .eq('user_id', myId)
+        .eq('emoji', emoji)
+      setMessageReactions(prev => ({
+        ...prev,
+        [messageId]: {
+          ...prev[messageId],
+          [emoji]: (prev[messageId]?.[emoji] ?? []).filter(id => id !== myId),
+        },
+      }))
+    } else {
+      await supabase.from('message_reactions')
+        .insert({ message_id: messageId, user_id: myId, emoji })
+      setMessageReactions(prev => ({
+        ...prev,
+        [messageId]: {
+          ...prev[messageId],
+          [emoji]: [...(prev[messageId]?.[emoji] ?? []), myId],
+        },
+      }))
+    }
+    setPaletteMessageId(null)
+  }
 
   const sendMsg = async () => {
     if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
@@ -270,10 +335,18 @@ export default function ChatRoomPage() {
           const isMe = m.sender_id === myId
           const isTemp = m.id.startsWith('temp-')
           const time = new Date(m.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+          const rxns = messageReactions[m.id] ?? {}
+          const myEmoji = Object.entries(rxns).find(([, ids]) => ids.includes(myId))?.[0] ?? null
           return (
             <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start', opacity: isTemp ? 0.7 : 1 }}>
               {!isMe && <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 3 }}>{otherProfile?.nickname}</div>}
-              <div style={{ padding: m.image_url || m.file_url ? '6px' : '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none' }}>
+              <div
+                onContextMenu={(e) => { e.preventDefault(); if (!isTemp) setPaletteMessageId(m.id) }}
+                onTouchStart={() => { if (!isTemp) startPress(m.id) }}
+                onTouchEnd={cancelPress}
+                onTouchMove={cancelPress}
+                style={{ padding: m.image_url || m.file_url ? '6px' : '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+              >
                 {m.image_url && (
                   <img src={m.image_url} alt="画像" style={{ width: '100%', maxWidth: 200, borderRadius: 8, display: 'block' }} />
                 )}
@@ -285,6 +358,7 @@ export default function ChatRoomPage() {
                 )}
                 {m.content && <div style={{ padding: m.image_url || m.file_url ? '4px 4px 0' : '0' }}>{m.content}</div>}
               </div>
+              <ReactionBar reactions={rxns} myId={myId} onToggle={(emoji) => toggleMessageReaction(m.id, emoji)} />
               <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>
                 {isTemp ? '送信中...' : time}
               </div>
@@ -293,6 +367,17 @@ export default function ChatRoomPage() {
         })}
         <div ref={bottomRef} />
       </div>
+
+      {/* リアクションパレット（メッセージ長押し） */}
+      {paletteMessageId && (
+        <div style={{ position: 'fixed', bottom: '38%', left: '50%', transform: 'translateX(-50%)', zIndex: 350 }}>
+          <ReactionPalette
+            myEmoji={Object.entries(messageReactions[paletteMessageId] ?? {}).find(([, ids]) => ids.includes(myId))?.[0] ?? null}
+            onSelect={(emoji) => toggleMessageReaction(paletteMessageId, emoji)}
+            onClose={() => setPaletteMessageId(null)}
+          />
+        </div>
+      )}
 
       {/* プレビュー */}
       {(imagePreview || selectedFile) && (

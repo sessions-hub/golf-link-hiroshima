@@ -9,6 +9,7 @@ import PointToast from '@/components/PointToast'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
+import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 
 interface Profile {
   user_id: string
@@ -97,6 +98,8 @@ export default function UserProfilePage() {
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [profilePts, setProfilePts] = useState(0)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
+  const [commentReactions, setCommentReactions] = useState<Record<string, Record<string, string[]>>>({})
+  const [commentReactionPaletteId, setCommentReactionPaletteId] = useState<string | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -223,8 +226,47 @@ export default function UserProfilePage() {
       .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
-    if (data) setModalComments(data as any)
+    if (data) {
+      setModalComments(data as any)
+      const commentIds = data.map((c: any) => c.id)
+      if (commentIds.length > 0) {
+        const { data: rxnData } = await supabase
+          .from('comment_reactions')
+          .select('comment_id, user_id, emoji')
+          .in('comment_id', commentIds)
+        if (rxnData) {
+          const rxns: Record<string, Record<string, string[]>> = {}
+          rxnData.forEach((r: any) => {
+            if (!rxns[r.comment_id]) rxns[r.comment_id] = {}
+            if (!rxns[r.comment_id][r.emoji]) rxns[r.comment_id][r.emoji] = []
+            rxns[r.comment_id][r.emoji].push(r.user_id)
+          })
+          setCommentReactions(prev => ({ ...prev, ...rxns }))
+        }
+      }
+    }
     setCommentsLoading(false)
+  }
+
+  const toggleCommentReaction = async (commentId: string, emoji: string) => {
+    if (!myId) return
+    const existing = commentReactions[commentId]?.[emoji] ?? []
+    const hasReacted = existing.includes(myId)
+    if (hasReacted) {
+      await supabase.from('comment_reactions')
+        .delete().eq('comment_id', commentId).eq('user_id', myId).eq('emoji', emoji)
+      setCommentReactions(prev => ({
+        ...prev,
+        [commentId]: { ...prev[commentId], [emoji]: (prev[commentId]?.[emoji] ?? []).filter(id => id !== myId) },
+      }))
+    } else {
+      await supabase.from('comment_reactions').insert({ comment_id: commentId, user_id: myId, emoji })
+      setCommentReactions(prev => ({
+        ...prev,
+        [commentId]: { ...prev[commentId], [emoji]: [...(prev[commentId]?.[emoji] ?? []), myId] },
+      }))
+    }
+    setCommentReactionPaletteId(null)
   }
 
   const handleModalComment = async (postId?: string) => {
@@ -408,13 +450,19 @@ export default function UserProfilePage() {
                 <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
               )}
               {modalComments.map((c: any) => (
-                <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                    {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                  </div>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                <div key={c.id} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                      </div>
+                      <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />
+                    </div>
+                    <button onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
                   </div>
                 </div>
               ))}
@@ -496,13 +544,19 @@ export default function UserProfilePage() {
                 <div style={{ fontSize: 12, color: 'var(--mute)', padding: '4px 0' }}>まだコメントはありません</div>
               )}
               {modalComments.map((c: any) => (
-                <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                  <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                    {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                  </div>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                <div key={c.id} style={{ marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
+                      </div>
+                      <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />
+                    </div>
+                    <button onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
                   </div>
                 </div>
               ))}
@@ -520,6 +574,18 @@ export default function UserProfilePage() {
           </div>
         </div>
       )}
+
+      {/* コメントリアクションパレット */}
+      {commentReactionPaletteId && (
+        <div style={{ position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)', zIndex: 350 }}>
+          <ReactionPalette
+            myEmoji={Object.entries(commentReactions[commentReactionPaletteId] ?? {}).find(([, ids]) => ids.includes(myId))?.[0] ?? null}
+            onSelect={(emoji) => toggleCommentReaction(commentReactionPaletteId, emoji)}
+            onClose={() => setCommentReactionPaletteId(null)}
+          />
+        </div>
+      )}
+
       <BottomNav />
     </div>
   )
