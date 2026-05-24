@@ -453,8 +453,8 @@ export default function UserProfilePage() {
               </button>
               <button
                 onClick={() => setShowBlockModal(true)}
-                style={{ width: 42, height: 42, borderRadius: 10, border: `1px solid ${isBlocked ? 'rgba(200,60,60,.4)' : 'var(--line)'}`, background: isBlocked ? 'rgba(200,60,60,.08)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 18 }}>
-                🚫
+                style={{ width: 42, height: 42, borderRadius: 10, border: `1px solid ${isBlocked ? 'rgba(200,60,60,.25)' : 'var(--line)'}`, background: isBlocked ? 'rgba(200,60,60,.08)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="4.5" y1="4.5" x2="19.5" y2="19.5"/></svg>
               </button>
             </div>
           </div>
