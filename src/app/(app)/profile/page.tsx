@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, isPremium, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
+import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
@@ -263,6 +264,7 @@ export default function ProfilePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+      addPoints(supabase, user.id, 2)
     }
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !liked, likes_count: liked ? p.likes_count - 1 : p.likes_count + 1 }
@@ -294,6 +296,7 @@ export default function ProfilePage() {
       user_id: user.id,
       content: modalCommentInput.trim(),
     })
+    addPoints(supabase, user.id, 2)
     setModalCommentInput('')
     await fetchModalComments(selectedPost.id)
   }
