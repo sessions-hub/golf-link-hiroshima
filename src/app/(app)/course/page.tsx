@@ -2,7 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canJoinComp, canHostComp, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
@@ -53,8 +53,11 @@ const getPlanBadge = (plan: Plan) => {
 
 export default function CoursePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'course' | 'comp'>('course')
+  const [activeTab, setActiveTab] = useState<'course' | 'comp'>(
+    searchParams.get('tab') === 'comp' ? 'comp' : 'course'
+  )
   const [courseFilter, setCourseFilter] = useState('広島県')
   const [searchText, setSearchText] = useState('')
   const [goraCourses, setGoraCourses] = useState<GoraCourse[]>([])
