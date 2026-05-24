@@ -8,11 +8,11 @@ const ITEMS = [
   },
   {
     label: '運営責任者',
-    value: '澤田 朋治',
+    value: '澤田 朋治（Tomoharu Sawada）',
   },
   {
     label: '所在地',
-    value: '広島県広島市\n（詳細はメールにてお問い合わせください）',
+    value: '広島県広島市\nHiroshima City, Hiroshima Prefecture, Japan\n（詳細はメールにてお問い合わせください）',
   },
   {
     label: '電話番号',
@@ -24,11 +24,11 @@ const ITEMS = [
   },
   {
     label: 'ウェブサイト',
-    value: 'https://golf-link-hiroshima.vercel.app',
+    value: 'https://golflink-hiroshima.com',
   },
   {
     label: '販売サービス',
-    value: 'ゴルファー向けSNS・マッチング・コンペ管理・GPS計測サービス「GLH.」の有料プラン',
+    value: 'ゴルファー向けコミュニティサービス「GLH.」の有料プラン\nSNS・マッチング・コース予約・コンペ管理・スコア記録・GPS計測等の機能を提供',
   },
   {
     label: '販売価格',
@@ -64,7 +64,7 @@ const ITEMS = [
   },
   {
     label: '個人情報の取扱い',
-    value: 'プライバシーポリシーに準じます\nhttps://golf-link-hiroshima.vercel.app/legal/privacy',
+    value: 'プライバシーポリシーに準じます\nhttps://golflink-hiroshima.com/legal/privacy',
   },
 ]
 

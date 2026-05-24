@@ -129,8 +129,11 @@ export default function TermsPage() {
           </div>
         ))}
 
-        <p style={{ color: 'var(--mute)', fontSize: 11, marginTop: 32 }}>
-          お問い合わせ：info@golflink-hiroshima.com
+        <p style={{ color: 'var(--mute)', fontSize: 11, marginTop: 32, lineHeight: 1.8 }}>
+          Golf Link Hiroshima 運営事務局{'\n'}
+          運営責任者：澤田 朋治（Tomoharu Sawada）{'\n'}
+          お問い合わせ：info@golflink-hiroshima.com{'\n'}
+          https://golflink-hiroshima.com
         </p>
       </div>
     </div>
