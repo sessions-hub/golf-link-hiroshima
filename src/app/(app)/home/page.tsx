@@ -89,6 +89,8 @@ export default function HomePage() {
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const deferredPromptRef = useRef<any>(null)
+  const [totalPts, setTotalPts] = useState(0)
+  const [todayPts, setTodayPts] = useState(0)
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -159,6 +161,16 @@ export default function HomePage() {
         setRoundCount(scoreData.length)
       }
       setMyUserId(user.id)
+
+      // ポイント取得
+      const today = new Date().toISOString().split('T')[0]
+      const { data: ptsData } = await supabase
+        .from('user_points')
+        .select('total_points, today_points, today_date')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      setTotalPts(ptsData?.total_points ?? 0)
+      setTodayPts(ptsData?.today_date === today ? (ptsData?.today_points ?? 0) : 0)
 
       // チャット一覧取得（未読あり・最新3件）
       const { data: chatData } = await supabase
@@ -354,10 +366,7 @@ export default function HomePage() {
     p.profiles?.nickname?.includes(searchQuery)
   )
 
-  // MOCK: ポイントDBが実装されたら実際の値に差し替え
-  const MOCK_PTS = 3240
-  const TODAY_PTS = 65
-  const levelInfo = getLevelInfo(MOCK_PTS)
+  const levelInfo = getLevelInfo(totalPts)
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -414,9 +423,9 @@ export default function HomePage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
                     <span style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 500, color: 'var(--txt)', lineHeight: 1 }}>
-                      {MOCK_PTS.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 3 }}>pt</span>
+                      {totalPts.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 3 }}>pt</span>
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--g2)', fontFamily: 'Inter', lineHeight: 1 }}>本日 +{TODAY_PTS}pt</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--g2)', fontFamily: 'Inter', lineHeight: 1 }}>本日 +{todayPts}pt</span>
                   </div>
                   <div style={{ height: 5, background: 'var(--surf)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
                     <div style={{ height: '100%', width: `${lv.progress * 100}%`, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 3 }} />

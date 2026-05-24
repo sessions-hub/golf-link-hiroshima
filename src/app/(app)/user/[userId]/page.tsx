@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
+import { getLevelInfo } from '@/lib/level'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
@@ -73,11 +74,6 @@ const DAY_LABEL: Record<string, string> = {
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
-const getPlanBadge = (plan: string) => {
-  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
-  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, #15803d, #16a34a)', color: 'white' }
-  return { label: 'FREE', bg: '#eef3ee', color: '#7a9a7a' }
-}
 
 export default function UserProfilePage() {
   const router = useRouter()
@@ -97,6 +93,7 @@ export default function UserProfilePage() {
   const [modalComments, setModalComments] = useState<any[]>([])
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
+  const [profilePts, setProfilePts] = useState(0)
 
   useEffect(() => {
     const init = async () => {
@@ -117,6 +114,14 @@ export default function UserProfilePage() {
           .eq('user_id', userId)
           .maybeSingle()
         setProfile({ ...prof, plan: subData?.plan ?? 'free' })
+
+        // ポイント取得
+        const { data: ptsData } = await supabase
+          .from('user_points')
+          .select('total_points')
+          .eq('user_id', userId)
+          .maybeSingle()
+        setProfilePts(ptsData?.total_points ?? 0)
       }
 
       const { data: postData } = await supabase
@@ -253,7 +258,7 @@ export default function UserProfilePage() {
 
   const isMe = myId === userId
   const zodiac = profile.birth_date ? ZODIAC_NAMES_JP[getZodiacSign(profile.birth_date)] : null
-  const planBadge = getPlanBadge(profile.plan)
+  const profileLevelInfo = getLevelInfo(profilePts)
   const areaLabel = profile.areas && profile.areas.length > 0 ? AREA_LABELS[profile.areas[0]] ?? profile.areas[0] : null
   const ageDecade = profile.birth_date ? AGE_DECADE(profile.birth_date) : null
   const otherPosts = featuredPost ? posts.filter(p => p.id !== featuredPost.id) : posts
@@ -294,9 +299,9 @@ export default function UserProfilePage() {
                   {profile.gender === 'other' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>}
                 </span>
               )}
-              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'baseline', gap: 2, background: 'rgba(13,61,43,.07)', border: '1px solid rgba(13,61,43,.13)', borderRadius: 5, padding: '3px 8px' }}>
-                <span style={{ fontSize: 7, fontFamily: 'Inter', fontWeight: 700, color: 'var(--g3)', letterSpacing: '.12em' }}>GLH</span>
-                <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 700, color: 'var(--g1)' }}>Lv.{profile.plan === 'premium' ? 4 : profile.plan === 'standard' ? 2 : 1}</span>
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'baseline', gap: 2, background: `${profileLevelInfo.color}0a`, border: `1px solid ${profileLevelInfo.color}4d`, borderRadius: 5, padding: '3px 8px' }}>
+                <span style={{ fontSize: 7, fontFamily: 'Inter', fontWeight: 700, color: profileLevelInfo.color, letterSpacing: '.12em', opacity: .7 }}>GLH</span>
+                <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 700, color: profileLevelInfo.color }}>Lv.{profileLevelInfo.level}</span>
               </span>
             </div>
             {/* エリア・年代 */}
