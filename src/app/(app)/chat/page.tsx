@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import { FriendAvatar } from '@/components/FriendAvatar'
 
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
@@ -36,6 +37,7 @@ export default function ChatListPage() {
   const [myId, setMyId] = useState('')
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const init = async () => {
@@ -43,10 +45,16 @@ export default function ChatListPage() {
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
 
-      const [plan, { data }] = await Promise.all([
+      const [plan, { data }, { data: myFavs }, { data: favMe }] = await Promise.all([
         getUserPlan(),
         supabase.from('chat_rooms').select('*').or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`).order('last_message_at', { ascending: false }),
+        supabase.from('favorites').select('target_id').eq('user_id', user.id),
+        supabase.from('favorites').select('user_id').eq('target_id', user.id),
       ])
+      if (myFavs && favMe) {
+        const favMeSet = new Set(favMe.map(f => f.user_id))
+        setFriendIds(new Set(myFavs.filter(f => favMeSet.has(f.target_id)).map(f => f.target_id)))
+      }
       setUserPlan(plan)
 
       if (data) {
@@ -134,12 +142,13 @@ export default function ChatListPage() {
             >
               {/* アバター */}
               <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); router.push(`/user/${room.other_user.user_id}`) }}>
-                <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden', cursor: 'pointer' }}>
-                  {room.other_user.avatar_url
-                    ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : room.other_user.nickname?.[0] ?? '?'
-                  }
-                </div>
+                <FriendAvatar
+                  avatarUrl={room.other_user.avatar_url}
+                  nickname={room.other_user.nickname}
+                  isFriend={friendIds.has(room.other_user.user_id)}
+                  size={52}
+                  border="1px solid var(--line)"
+                />
                 {unread > 0 && (
                   <div style={{ position: 'absolute', top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white', padding: '0 4px' }}>
                     {unread > 99 ? '99+' : unread}

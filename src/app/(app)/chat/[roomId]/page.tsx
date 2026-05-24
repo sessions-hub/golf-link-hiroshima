@@ -2,6 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
+import { FriendAvatar } from '@/components/FriendAvatar'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -39,6 +40,7 @@ export default function ChatRoomPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [messageReactions, setMessageReactions] = useState<Record<string, Record<string, string[]>>>({})
   const [paletteMessageId, setPaletteMessageId] = useState<string | null>(null)
+  const [isFriend, setIsFriend] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -60,12 +62,13 @@ export default function ChatRoomPage() {
 
       const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id, nickname, avatar_url')
-        .eq('user_id', otherUserId)
-        .single()
+      const [{ data: profile }, { data: myFav }, { data: theirFav }] = await Promise.all([
+        supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single(),
+        supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', otherUserId).maybeSingle(),
+        supabase.from('favorites').select('id').eq('user_id', otherUserId).eq('target_id', user.id).maybeSingle(),
+      ])
       if (profile) setOtherProfile(profile)
+      setIsFriend(!!(myFav && theirFav))
 
       const { data: msgs } = await supabase
         .from('messages')
@@ -309,12 +312,15 @@ export default function ChatRoomPage() {
         <div onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </div>
-        <div onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)} style={{ width: 38, height: 38, borderRadius: '50%', background: '#E8F0F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#3a6aaa', overflow: 'hidden', cursor: 'pointer' }}>
-          {otherProfile?.avatar_url
-            ? <img src={otherProfile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : otherProfile?.nickname?.[0] ?? '?'
-          }
-        </div>
+        <FriendAvatar
+          avatarUrl={otherProfile?.avatar_url ?? null}
+          nickname={otherProfile?.nickname ?? ''}
+          isFriend={isFriend}
+          size={38}
+          bg="#E8F0F8"
+          textColor="#3a6aaa"
+          onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)}
+        />
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{otherProfile?.nickname ?? 'チャット'}</div>
 

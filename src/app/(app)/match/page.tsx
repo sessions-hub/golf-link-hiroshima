@@ -10,6 +10,7 @@ import PointToast from '@/components/PointToast'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import { FriendAvatar } from '@/components/FriendAvatar'
 
 interface MatchProfile {
   user_id: string
@@ -106,6 +107,7 @@ export default function MatchPage() {
   const [favoritedBy, setFavoritedBy] = useState<any[]>([])
   const [favoritingList, setFavoritingList] = useState<any[]>([])
   const [favoritedByIds, setFavoritedByIds] = useState<Set<string>>(new Set())
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -127,11 +129,15 @@ export default function MatchPage() {
       if (!error) setMatches(data ?? [])
 
       // お気に入り一覧
-      const { data: favData } = await supabase
-        .from('favorites')
-        .select('target_id')
-        .eq('user_id', user.id)
+      const [{ data: favData }, { data: favMeData }] = await Promise.all([
+        supabase.from('favorites').select('target_id').eq('user_id', user.id),
+        supabase.from('favorites').select('user_id').eq('target_id', user.id),
+      ])
       if (favData) setFavorites(new Set(favData.map(f => f.target_id)))
+      if (favData && favMeData) {
+        const favMeSet = new Set(favMeData.map(f => f.user_id))
+        setFriendIds(new Set(favData.filter(f => favMeSet.has(f.target_id)).map(f => f.target_id)))
+      }
 
       // 足跡を記録
       await supabase.from('footprints').insert({
@@ -407,15 +413,16 @@ export default function MatchPage() {
               return (
                 <div key={m.user_id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isFav ? 'rgba(200,60,100,.2)' : 'var(--line)'}`, padding: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                    <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => router.push(`/user/${m.user_id}`)}>
-                      <div style={{ width: 46, height: 46, borderRadius: 10, background: avatarColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: avatarColor.text, flexShrink: 0, overflow: 'hidden' }}>
-                        {m.avatar_url
-                          ? <img src={m.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : m.nickname?.[0] ?? '?'
-                        }
-                      </div>
-
-                    </div>
+                    <FriendAvatar
+                      avatarUrl={m.avatar_url}
+                      nickname={m.nickname}
+                      isFriend={friendIds.has(m.user_id)}
+                      size={46}
+                      borderRadius={10}
+                      bg={avatarColor.bg}
+                      textColor={avatarColor.text}
+                      onClick={() => router.push(`/user/${m.user_id}`)}
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
                         {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
@@ -528,9 +535,14 @@ export default function MatchPage() {
                     if (!p) return null
                     return (
                       <div key={`${fp.visitor_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
-                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
-                        </div>
+                        <FriendAvatar
+                          avatarUrl={p.avatar_url}
+                          nickname={p.nickname}
+                          isFriend={friendIds.has(p.user_id)}
+                          size={46}
+                          borderRadius={10}
+                          onClick={() => router.push(`/user/${p.user_id}`)}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 3 }}>{p.nickname}</div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -564,9 +576,14 @@ export default function MatchPage() {
                     const isMutual = favorites.has(p.user_id)
                     return (
                       <div key={`${fb.user_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
-                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
-                        </div>
+                        <FriendAvatar
+                          avatarUrl={p.avatar_url}
+                          nickname={p.nickname}
+                          isFriend={friendIds.has(p.user_id)}
+                          size={46}
+                          borderRadius={10}
+                          onClick={() => router.push(`/user/${p.user_id}`)}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
@@ -608,9 +625,14 @@ export default function MatchPage() {
                     const isMutual = favoritedByIds.has(p.user_id)
                     return (
                       <div key={`${fl.target_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
-                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
-                        </div>
+                        <FriendAvatar
+                          avatarUrl={p.avatar_url}
+                          nickname={p.nickname}
+                          isFriend={friendIds.has(p.user_id)}
+                          size={46}
+                          borderRadius={10}
+                          onClick={() => router.push(`/user/${p.user_id}`)}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>

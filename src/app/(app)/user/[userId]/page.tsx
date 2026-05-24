@@ -10,6 +10,7 @@ import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
+import { FriendAvatar } from '@/components/FriendAvatar'
 
 interface Profile {
   user_id: string
@@ -100,6 +101,7 @@ export default function UserProfilePage() {
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [commentReactions, setCommentReactions] = useState<Record<string, Record<string, string[]>>>({})
   const [commentReactionPaletteId, setCommentReactionPaletteId] = useState<string | null>(null)
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const init = async () => {
@@ -157,13 +159,16 @@ export default function UserProfilePage() {
         }
       }
 
-      const { data: favData } = await supabase
-        .from('favorites')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('target_id', userId)
-        .single()
+      const [{ data: favData }, { data: myFavsAll }, { data: favMeAll }] = await Promise.all([
+        supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', userId).single(),
+        supabase.from('favorites').select('target_id').eq('user_id', user.id),
+        supabase.from('favorites').select('user_id').eq('target_id', user.id),
+      ])
       setIsFav(!!favData)
+      if (myFavsAll && favMeAll) {
+        const favMeSet = new Set(favMeAll.map((f: any) => f.user_id))
+        setFriendIds(new Set(myFavsAll.filter((f: any) => favMeSet.has(f.target_id)).map((f: any) => f.target_id)))
+      }
 
       if (user.id !== userId) {
         await supabase.from('footprints').insert({
@@ -353,12 +358,15 @@ export default function UserProfilePage() {
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
           {/* アバター */}
-          <div style={{ width: 64, height: 64, borderRadius: 14, background: 'var(--surf)', border: '1.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
-            {profile.avatar_url
-              ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : profile.nickname?.[0]
-            }
-          </div>
+          <FriendAvatar
+            avatarUrl={profile.avatar_url}
+            nickname={profile.nickname}
+            isFriend={friendIds.has(userId)}
+            size={64}
+            borderRadius={14}
+            border="1.5px solid var(--line)"
+            flexShrink={0}
+          />
           {/* 情報 */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* 名前・性別バッジ・プランバッジ */}
@@ -419,12 +427,14 @@ export default function UserProfilePage() {
         {featuredPost && (
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
             <div style={{ padding: '12px 16px 8px', display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
-                {profile.avatar_url
-                  ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : profile.nickname?.[0]
-                }
-              </div>
+              <FriendAvatar
+                avatarUrl={profile.avatar_url}
+                nickname={profile.nickname}
+                isFriend={friendIds.has(userId)}
+                size={36}
+                border="1px solid var(--line)"
+                flexShrink={0}
+              />
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{profile.nickname}</div>
                 <div style={{ fontSize: 10, color: 'var(--mute)' }}>{new Date(featuredPost.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric', timeZone: 'Asia/Tokyo' })}</div>
@@ -452,9 +462,15 @@ export default function UserProfilePage() {
               {modalComments.map((c: any) => (
                 <div key={c.id} style={{ marginBottom: 8 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                    </div>
+                    <FriendAvatar
+                      avatarUrl={c.profiles?.avatar_url ?? null}
+                      nickname={c.profiles?.nickname ?? ''}
+                      isFriend={!!c.user_id && friendIds.has(c.user_id)}
+                      size={28}
+                      border="1px solid var(--line)"
+                      flexShrink={0}
+                      onClick={() => c.user_id && router.push(`/user/${c.user_id}`)}
+                    />
                     <div style={{ flex: 1 }}>
                       <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
@@ -546,9 +562,15 @@ export default function UserProfilePage() {
               {modalComments.map((c: any) => (
                 <div key={c.id} style={{ marginBottom: 8 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                    </div>
+                    <FriendAvatar
+                      avatarUrl={c.profiles?.avatar_url ?? null}
+                      nickname={c.profiles?.nickname ?? ''}
+                      isFriend={!!c.user_id && friendIds.has(c.user_id)}
+                      size={28}
+                      border="1px solid var(--line)"
+                      flexShrink={0}
+                      onClick={() => c.user_id && router.push(`/user/${c.user_id}`)}
+                    />
                     <div style={{ flex: 1 }}>
                       <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>

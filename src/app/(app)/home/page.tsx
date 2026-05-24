@@ -2,6 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
+import { FriendAvatar } from '@/components/FriendAvatar'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -89,6 +90,7 @@ export default function HomePage() {
   const [editCaption, setEditCaption] = useState('')
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
   const [myUserId, setMyUserId] = useState('')
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const fileRef = useRef<HTMLInputElement>(null)
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
@@ -165,6 +167,16 @@ export default function HomePage() {
         setRoundCount(scoreData.length)
       }
       setMyUserId(user.id)
+
+      // 相互お気に入り（フレンド）
+      const [{ data: myFavs }, { data: favMe }] = await Promise.all([
+        supabase.from('favorites').select('target_id').eq('user_id', user.id),
+        supabase.from('favorites').select('user_id').eq('target_id', user.id),
+      ])
+      if (myFavs && favMe) {
+        const favMeSet = new Set(favMe.map((f: any) => f.user_id))
+        setFriendIds(new Set(myFavs.filter((f: any) => favMeSet.has(f.target_id)).map((f: any) => f.target_id)))
+      }
 
       // ポイント取得 + ログインボーナス
       const today = new Date().toISOString().split('T')[0]
@@ -560,12 +572,13 @@ export default function HomePage() {
                 return (
                   <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
                     <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', overflow: 'hidden' }}>
-                        {room.other_user.avatar_url
-                          ? <img src={room.other_user.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : room.other_user.nickname?.[0] ?? '?'
-                        }
-                      </div>
+                      <FriendAvatar
+                        avatarUrl={room.other_user.avatar_url}
+                        nickname={room.other_user.nickname}
+                        isFriend={friendIds.has(room.other_user.user_id)}
+                        size={42}
+                        border="1px solid var(--line)"
+                      />
                       {unread > 0 && (
                         <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
                           {unread > 9 ? '9+' : unread}
@@ -667,12 +680,14 @@ export default function HomePage() {
             {filteredPosts.map((post) => (
               <div key={post.id} style={{ background: 'white', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
                 <div style={{ padding: '12px 16px 8px', display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', overflow: 'hidden', flexShrink: 0 }}>
-                    {post.profiles?.avatar_url
-                      ? <img src={post.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : post.profiles?.nickname?.[0] ?? '?'
-                    }
-                  </div>
+                  <FriendAvatar
+                    avatarUrl={post.profiles?.avatar_url ?? null}
+                    nickname={post.profiles?.nickname ?? ''}
+                    isFriend={friendIds.has(post.user_id)}
+                    size={40}
+                    flexShrink={0}
+                    onClick={() => router.push(`/user/${post.user_id}`)}
+                  />
                   <div style={{ flex: 1 }}>
                     <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer' }}>{post.profiles?.nickname ?? 'ゴルファー'}</div>
                     <div style={{ fontSize: 10, color: 'var(--mute)' }}>{new Date(post.created_at).toLocaleDateString('ja-JP')}</div>
@@ -719,12 +734,15 @@ export default function HomePage() {
                     {(comments[post.id] ?? []).map(c => (
                       <div key={c.id} style={{ marginBottom: 8 }}>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                          <div onClick={() => c.user_id && router.push(`/user/${c.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                            {c.profiles?.avatar_url
-                              ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              : c.profiles?.nickname?.[0] ?? '?'
-                            }
-                          </div>
+                          <FriendAvatar
+                            avatarUrl={c.profiles?.avatar_url ?? null}
+                            nickname={c.profiles?.nickname ?? ''}
+                            isFriend={!!c.user_id && friendIds.has(c.user_id)}
+                            size={28}
+                            border="1px solid var(--line)"
+                            flexShrink={0}
+                            onClick={() => c.user_id && router.push(`/user/${c.user_id}`)}
+                          />
                           <div style={{ flex: 1 }}>
                             <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
                               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>

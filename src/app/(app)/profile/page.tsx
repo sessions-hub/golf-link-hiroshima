@@ -12,6 +12,7 @@ import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
+import { FriendAvatar } from '@/components/FriendAvatar'
 
 const SVG_ICONS: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
@@ -141,6 +142,7 @@ export default function ProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [posting, setPosting] = useState(false)
   const [totalPts, setTotalPts] = useState(0)
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const fileRef = React.useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -151,6 +153,16 @@ export default function ProfilePage() {
 
       const { data } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
       if (data) setProfile(data)
+
+      // 相互お気に入り（フレンド）
+      const [{ data: myFavsData }, { data: favMeData }] = await Promise.all([
+        supabase.from('favorites').select('target_id').eq('user_id', user.id),
+        supabase.from('favorites').select('user_id').eq('target_id', user.id),
+      ])
+      if (myFavsData && favMeData) {
+        const favMeSet = new Set(favMeData.map((f: any) => f.user_id))
+        setFriendIds(new Set(myFavsData.filter((f: any) => favMeSet.has(f.target_id)).map((f: any) => f.target_id)))
+      }
 
       const plan = await getUserPlan()
       setUserPlan(plan)
@@ -618,9 +630,13 @@ export default function ProfilePage() {
                   const p = v.profiles
                   return (
                     <div key={v.visitor_id} onClick={() => router.push(`/user/${v.visitor_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                        {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
-                      </div>
+                      <FriendAvatar
+                        avatarUrl={p?.avatar_url ?? null}
+                        nickname={p?.nickname ?? ''}
+                        isFriend={!!p?.user_id && friendIds.has(p.user_id)}
+                        size={44}
+                        border="1px solid var(--line)"
+                      />
                       <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
                     </div>
                   )
@@ -629,9 +645,14 @@ export default function ProfilePage() {
                   const p = l.profiles
                   return (
                     <div key={l.user_id} onClick={() => router.push(`/user/${l.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(200,60,100,.08)', border: '1px solid rgba(200,60,100,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                        {p?.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p?.nickname?.[0] ?? '?'}
-                      </div>
+                      <FriendAvatar
+                        avatarUrl={p?.avatar_url ?? null}
+                        nickname={p?.nickname ?? ''}
+                        isFriend={!!p?.user_id && friendIds.has(p.user_id)}
+                        size={44}
+                        bg="rgba(200,60,100,.08)"
+                        border="1px solid rgba(200,60,100,.2)"
+                      />
                       <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
                     </div>
                   )
@@ -819,9 +840,15 @@ export default function ProfilePage() {
               {modalComments.map((c: any) => (
                 <div key={c.id} style={{ marginBottom: 8 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div onClick={() => c.profiles?.user_id && router.push(`/user/${c.profiles.user_id}`)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
-                      {c.profiles?.avatar_url ? <img src={c.profiles.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : c.profiles?.nickname?.[0] ?? '?'}
-                    </div>
+                    <FriendAvatar
+                      avatarUrl={c.profiles?.avatar_url ?? null}
+                      nickname={c.profiles?.nickname ?? ''}
+                      isFriend={!!c.profiles?.user_id && friendIds.has(c.profiles.user_id)}
+                      size={28}
+                      border="1px solid var(--line)"
+                      flexShrink={0}
+                      onClick={() => c.profiles?.user_id && router.push(`/user/${c.profiles.user_id}`)}
+                    />
                     <div style={{ flex: 1 }}>
                       <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
