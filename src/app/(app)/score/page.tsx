@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
+import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { type CourseEntry, searchVenues, getVenueCourses } from '@/lib/courses'
@@ -149,6 +150,7 @@ export default function ScorePage() {
       hole_scores: scores.slice(0, holeCount),
     })
     if (!error) {
+      addPoints(supabase, user.id, 50)
       const { data: newHistory } = await supabase
         .from('scorecards')
         .select('*')

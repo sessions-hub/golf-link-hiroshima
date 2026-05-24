@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
+import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -162,15 +163,22 @@ export default function HomePage() {
       }
       setMyUserId(user.id)
 
-      // ポイント取得
+      // ポイント取得 + ログインボーナス
       const today = new Date().toISOString().split('T')[0]
       const { data: ptsData } = await supabase
         .from('user_points')
         .select('total_points, today_points, today_date')
         .eq('user_id', user.id)
         .maybeSingle()
-      setTotalPts(ptsData?.total_points ?? 0)
-      setTodayPts(ptsData?.today_date === today ? (ptsData?.today_points ?? 0) : 0)
+      const isFirstVisitToday = !ptsData || ptsData.today_date !== today
+      if (isFirstVisitToday) {
+        await addPoints(supabase, user.id, 5)
+        setTotalPts((ptsData?.total_points ?? 0) + 5)
+        setTodayPts(5)
+      } else {
+        setTotalPts(ptsData.total_points)
+        setTodayPts(ptsData.today_points)
+      }
 
       // チャット一覧取得（未読あり・最新3件）
       const { data: chatData } = await supabase
@@ -263,6 +271,9 @@ export default function HomePage() {
     if (!error) {
       setCommentInputs(prev => ({ ...prev, [postId]: '' }))
       await fetchComments(postId)
+      addPoints(supabase, user.id, 2)
+      setTotalPts(p => p + 2)
+      setTodayPts(p => p + 2)
       // 投稿者に通知
       const post = posts.find(p => p.id === postId)
       if (post && post.user_id !== user.id) {
@@ -324,6 +335,10 @@ export default function HomePage() {
       return
     }
 
+    addPoints(supabase, user.id, 10)
+    setTotalPts(p => p + 10)
+    setTodayPts(p => p + 10)
+
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
@@ -346,6 +361,9 @@ export default function HomePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+      addPoints(supabase, user.id, 2)
+      setTotalPts(p => p + 2)
+      setTodayPts(p => p + 2)
       // 投稿者に通知
       const post = posts.find(p => p.id === postId)
       if (post && post.user_id !== user.id) {

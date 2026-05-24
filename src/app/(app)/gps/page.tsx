@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
+import { createClient } from '@/lib/supabase/client'
+import { addPoints } from '@/lib/points'
 
 interface GoraCourse {
   golfCourseId: number
@@ -62,6 +64,8 @@ const getPlanBadge = (plan: Plan) => {
 
 export default function GpsPage() {
   const router = useRouter()
+  const supabase = createClient()
+  const [myId, setMyId] = useState('')
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [position, setPosition] = useState<GPSPosition | null>(null)
   const [gpsError, setGpsError] = useState('')
@@ -78,9 +82,9 @@ export default function GpsPage() {
 
   useEffect(() => {
     const init = async () => {
-      const supabase = (await import('@/lib/supabase/client')).createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setMyId(user.id)
       getUserPlan().then(setUserPlan)
     }
     init()
@@ -179,6 +183,7 @@ export default function GpsPage() {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     setSelected(course)
     setHole(1)
+    if (myId) addPoints(supabase, myId, 50)
     if (position && course.latitude && course.longitude) {
       const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
       const center = mToY(distM)

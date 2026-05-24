@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canJoinComp, canHostComp, type Plan } from '@/lib/plan'
+import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -198,6 +199,7 @@ export default function CoursePage() {
     })
 
     if (!error) {
+      addPoints(supabase, myId, 200)
       await fetchCompetitions(myId)
       setShowCreateModal(false)
       setTitle('')
@@ -222,6 +224,7 @@ export default function CoursePage() {
         user_id: myId,
         status: 'confirmed',
       })
+      addPoints(supabase, myId, 50)
       // 主催者にプッシュ通知
       const comp = competitions.find(c => c.id === compId)
       if (comp?.organizer_id) {

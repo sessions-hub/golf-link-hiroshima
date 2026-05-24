@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
+import { addPoints } from '@/lib/points'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
@@ -165,6 +166,7 @@ export default function MatchPage() {
         user_id: myId,
         target_id: targetId,
       })
+      addPoints(supabase, myId, 5)
     }
     setFavorites(newFavs)
   }
