@@ -294,7 +294,10 @@ export default function UserProfilePage() {
                   {profile.gender === 'other' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="3" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="21"/><line x1="3" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="21" y2="12"/></svg>}
                 </span>
               )}
-              <span style={{ marginLeft: 'auto', padding: '3px 8px', borderRadius: 4, fontSize: 9, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.06em', background: planBadge.bg, color: planBadge.color, border: profile.plan === 'free' ? '1px solid var(--line)' : 'none' }}>{planBadge.label}</span>
+              <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'baseline', gap: 2, background: 'rgba(13,61,43,.07)', border: '1px solid rgba(13,61,43,.13)', borderRadius: 5, padding: '3px 8px' }}>
+                <span style={{ fontSize: 7, fontFamily: 'Inter', fontWeight: 700, color: 'var(--g3)', letterSpacing: '.12em' }}>GLH</span>
+                <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 700, color: 'var(--g1)' }}>Lv.{profile.plan === 'premium' ? 4 : profile.plan === 'standard' ? 2 : 1}</span>
+              </span>
             </div>
             {/* エリア・年代 */}
             {(areaLabel || ageDecade) && (

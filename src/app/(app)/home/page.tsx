@@ -5,6 +5,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
+import { getLevelInfo } from '@/lib/level'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -353,6 +354,11 @@ export default function HomePage() {
     p.profiles?.nickname?.includes(searchQuery)
   )
 
+  // MOCK: ポイントDBが実装されたら実際の値に差し替え
+  const MOCK_PTS = 320
+  const TODAY_PTS = 15
+  const levelInfo = getLevelInfo(MOCK_PTS)
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
@@ -385,6 +391,43 @@ export default function HomePage() {
       {/* ホームタブ */}
       {activeTab === 'home' && (
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+
+          {/* レベルカード */}
+          <div style={{ margin: '8px 16px 10px', background: 'linear-gradient(135deg,#0a1f0a,#162a16)', borderRadius: 14, padding: '14px 16px', border: '1px solid rgba(168,224,99,.2)', boxShadow: '0 4px 16px rgba(13,61,43,.18)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                  <span style={{ fontSize: 9, fontFamily: 'Inter', fontWeight: 700, color: 'rgba(168,224,99,.45)', letterSpacing: '.14em' }}>GLH</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 700, color: 'var(--lime)', lineHeight: 1 }}>Lv.{levelInfo.level}</span>
+                </div>
+                <div style={{ fontSize: 10, fontFamily: 'Inter', fontWeight: 700, color: 'rgba(168,224,99,.5)', letterSpacing: '.16em', marginTop: 3 }}>{levelInfo.name}</div>
+              </div>
+              <div style={{ background: 'rgba(168,224,99,.09)', border: '1px solid rgba(168,224,99,.18)', borderRadius: 10, padding: '7px 13px', textAlign: 'right' }}>
+                <div style={{ fontSize: 9, color: 'rgba(168,224,99,.4)', fontFamily: 'Inter', letterSpacing: '.1em', marginBottom: 2 }}>本日</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--lime)' }}>+{TODAY_PTS}pt</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 10 }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 36, fontWeight: 700, color: 'white', lineHeight: 1 }}>{MOCK_PTS.toLocaleString()}</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontFamily: 'Inter' }}>pt</span>
+            </div>
+
+            <div style={{ marginBottom: 7 }}>
+              <div style={{ height: 5, background: 'rgba(255,255,255,.07)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${levelInfo.progress * 100}%`, background: 'linear-gradient(90deg,rgba(168,224,99,.5),var(--lime))', borderRadius: 3 }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.28)', letterSpacing: '.1em' }}>{levelInfo.name}</span>
+              {levelInfo.next
+                ? <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.45)' }}>次のLvまで <span style={{ fontWeight: 700, color: 'rgba(168,224,99,.75)' }}>{levelInfo.ptToNext}pt</span></span>
+                : <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.6)', fontWeight: 700 }}>MAX LEVEL</span>
+              }
+              <span style={{ fontSize: 9, fontFamily: 'Inter', color: 'rgba(168,224,99,.28)', letterSpacing: '.1em' }}>{levelInfo.next?.name ?? ''}</span>
+            </div>
+          </div>
 
           {/* マッチング待ちカード */}
           <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: 16, position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(13,61,43,.2)', cursor: 'pointer' }}>
