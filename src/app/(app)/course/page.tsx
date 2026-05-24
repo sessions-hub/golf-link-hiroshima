@@ -246,18 +246,7 @@ export default function CoursePage() {
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
-        {activeTab === 'comp' && (myPlan === 'premium') && (
-          <button onClick={() => {
-            if (!canHostComp(userPlan)) {
-              alert('コンペの主催はプレミアムプランが必要です\nマイページからアップグレードできます')
-              return
-            }
-            setShowCreateModal(true)
-          }} style={{ background: canHostComp(userPlan) ? 'var(--lime)' : 'var(--mute)', color: canHostComp(userPlan) ? 'var(--g1)' : 'white', border: 'none', borderRadius: 7, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>＋ 主催する{!canHostComp(userPlan) ? ' 🔒' : ''}</button>
-        )}
-        {activeTab === 'comp' && myPlan !== 'premium' && (
-          <button onClick={() => router.push('/subscription')} style={{ background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '6px 12px', fontSize: 11, cursor: 'pointer' }}>プレミアムで主催</button>
-        )}
+        {(() => { const b = getPlanBadge(userPlan); return <span style={{ background: b.bg, color: b.color, borderRadius: 5, padding: '3px 9px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em' }}>{b.label}</span> })()}
       </div>
 
       {/* タブ */}
@@ -347,6 +336,13 @@ export default function CoursePage() {
       {/* コンペタブ */}
       {activeTab === 'comp' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
+          <div style={{ padding: '8px 16px 4px', display: 'flex', justifyContent: 'flex-end' }}>
+            {myPlan === 'premium' ? (
+              <button onClick={() => setShowCreateModal(true)} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>＋ 主催する</button>
+            ) : (
+              <button onClick={() => router.push('/subscription')} style={{ background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>プレミアムで主催する</button>
+            )}
+          </div>
           {loading && <SectionLoading />}
 
           {!loading && competitions.length === 0 && (

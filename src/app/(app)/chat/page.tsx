@@ -4,8 +4,15 @@ import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+
+const getPlanBadge = (plan: Plan) => {
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+}
 
 interface ChatRoom {
   id: string
@@ -28,6 +35,7 @@ export default function ChatListPage() {
   const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [myId, setMyId] = useState('')
   const [loading, setLoading] = useState(true)
+  const [userPlan, setUserPlan] = useState<Plan>('free')
 
   useEffect(() => {
     const init = async () => {
@@ -35,11 +43,11 @@ export default function ChatListPage() {
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
 
-      const { data } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false })
+      const [plan, { data }] = await Promise.all([
+        getUserPlan(),
+        supabase.from('chat_rooms').select('*').or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`).order('last_message_at', { ascending: false }),
+      ])
+      setUserPlan(plan)
 
       if (data) {
         const roomsWithProfiles = await Promise.all(data.map(async (room) => {
@@ -94,11 +102,14 @@ export default function ChatListPage() {
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo />
-        {totalUnread > 0 && (
-          <div style={{ background: '#e05070', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
-            {totalUnread}件の未読
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {totalUnread > 0 && (
+            <div style={{ background: '#e05070', color: 'white', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+              {totalUnread}件の未読
+            </div>
+          )}
+          {(() => { const b = getPlanBadge(userPlan); return <span style={{ background: b.bg, color: b.color, borderRadius: 5, padding: '3px 9px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em' }}>{b.label}</span> })()}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
