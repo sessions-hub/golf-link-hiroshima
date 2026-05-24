@@ -19,6 +19,7 @@ const SVG_ICONS: Record<string, React.ReactNode> = {
   book: <><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></>,
   lock: <><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></>,
   store: <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></>,
+  shield: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>,
 }
 
 const MENU_ITEMS = [
@@ -123,6 +124,7 @@ export default function ProfilePage() {
   const [showAllNotif, setShowAllNotif] = useState(false)
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const [showPostModal, setShowPostModal] = useState(false)
+  const [legalOpen, setLegalOpen] = useState(false)
   const [modalComments, setModalComments] = useState<any[]>([])
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -608,18 +610,24 @@ export default function ProfilePage() {
                 <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
               </div>
             ))}
-          </div>
 
-          {/* 法的情報 */}
-          <div style={{ background: 'white', marginBottom: 8 }}>
-            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>法的情報</div>
-            {LEGAL_ITEMS.map((item) => (
-              <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+            {/* 法的情報アコーディオン */}
+            <div onClick={() => setLegalOpen(o => !o)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', borderBottom: legalOpen ? '1px solid var(--surf)' : 'none' }}>
+              <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS.shield}</svg>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>法的情報</div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round" style={{ transform: legalOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .2s' }}>
+                <polyline points="6,9 12,15 18,9"/>
+              </svg>
+            </div>
+            {legalOpen && LEGAL_ITEMS.map((item, i) => (
+              <div key={item.label} onClick={() => router.push(item.path)} style={{ padding: '11px 20px 11px 32px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: i < LEGAL_ITEMS.length - 1 ? '1px solid var(--surf)' : 'none', cursor: 'pointer', background: 'var(--off)' }}>
+                <div style={{ width: 26, height: 26, background: 'white', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
-                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
+                <div style={{ fontSize: 12, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
+                <div style={{ color: 'var(--mute)', fontSize: 16 }}>›</div>
               </div>
             ))}
           </div>

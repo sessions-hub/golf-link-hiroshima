@@ -40,7 +40,9 @@ test.describe('/profile プロフィールページ', () => {
     await page.locator('button', { hasText: '設定・メニュー' }).click()
 
     await expect(page.locator('text=サブスクリプション管理')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=利用規約')).toBeVisible()
+    await expect(page.locator('text=法的情報')).toBeVisible()
+    await page.locator('text=法的情報').click()
+    await expect(page.locator('text=利用規約')).toBeVisible({ timeout: 3_000 })
     await expect(page.locator('text=特定商取引法に基づく表記')).toBeVisible()
   })
 
