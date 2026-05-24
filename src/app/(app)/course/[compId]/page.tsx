@@ -1,0 +1,258 @@
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { PageLoading } from '@/components/LoadingDots'
+import BottomNav from '@/components/layout/BottomNav'
+
+interface Competition {
+  id: string
+  organizer_id: string
+  title: string
+  description: string | null
+  course_name: string
+  comp_date: string
+  format: string
+  max_players: number
+  fee: number
+  status: string
+  image_url: string | null
+  pdf_url: string | null
+  created_at: string
+}
+
+interface Profile {
+  user_id: string
+  nickname: string
+  avatar_url: string | null
+  handicap: number
+}
+
+export default function CompDetailPage() {
+  const router = useRouter()
+  const params = useParams()
+  const compId = params.compId as string
+  const supabase = createClient()
+
+  const [comp, setComp] = useState<Competition | null>(null)
+  const [organizer, setOrganizer] = useState<Profile | null>(null)
+  const [entries, setEntries] = useState<Profile[]>([])
+  const [myId, setMyId] = useState('')
+  const [isEntered, setIsEntered] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [entering, setEntering] = useState(false)
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      setMyId(user.id)
+
+      const { data: compData } = await supabase
+        .from('competitions')
+        .select('*')
+        .eq('id', compId)
+        .single()
+
+      if (!compData) { router.push('/course'); return }
+      setComp(compData)
+
+      const [{ data: orgData }, { data: entriesData }, { data: myEntry }] = await Promise.all([
+        supabase.from('profiles').select('user_id, nickname, avatar_url, handicap')
+          .eq('user_id', compData.organizer_id).single(),
+        supabase.from('comp_entries').select('user_id, profiles(user_id, nickname, avatar_url)')
+          .eq('comp_id', compId),
+        supabase.from('comp_entries').select('comp_id')
+          .eq('comp_id', compId).eq('user_id', user.id).maybeSingle(),
+      ])
+
+      if (orgData) setOrganizer(orgData)
+      if (entriesData) setEntries(entriesData.map((e: any) => e.profiles).filter(Boolean))
+      setIsEntered(!!myEntry)
+      setLoading(false)
+    }
+    init()
+  }, [compId])
+
+  const handleEntry = async () => {
+    if (!myId || !comp) return
+    setEntering(true)
+    if (isEntered) {
+      await supabase.from('comp_entries').delete().eq('comp_id', comp.id).eq('user_id', myId)
+      setIsEntered(false)
+      setEntries(prev => prev.filter(e => e.user_id !== myId))
+    } else {
+      await supabase.from('comp_entries').insert({ comp_id: comp.id, user_id: myId, status: 'confirmed' })
+      setIsEntered(true)
+      if (comp.organizer_id) {
+        await fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: comp.organizer_id,
+            title: 'GLH. コンペに参加者が来ました！',
+            body: `${comp.title}に新しい参加者が申し込みました`,
+            url: `/course/${comp.id}`,
+          }),
+        })
+      }
+    }
+    setEntering(false)
+  }
+
+  if (loading) return <PageLoading />
+  if (!comp) return null
+
+  const isOrganizer = comp.organizer_id === myId
+  const remaining = comp.max_players - entries.length
+  const dateStr = new Date(comp.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+  const statusLabel = comp.status === 'recruiting' ? '募集中' : comp.status === 'closed' ? '締切' : '終了'
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+
+      {/* ヘッダー */}
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
+        </button>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>コンペ詳細</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+
+        {/* ヒーローバナー */}
+        <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ background: comp.status === 'recruiting' ? 'var(--lime)' : 'rgba(255,255,255,.2)', color: comp.status === 'recruiting' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+              {statusLabel}
+            </span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter' }}>{dateStr}</span>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 16, lineHeight: 1.3 }}>{comp.title}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            {[
+              { label: '形式', value: comp.format },
+              { label: '参加者', value: `${entries.length}/${comp.max_players}` },
+              { label: '残り枠', value: remaining > 0 ? `${remaining}枠` : '満員' },
+              { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
+            ].map((s) => (
+              <div key={s.label} style={{ background: 'rgba(255,255,255,.12)', borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,.7)' }}>{s.label}</span>
+                <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'white' }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 開催情報 */}
+        <div style={{ background: 'white', margin: '10px 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>開催情報</div>
+          {[
+            { label: 'コース名', value: comp.course_name },
+            { label: '開催日', value: dateStr },
+            { label: '形式', value: comp.format },
+            { label: '定員', value: `${comp.max_players}名` },
+            { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
+          ].map((info) => (
+            <div key={info.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--surf)' }}>
+              <span style={{ fontSize: 12, color: 'var(--mute)' }}>{info.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{info.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* コンペ詳細 */}
+        {comp.description && (
+          <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>コンペ詳細</div>
+            <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.8 }}>{comp.description}</div>
+          </div>
+        )}
+
+        {/* コンペ画像 */}
+        {comp.image_url && (
+          <div style={{ margin: '0 16px 10px' }}>
+            <img src={comp.image_url} alt="コンペ画像" style={{ width: '100%', borderRadius: 12, maxHeight: 220, objectFit: 'cover' }} />
+          </div>
+        )}
+
+        {/* 要項PDF */}
+        {comp.pdf_url && (
+          <div style={{ margin: '0 16px 10px' }}>
+            <a href={comp.pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', textDecoration: 'none' }}>
+              <span style={{ fontSize: 20 }}>📄</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--g2)' }}>要項PDFを見る</div>
+                <div style={{ fontSize: 11, color: 'var(--mute)' }}>タップして開く</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+            </a>
+          </div>
+        )}
+
+        {/* 主催者プロフィール */}
+        {organizer && (
+          <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>主催者</div>
+            <div onClick={() => router.push(`/user/${organizer.user_id}`)} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
+                {organizer.avatar_url
+                  ? <img src={organizer.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : organizer.nickname?.[0] ?? '?'
+                }
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{organizer.nickname}</div>
+                <div style={{ fontSize: 12, color: 'var(--mute)' }}>HCP {organizer.handicap}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+            </div>
+          </div>
+        )}
+
+        {/* 参加者一覧 */}
+        <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者 {entries.length}名</div>
+          {entries.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--mute)', textAlign: 'center', padding: '8px 0' }}>まだ参加者がいません</div>
+          ) : (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {entries.map((p) => (
+                <div key={p.user_id} onClick={() => router.push(`/user/${p.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                    {p.avatar_url
+                      ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : p.nickname?.[0] ?? '?'
+                    }
+                  </div>
+                  <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nickname}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 参加ボタン */}
+        <div style={{ padding: '0 16px 10px' }}>
+          {isOrganizer ? (
+            <div style={{ background: 'rgba(168,224,99,.1)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>
+              あなたが主催するコンペです
+            </div>
+          ) : comp.status === 'recruiting' ? (
+            <button
+              onClick={handleEntry}
+              disabled={entering}
+              style={{ width: '100%', background: isEntered ? 'var(--surf)' : 'var(--g1)', color: isEntered ? 'var(--mute)' : 'white', border: isEntered ? '1px solid var(--line)' : 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: entering ? 'not-allowed' : 'pointer' }}
+            >
+              {entering ? '処理中...' : isEntered ? '参加をキャンセル' : '参加申し込み'}
+            </button>
+          ) : null}
+        </div>
+
+      </div>
+
+      <BottomNav />
+    </div>
+  )
+}

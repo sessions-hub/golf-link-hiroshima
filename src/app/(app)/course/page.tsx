@@ -356,7 +356,7 @@ export default function CoursePage() {
           )}
 
           {competitions.map((c) => (
-            <div key={c.id} style={{ margin: '0 16px 10px', borderRadius: 12, padding: 15, cursor: 'pointer', border: c.organizer_id === myId ? '1px solid rgba(168,224,99,.35)' : '1px solid var(--line)', background: c.organizer_id === myId ? 'rgba(168,224,99,.04)' : 'white', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+            <div key={c.id} onClick={() => router.push(`/course/${c.id}`)} style={{ margin: '0 16px 10px', borderRadius: 12, padding: 15, cursor: 'pointer', border: c.organizer_id === myId ? '1px solid rgba(168,224,99,.35)' : '1px solid var(--line)', background: c.organizer_id === myId ? 'rgba(168,224,99,.04)' : 'white', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                 <div style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>
                   {new Date(c.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -395,7 +395,7 @@ export default function CoursePage() {
 
               {c.status === 'recruiting' && c.organizer_id !== myId && (
                 <button
-                  onClick={() => handleEntry(c.id, c.is_entered ?? false)}
+                  onClick={(e) => { e.stopPropagation(); handleEntry(c.id, c.is_entered ?? false) }}
                   style={{ width: '100%', background: c.is_entered ? 'var(--surf)' : 'var(--g1)', color: c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                   {c.is_entered ? '参加キャンセル' : '参加申し込み'}
                 </button>
