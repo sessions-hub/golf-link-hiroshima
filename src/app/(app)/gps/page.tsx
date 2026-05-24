@@ -271,7 +271,7 @@ export default function GpsPage() {
                 {Icons.pin(26, 'white')}
               </div>
               <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>GPS計測はスタンダードプラン以上</div>
-              <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コース予約など全機能が使えます。</div>
+              <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コンペ参加など全機能が使えます。</div>
               <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
               <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
             </div>
@@ -378,7 +378,7 @@ export default function GpsPage() {
               {Icons.pin(26, 'white')}
             </div>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>GPS計測はスタンダードプラン以上</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コース予約など全機能が使えます。</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>スタンダードプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コンペ参加など全機能が使えます。</div>
             <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
             <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
           </div>
