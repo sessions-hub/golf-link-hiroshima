@@ -2,22 +2,25 @@
 import { useEffect, useState } from 'react'
 
 interface Props {
-  amount: number | null
+  amount: number
   onDone: () => void
 }
 
+// key prop でリマウントして使う。マウント時に即表示し 2 秒後に自動で消える。
 export default function PointToast({ amount, onDone }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (amount === null) return
-    setVisible(true)
-    const hide = setTimeout(() => setVisible(false), 1800)
-    const done = setTimeout(() => { onDone() }, 2200)
-    return () => { clearTimeout(hide); clearTimeout(done) }
-  }, [amount])
-
-  if (amount === null) return null
+    // 次フレームで visible=true にすることで CSS transition が確実に発火する
+    const enter = requestAnimationFrame(() => setVisible(true))
+    const hide = setTimeout(() => setVisible(false), 2000)
+    const done = setTimeout(onDone, 2350)
+    return () => {
+      cancelAnimationFrame(enter)
+      clearTimeout(hide)
+      clearTimeout(done)
+    }
+  }, [])
 
   return (
     <div style={{
@@ -25,7 +28,7 @@ export default function PointToast({ amount, onDone }: Props) {
       top: 'calc(env(safe-area-inset-top) + 16px)',
       left: '50%',
       transform: `translateX(-50%) translateY(${visible ? 0 : -80}px)`,
-      transition: 'transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s ease',
+      transition: 'transform .32s cubic-bezier(.34,1.56,.64,1), opacity .32s ease',
       opacity: visible ? 1 : 0,
       background: 'var(--g1)',
       color: 'white',

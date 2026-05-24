@@ -264,7 +264,11 @@ export default function ProfilePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
-      addPoints(supabase, user.id, 2)
+      const likeKey = `ptsl_${user.id}_${postId}`
+      if (!localStorage.getItem(likeKey)) {
+        addPoints(supabase, user.id, 2)
+        localStorage.setItem(likeKey, '1')
+      }
     }
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !liked, likes_count: liked ? p.likes_count - 1 : p.likes_count + 1 }

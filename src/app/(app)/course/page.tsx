@@ -74,7 +74,7 @@ export default function CoursePage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
 
-  const [toastPts, setToastPts] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
 
   // コンペ作成フォーム
   const [title, setTitle] = useState('')
@@ -203,7 +203,7 @@ export default function CoursePage() {
 
     if (!error) {
       addPoints(supabase, myId, 200)
-      setToastPts(200)
+      setToast(t => ({ pts: 200, k: (t?.k ?? 0) + 1 }))
       await fetchCompetitions(myId)
       setShowCreateModal(false)
       setTitle('')
@@ -229,7 +229,7 @@ export default function CoursePage() {
         status: 'confirmed',
       })
       addPoints(supabase, myId, 50)
-      setToastPts(50)
+      setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 }))
       // 主催者にプッシュ通知
       const comp = competitions.find(c => c.id === compId)
       if (comp?.organizer_id) {
@@ -250,7 +250,7 @@ export default function CoursePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
+      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>

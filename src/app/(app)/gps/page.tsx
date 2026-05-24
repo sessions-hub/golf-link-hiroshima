@@ -77,7 +77,7 @@ export default function GpsPage() {
   const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
   const [searchText, setSearchText] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [toastPts, setToastPts] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
   const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -185,7 +185,7 @@ export default function GpsPage() {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     setSelected(course)
     setHole(1)
-    if (myId) { addPoints(supabase, myId, 50); setToastPts(50) }
+    if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
     if (position && course.latitude && course.longitude) {
       const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
       const center = mToY(distM)
@@ -291,7 +291,7 @@ export default function GpsPage() {
   // GPS計測画面
   return (
     <div style={{ minHeight: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
+      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <svg width="100%" height="100%" viewBox="0 0 390 600" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="xMidYMid slice">
           <rect width="390" height="600" fill="#080f08"/>

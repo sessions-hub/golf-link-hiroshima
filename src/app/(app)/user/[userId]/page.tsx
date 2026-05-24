@@ -96,7 +96,7 @@ export default function UserProfilePage() {
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [profilePts, setProfilePts] = useState(0)
-  const [toastPts, setToastPts] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -181,14 +181,18 @@ export default function UserProfilePage() {
         .eq('user_id', myId).eq('target_id', userId)
     } else {
       await supabase.from('favorites').insert({ user_id: myId, target_id: userId })
-      addPoints(supabase, myId, 5)
-      setToastPts(5)
-      const { data: reverse } = await supabase.from('favorites')
-        .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
-      if (reverse) {
-        addPoints(supabase, myId, 20)
-        addPoints(supabase, userId, 20)
-        setToastPts(20)
+      const favKey = `ptsf_${myId}_${userId}`
+      if (!localStorage.getItem(favKey)) {
+        addPoints(supabase, myId, 5)
+        setToast(t => ({ pts: 5, k: (t?.k ?? 0) + 1 }))
+        const { data: reverse } = await supabase.from('favorites')
+          .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
+        if (reverse) {
+          addPoints(supabase, myId, 20)
+          addPoints(supabase, userId, 20)
+          setToast(t => ({ pts: 20, k: (t?.k ?? 0) + 1 }))
+        }
+        localStorage.setItem(favKey, '1')
       }
     }
     setIsFav(!isFav)
@@ -252,11 +256,16 @@ export default function UserProfilePage() {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId)
     } else {
       await supabase.from('post_likes').insert({ post_id: postId, user_id: myId })
-      addPoints(supabase, myId, 2)
-      // 投稿者に通知・ポイント
+      const likeKey = `ptsl_${myId}_${postId}`
+      if (!localStorage.getItem(likeKey)) {
+        addPoints(supabase, myId, 2)
+        const targetPost = posts.find(p => p.id === postId) ?? (featuredPost?.id === postId ? featuredPost : null)
+        if (targetPost && targetPost.user_id !== myId) addPoints(supabase, targetPost.user_id, 3)
+        localStorage.setItem(likeKey, '1')
+      }
+      // 投稿者に通知
       const targetPost = posts.find(p => p.id === postId) ?? (featuredPost?.id === postId ? featuredPost : null)
       if (targetPost && targetPost.user_id !== myId) {
-        addPoints(supabase, targetPost.user_id, 3)
         await supabase.from('post_notifications').insert({
           user_id: targetPost.user_id, actor_id: myId, post_id: postId, type: 'like'
         })
@@ -285,7 +294,7 @@ export default function UserProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <PointToast amount={toastPts} onDone={() => setToastPts(null)} />
+      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
