@@ -41,3 +41,7 @@ export function canSeeWhoVisited(plan: Plan) {
 export function isPremium(plan: Plan) {
   return plan === 'premium'
 }
+
+export function canSeeInterest(plan: Plan) {
+  return plan === 'premium'
+}

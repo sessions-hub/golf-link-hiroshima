@@ -14,7 +14,7 @@ test.describe('/match マッチングページ', () => {
     await page.goto('/match')
 
     await expect(page.locator('text=ゴルファーを探す')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=レッスン')).toBeVisible()
+    await expect(page.locator('text=気になる')).toBeVisible()
   })
 
   test('フィルターチップが表示される', async ({ page }) => {
@@ -37,15 +37,15 @@ test.describe('/match マッチングページ', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('レッスンタブに切り替えるとレッスン一覧が表示される', async ({ page }) => {
+  test('気になるタブに切り替えるとプレミアム誘導バナーが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/match')
 
-    await page.locator('button', { hasText: 'レッスン' }).click()
+    await page.locator('button', { hasText: '気になる' }).click()
 
-    // ハードコードされたレッスンデータが表示される
-    await expect(page.locator('text=中村 浩二 プロ')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=田中 ゴルフアカデミー')).toBeVisible()
+    // フリープランではプレミアム誘導バナーが表示される
+    await expect(page.locator('text=気になるを見るには')).toBeVisible({ timeout: 5_000 })
+    await expect(page.locator('text=プレミアムにアップグレード')).toBeVisible()
   })
 
   test('お気に入りフィルターでお気に入りがない場合のメッセージが表示される', async ({ page }) => {

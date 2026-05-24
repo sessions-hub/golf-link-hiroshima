@@ -4,7 +4,7 @@ import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, type Plan } from '@/lib/plan'
+import { getUserPlan, canSeeInterest, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
@@ -29,10 +29,10 @@ interface MatchProfile {
   areas?: string[]
 }
 
-const LESSONS = [
-  { id: 1, name: '中村 浩二 プロ', desc: 'ドライバー · アプローチ改善専門', price: 8000, rating: 4.9, reviews: 128, initial: '中', color: '#0D3D2B', textColor: '#A8E063', badge: '空きあり', badgeColor: '#EBF4EF', badgeText: '#2E7D55' },
-  { id: 2, name: '田中 ゴルフアカデミー', desc: '初心者〜中級者 · 少人数制', price: 5500, rating: 4.6, reviews: 89, initial: '田', color: '#EBF4EF', textColor: '#1A5C40', badge: '体験あり', badgeColor: '#EBF4EF', badgeText: '#8AADA0' },
-  { id: 3, name: '小林 美香 プロ', desc: 'スコアアップ · メンタル強化', price: 9500, rating: 4.8, reviews: 56, initial: '小', color: '#F2EBF8', textColor: '#7a50aa', badge: '人気', badgeColor: '#A8E063', badgeText: '#0D3D2B' },
+const DUMMY_INTEREST = [
+  { id: 'a', name: '田中　○○', area: '広島・廿日市', hdcp: 15 },
+  { id: 'b', name: '山田　○○', area: '東広島・呉', hdcp: 28 },
+  { id: 'c', name: '鈴木　○○', area: '福山', hdcp: 5 },
 ]
 
 const AREA_LABELS: Record<string, string> = {
@@ -91,7 +91,7 @@ const getPlanBadge = (plan: Plan) => {
 export default function MatchPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'golfer' | 'lesson'>('golfer')
+  const [activeTab, setActiveTab] = useState<'golfer' | 'interest'>('golfer')
   const [matches, setMatches] = useState<MatchProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
@@ -100,8 +100,12 @@ export default function MatchPage() {
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [activeTab2, setActiveTab2] = useState<'list' | 'footprint'>('list')
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
+  const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>('footprint')
+  const [footprints, setFootprints] = useState<any[]>([])
+  const [favoritedBy, setFavoritedBy] = useState<any[]>([])
+  const [favoritingList, setFavoritingList] = useState<any[]>([])
+  const [favoritedByIds, setFavoritedByIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchData = async () => {
@@ -136,11 +140,67 @@ export default function MatchPage() {
       }).then(() => {})
 
       const plan = await getUserPlan()
-    setUserPlan(plan)
-    setLoading(false)
+      setUserPlan(plan)
+
+      if (plan === 'premium') {
+        // 足跡（自分のページを見た人）
+        const { data: fp } = await supabase
+          .from('footprints')
+          .select('visitor_id, created_at, profiles!footprints_visitor_id_fkey(user_id, nickname, avatar_url, handicap, areas)')
+          .eq('visited_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30)
+        if (fp) setFootprints(fp)
+
+        // お気に入りされた
+        const { data: fb } = await supabase
+          .from('favorites')
+          .select('user_id, created_at, profiles!favorites_user_id_fkey(user_id, nickname, avatar_url, handicap, areas)')
+          .eq('target_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30)
+        if (fb) {
+          setFavoritedBy(fb)
+          setFavoritedByIds(new Set(fb.map((f: any) => f.user_id)))
+        }
+
+        // お気に入りした（2ステップ）
+        const { data: myFavIds } = await supabase
+          .from('favorites')
+          .select('target_id, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30)
+        if (myFavIds && myFavIds.length > 0) {
+          const ids = myFavIds.map((f: any) => f.target_id)
+          const { data: favProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url, handicap, areas')
+            .in('user_id', ids)
+          const pm = new Map(favProfiles?.map((p: any) => [p.user_id, p]) ?? [])
+          setFavoritingList(myFavIds.map((f: any) => ({
+            ...f,
+            profiles: pm.get(f.target_id) ?? null,
+          })))
+        }
+      }
+
+      setLoading(false)
     }
     fetchData()
   }, [])
+
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const min = Math.floor(diff / 60000)
+    if (min < 1) return 'たった今'
+    if (min < 60) return `${min}分前`
+    const hr = Math.floor(min / 60)
+    if (hr < 24) return `${hr}時間前`
+    const day = Math.floor(hr / 24)
+    if (day === 1) return '昨日'
+    return `${day}日前`
+  }
 
   // プロフィールを見た時に足跡を記録
   const recordFootprint = async (targetId: string) => {
@@ -272,11 +332,11 @@ export default function MatchPage() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
-        {(['golfer', 'lesson'] as const).map((tab) => (
+        {(['golfer', 'interest'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              {tab === 'golfer' ? Icons.users(14, 'currentColor') : Icons.book(14, 'currentColor')}
-              {tab === 'golfer' ? 'ゴルファーを探す' : 'レッスン'}
+              {tab === 'golfer' ? Icons.users(14, 'currentColor') : Icons.heart(14, 'currentColor')}
+              {tab === 'golfer' ? 'ゴルファーを探す' : '気になる'}
             </span>
           </button>
         ))}
@@ -404,33 +464,180 @@ export default function MatchPage() {
         </>
       )}
 
-      {activeTab === 'lesson' && (
-        <>
-          <div style={{ background: 'white', padding: '8px 16px 10px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: 5 }}>
-              {['プロ個人', 'スクール', 'オンライン', '初心者向け'].map((f) => (
-                <button key={f} style={{ padding: '3px 8px', borderRadius: 4, fontSize: 10, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)', cursor: 'pointer' }}>{f}</button>
-              ))}
-            </div>
-          </div>
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
-            <div style={{ height: 8 }} />
-            {LESSONS.map((l) => (
-              <div key={l.id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
-                <div style={{ width: 50, height: 50, borderRadius: 12, background: l.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: l.textColor, flexShrink: 0 }}>{l.initial}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{l.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>{l.desc}</div>
-                  <div style={{ fontSize: 11, color: '#A8E063', marginTop: 3 }}>{'★'.repeat(Math.floor(l.rating))} <span style={{ color: 'var(--mute)', fontSize: 10 }}>{l.rating}（{l.reviews}件）</span></div>
-                  <div style={{ display: 'flex', gap: 7, marginTop: 7, alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>¥{l.price.toLocaleString()}/h</span>
-                    <span style={{ background: l.badgeColor, color: l.badgeText, padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700 }}>{l.badge}</span>
+      {activeTab === 'interest' && (
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+          {!canSeeInterest(userPlan) ? (
+            /* フリープラン：プレミアム誘導 */
+            <div style={{ position: 'relative' }}>
+              {/* ぼかしダミーカード */}
+              <div style={{ filter: 'blur(4px)', pointerEvents: 'none', padding: '8px 0' }}>
+                {DUMMY_INTEREST.map((d) => (
+                  <div key={d.id} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12 }}>
+                    <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0 }}>{d.name[0]}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 4 }}>{d.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--mid)', marginBottom: 4 }}>{d.area}</div>
+                      <div style={{ fontSize: 10, color: 'var(--mute)' }}>HC {d.hdcp}</div>
+                    </div>
+                    <div style={{ background: 'var(--g1)', color: 'white', borderRadius: 6, padding: '5px 10px', fontSize: 10, fontWeight: 700, alignSelf: 'center' }}>💬 チャット</div>
                   </div>
+                ))}
+              </div>
+              {/* 誘導バナー */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+                <div style={{ background: 'var(--g1)', borderRadius: 18, padding: '22px 20px', textAlign: 'center', width: '100%', boxShadow: '0 8px 28px rgba(13,61,43,.35)' }}>
+                  <div style={{ fontSize: 22, marginBottom: 10 }}>👑</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 8 }}>気になるを見るには</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,.75)', lineHeight: 1.8, marginBottom: 16 }}>
+                    あなたのプロフィールを見た人<br />お気に入りに追加した人・された人を<br />確認できます
+                  </div>
+                  <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                    プレミアムにアップグレード →
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </>
+            </div>
+          ) : (
+            /* プレミアムプラン */
+            <>
+              {/* サブタブ */}
+              <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+                {([
+                  { key: 'footprint', label: '足跡' },
+                  { key: 'favorited', label: 'お気に入りされた' },
+                  { key: 'favoriting', label: 'お気に入りした' },
+                ] as const).map(({ key, label }) => (
+                  <button key={key} onClick={() => setInterestSubTab(key)} style={{ flex: 1, padding: '10px 4px', fontSize: 11, fontWeight: interestSubTab === key ? 700 : 500, color: interestSubTab === key ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: interestSubTab === key ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 足跡タブ */}
+              {interestSubTab === 'footprint' && (
+                <div style={{ padding: '8px 0' }}>
+                  <div style={{ padding: '6px 16px 10px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>最近あなたのプロフィールを見た人</div>
+                  {footprints.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <div style={{ fontSize: 28, marginBottom: 10 }}>👣</div>
+                      <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ足跡がありません</div>
+                    </div>
+                  )}
+                  {footprints.map((fp: any, i) => {
+                    const p = fp.profiles
+                    if (!p) return null
+                    return (
+                      <div key={`${fp.visitor_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 3 }}>{p.nickname}</div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
+                        </div>
+                        <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                          {chatLoading === p.user_id ? '...' : '💬'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* お気に入りされたタブ */}
+              {interestSubTab === 'favorited' && (
+                <div style={{ padding: '8px 0' }}>
+                  <div style={{ padding: '6px 16px 10px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>あなたをお気に入りした人</div>
+                  {favoritedBy.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <div style={{ fontSize: 28, marginBottom: 10 }}>❤️</div>
+                      <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだお気に入りされていません</div>
+                    </div>
+                  )}
+                  {favoritedBy.map((fb: any, i) => {
+                    const p = fb.profiles
+                    if (!p) return null
+                    const isMutual = favorites.has(p.user_id)
+                    return (
+                      <div key={`${fb.user_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                            {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
+                          </div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fb.created_at)}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                          <button onClick={(e) => toggleFavorite(p.user_id, e)} style={{ background: 'none', border: `1px solid ${isMutual ? 'rgba(224,80,112,.4)' : 'var(--line)'}`, borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {isMutual ? Icons.heart(15, '#e05070', true) : Icons.heart(15, 'var(--mute)')}
+                          </button>
+                          <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                            {chatLoading === p.user_id ? '...' : '💬'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* お気に入りしたタブ */}
+              {interestSubTab === 'favoriting' && (
+                <div style={{ padding: '8px 0' }}>
+                  <div style={{ padding: '6px 16px 10px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>あなたがお気に入りした人</div>
+                  {favoritingList.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                      <div style={{ fontSize: 28, marginBottom: 10 }}>❤️</div>
+                      <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだお気に入りしていません</div>
+                    </div>
+                  )}
+                  {favoritingList.map((fl: any, i) => {
+                    const p = fl.profiles
+                    if (!p) return null
+                    const isMutual = favoritedByIds.has(p.user_id)
+                    return (
+                      <div key={`${fl.target_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                        <div onClick={() => router.push(`/user/${p.user_id}`)} style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer' }}>
+                          {p.avatar_url ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : p.nickname?.[0] ?? '?'}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                            {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
+                          </div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fl.created_at)}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                          <button onClick={(e) => toggleFavorite(p.user_id, e)} style={{ background: 'none', border: '1px solid rgba(224,80,112,.4)', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {Icons.heart(15, '#e05070', true)}
+                          </button>
+                          <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                            {chatLoading === p.user_id ? '...' : '💬'}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       <BottomNav />
