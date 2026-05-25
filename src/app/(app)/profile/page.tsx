@@ -351,6 +351,13 @@ export default function ProfilePage() {
     if (!modalCommentInput.trim() || !selectedPost) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const targetUserId = selectedPost.user_id
+    const { data: blockExists } = await supabase
+      .from('blocks')
+      .select('id')
+      .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${targetUserId}),and(blocker_id.eq.${targetUserId},blocked_id.eq.${user.id})`)
+      .maybeSingle()
+    if (blockExists) return
     await supabase.from('post_comments').insert({
       post_id: selectedPost.id,
       user_id: user.id,

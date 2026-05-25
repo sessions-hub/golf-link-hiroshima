@@ -324,6 +324,8 @@ export default function HomePage() {
     if (!content) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const post = posts.find(p => p.id === postId)
+    if (post && blockedUserIds.has(post.user_id)) return
     const { error } = await supabase.from('post_comments').insert({
       post_id: postId,
       user_id: user.id,
@@ -419,6 +421,8 @@ export default function HomePage() {
   const toggleLike = async (postId: string, liked: boolean) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const post = posts.find(p => p.id === postId)
+    if (post && blockedUserIds.has(post.user_id)) return
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {

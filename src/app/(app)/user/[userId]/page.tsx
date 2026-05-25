@@ -299,7 +299,7 @@ export default function UserProfilePage() {
 
   const handleModalComment = async (postId?: string) => {
     const targetPostId = postId ?? selectedPost?.id
-    if (!modalCommentInput.trim() || !myId || !targetPostId || isBlockedByThem) return
+    if (!modalCommentInput.trim() || !myId || !targetPostId || isBlockedByThem || isBlocked) return
     const commentText = modalCommentInput.trim()
     await supabase.from('post_comments').insert({
       post_id: targetPostId,
@@ -321,7 +321,7 @@ export default function UserProfilePage() {
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
-    if (!myId || isBlockedByThem) return
+    if (!myId || isBlockedByThem || isBlocked) return
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId)
     } else {
