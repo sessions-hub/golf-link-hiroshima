@@ -299,7 +299,12 @@ export default function UserProfilePage() {
 
   const handleModalComment = async (postId?: string) => {
     const targetPostId = postId ?? selectedPost?.id
-    if (!modalCommentInput.trim() || !myId || !targetPostId || isBlockedByThem || isBlocked) return
+    if (!modalCommentInput.trim() || !myId || !targetPostId) return
+    const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
+      supabase.from('blocks').select('id').eq('blocker_id', myId).eq('blocked_id', userId).maybeSingle(),
+      supabase.from('blocks').select('id').eq('blocker_id', userId).eq('blocked_id', myId).maybeSingle(),
+    ])
+    if (iBlock || theyBlock) return
     const commentText = modalCommentInput.trim()
     await supabase.from('post_comments').insert({
       post_id: targetPostId,
@@ -321,7 +326,12 @@ export default function UserProfilePage() {
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
-    if (!myId || isBlockedByThem || isBlocked) return
+    if (!myId) return
+    const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
+      supabase.from('blocks').select('id').eq('blocker_id', myId).eq('blocked_id', userId).maybeSingle(),
+      supabase.from('blocks').select('id').eq('blocker_id', userId).eq('blocked_id', myId).maybeSingle(),
+    ])
+    if (iBlock || theyBlock) return
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', myId)
     } else {

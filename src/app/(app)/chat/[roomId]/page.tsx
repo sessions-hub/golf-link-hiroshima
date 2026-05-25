@@ -43,6 +43,7 @@ export default function ChatRoomPage() {
   const [isFriend, setIsFriend] = useState(false)
   const [isBlocked, setIsBlocked] = useState(false)
   const [isBlockedByThem, setIsBlockedByThem] = useState(false)
+  const [partnerId, setPartnerId] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -75,6 +76,7 @@ export default function ChatRoomPage() {
       setIsFriend(!!(myFav && theirFav))
       setIsBlockedByThem(!!blockedByData)
       setIsBlocked(!!iBlockData)
+      setPartnerId(otherUserId)
 
       const { data: msgs } = await supabase
         .from('messages')
@@ -194,7 +196,18 @@ export default function ChatRoomPage() {
   }
 
   const sendMsg = async () => {
-    if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending || isBlocked || isBlockedByThem) return
+    if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
+    if (partnerId) {
+      const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
+        supabase.from('blocks').select('id').eq('blocker_id', myId).eq('blocked_id', partnerId).maybeSingle(),
+        supabase.from('blocks').select('id').eq('blocker_id', partnerId).eq('blocked_id', myId).maybeSingle(),
+      ])
+      if (iBlock || theyBlock) {
+        setIsBlocked(!!iBlock)
+        setIsBlockedByThem(!!theyBlock)
+        return
+      }
+    }
     setSending(true)
 
     const content = input.trim()
