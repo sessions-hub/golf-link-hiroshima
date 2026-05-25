@@ -326,11 +326,9 @@ export default function HomePage() {
     if (!user) return
     const post = posts.find(p => p.id === postId)
     if (!post) return
-    const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
-      supabase.from('blocks').select('id').eq('blocker_id', user.id).eq('blocked_id', post.user_id).maybeSingle(),
-      supabase.from('blocks').select('id').eq('blocker_id', post.user_id).eq('blocked_id', user.id).maybeSingle(),
-    ])
-    if (iBlock || theyBlock) return
+    const { data: theyBlock } = await supabase.from('blocks').select('id')
+      .eq('blocker_id', post.user_id).eq('blocked_id', user.id).maybeSingle()
+    if (theyBlock) return
     const { error } = await supabase.from('post_comments').insert({
       post_id: postId,
       user_id: user.id,
@@ -428,11 +426,9 @@ export default function HomePage() {
     if (!user) return
     const post = posts.find(p => p.id === postId)
     if (!post) return
-    const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
-      supabase.from('blocks').select('id').eq('blocker_id', user.id).eq('blocked_id', post.user_id).maybeSingle(),
-      supabase.from('blocks').select('id').eq('blocker_id', post.user_id).eq('blocked_id', user.id).maybeSingle(),
-    ])
-    if (iBlock || theyBlock) return
+    const { data: theyBlock } = await supabase.from('blocks').select('id')
+      .eq('blocker_id', post.user_id).eq('blocked_id', user.id).maybeSingle()
+    if (theyBlock) return
     if (liked) {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     } else {

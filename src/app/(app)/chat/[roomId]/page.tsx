@@ -198,13 +198,10 @@ export default function ChatRoomPage() {
   const sendMsg = async () => {
     if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
     if (partnerId) {
-      const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
-        supabase.from('blocks').select('id').eq('blocker_id', myId).eq('blocked_id', partnerId).maybeSingle(),
-        supabase.from('blocks').select('id').eq('blocker_id', partnerId).eq('blocked_id', myId).maybeSingle(),
-      ])
-      if (iBlock || theyBlock) {
-        setIsBlocked(!!iBlock)
-        setIsBlockedByThem(!!theyBlock)
+      const { data: theyBlock } = await supabase.from('blocks').select('id')
+        .eq('blocker_id', partnerId).eq('blocked_id', myId).maybeSingle()
+      if (theyBlock) {
+        setIsBlockedByThem(true)
         return
       }
     }

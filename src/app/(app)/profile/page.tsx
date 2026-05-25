@@ -352,11 +352,9 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const targetUserId = selectedPost.user_id
-    const [{ data: iBlock }, { data: theyBlock }] = await Promise.all([
-      supabase.from('blocks').select('id').eq('blocker_id', user.id).eq('blocked_id', targetUserId).maybeSingle(),
-      supabase.from('blocks').select('id').eq('blocker_id', targetUserId).eq('blocked_id', user.id).maybeSingle(),
-    ])
-    if (iBlock || theyBlock) return
+    const { data: theyBlock } = await supabase.from('blocks').select('id')
+      .eq('blocker_id', targetUserId).eq('blocked_id', user.id).maybeSingle()
+    if (theyBlock) return
     await supabase.from('post_comments').insert({
       post_id: selectedPost.id,
       user_id: user.id,
