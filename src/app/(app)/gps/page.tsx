@@ -41,18 +41,6 @@ function mToY(m: number): number {
   return Math.round(m * 1.09361)
 }
 
-const getClub = (y: number) => {
-  if (y >= 220) return 'Dr'
-  if (y >= 200) return '3W'
-  if (y >= 185) return '5W'
-  if (y >= 170) return '4番I'
-  if (y >= 158) return '5番I'
-  if (y >= 145) return '6番I'
-  if (y >= 133) return '7番I'
-  if (y >= 120) return '8番I'
-  if (y >= 108) return '9番I'
-  return 'PW'
-}
 
 const getJudgment = (diff: number) => {
   if (diff <= -3) return 'アルバトロス'
@@ -85,7 +73,7 @@ export default function GpsPage() {
   const [loadingCourses, setLoadingCourses] = useState(false)
   const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
   const [hole, setHole] = useState(1)
-  const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
+  const [greenDist, setGreenDist] = useState<{ center: number } | null>(null)
   const [greenSide, setGreenSide] = useState<'single' | 'left' | 'right'>('single')
   const [searchText, setSearchText] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -201,7 +189,7 @@ export default function GpsPage() {
     if (position && course.latitude && course.longitude) {
       const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
       const center = mToY(distM)
-      setGreenDist({ front: center - 10, center, back: center + 10 })
+      setGreenDist({ center })
     }
   }
 
@@ -399,35 +387,14 @@ export default function GpsPage() {
             </div>
 
             {greenDist ? (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 11 }}>
-                  <div>
-                    <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                      <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
-                      <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
-                    </div>
-                    <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
-                  </div>
-                  <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderLeft: '2.5px solid var(--g3)', borderRadius: 7, padding: '9px 13px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>推奨クラブ</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: 'var(--g1)', marginTop: 2 }}>{getClub(greenDist.center)}</div>
-                  </div>
+              <div>
+                <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
                 </div>
-                <div style={{ display: 'flex', gap: 5 }}>
-                  {[
-                    { label: 'FRONT', val: greenDist.front, color: '#3a7a3a', bg: 'var(--off)', border: 'var(--line)' },
-                    { label: 'CENTER', val: greenDist.center, color: 'var(--g1)', bg: 'rgba(13,61,43,.06)', border: 'rgba(13,61,43,.18)' },
-                    { label: 'BACK', val: greenDist.back, color: '#c05050', bg: 'var(--off)', border: 'var(--line)' },
-                  ].map((d) => (
-                    <div key={d.label} style={{ flex: 1, background: d.bg, borderRadius: 6, padding: 7, textAlign: 'center', border: `1px solid ${d.border}` }}>
-                      <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>{d.label}</div>
-                      <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: d.color }}>{d.val}</div>
-                      <div style={{ fontSize: 7, color: 'var(--pale)' }}>y</div>
-                    </div>
-                  ))}
-                </div>
-              </>
+                <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
+              </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
                 GPS取得中...現在地からの距離を計算します
