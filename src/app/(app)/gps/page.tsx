@@ -27,7 +27,6 @@ interface GPSPosition {
   accuracy: number
 }
 
-// 2点間の距離計算（km）
 function calcDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371
   const dLat = (lat2 - lat1) * Math.PI / 180
@@ -38,7 +37,6 @@ function calcDistance(lat1: number, lng1: number, lat2: number, lng2: number): n
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-// ヤードをメートルに変換
 function mToY(m: number): number {
   return Math.round(m * 1.09361)
 }
@@ -56,12 +54,25 @@ const getClub = (y: number) => {
   return 'PW'
 }
 
-
-const getPlanBadge = (plan: Plan) => {
-  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
-  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
-  return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
+const getJudgment = (diff: number) => {
+  if (diff <= -3) return 'アルバトロス'
+  if (diff === -2) return 'イーグル'
+  if (diff === -1) return 'バーディ'
+  if (diff === 0) return 'パー'
+  if (diff === 1) return 'ボギー'
+  if (diff === 2) return 'ダブルボギー'
+  return 'トリプルボギー以上'
 }
+
+const getJudgmentColor = (diff: number) => {
+  if (diff <= -2) return '#f59e0b'
+  if (diff === -1) return '#16a34a'
+  if (diff === 0) return 'var(--g2)'
+  if (diff === 1) return '#3b82f6'
+  return '#ef4444'
+}
+
+const DEFAULT_PARS = [4, 3, 5, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 5, 4, 4]
 
 export default function GpsPage() {
   const router = useRouter()
@@ -75,9 +86,12 @@ export default function GpsPage() {
   const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
   const [hole, setHole] = useState(1)
   const [greenDist, setGreenDist] = useState<{ front: number; center: number; back: number } | null>(null)
+  const [greenSide, setGreenSide] = useState<'single' | 'left' | 'right'>('single')
   const [searchText, setSearchText] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
+  const [scores, setScores] = useState<number[]>(Array(18).fill(0))
+  const [saving, setSaving] = useState(false)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
   const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -92,7 +106,6 @@ export default function GpsPage() {
     init()
   }, [])
 
-  // GPS取得（大きく動いたか精度が改善したときだけ state 更新）
   useEffect(() => {
     if (!navigator.geolocation) {
       setGpsError('このデバイスはGPSに対応していません')
@@ -124,12 +137,10 @@ export default function GpsPage() {
     }
   }, [])
 
-  // コース一覧はマウント時に1回だけ取得
   useEffect(() => {
     fetchCourses('広島県')
   }, [])
 
-  // 位置が100m以上変わったときだけ距離を再ソート
   useEffect(() => {
     if (!position) return
     const last = lastSortRef.current
@@ -180,11 +191,12 @@ export default function GpsPage() {
     setLoadingCourses(false)
   }
 
-  // コース選択時にグリーン距離を計算
   const selectCourse = (course: GoraCourse & { distKm: number }) => {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     setSelected(course)
     setHole(1)
+    setScores(Array(18).fill(0))
+    setGreenSide('single')
     if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
     if (position && course.latitude && course.longitude) {
       const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
@@ -196,6 +208,44 @@ export default function GpsPage() {
   const filteredCourses = courses.filter(c =>
     c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
   )
+
+  const updateScore = (holeIdx: number, val: number) => {
+    if (val < 1 || val > 15) return
+    setScores(prev => { const n = [...prev]; n[holeIdx] = val; return n })
+  }
+
+  const handleSaveRound = async () => {
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSaving(false); return }
+    const total = scores.reduce((a, b) => a + b, 0)
+    const outScore = scores.slice(0, 9).reduce((a, b) => a + b, 0)
+    const inScore = scores.slice(9, 18).reduce((a, b) => a + b, 0)
+    const { error } = await supabase.from('scorecards').insert({
+      user_id: user.id,
+      course_name: selected?.golfCourseName ?? '',
+      hole_scores: scores,
+      total_score: total,
+      out_score: outScore,
+      in_score: inScore,
+      played_at: new Date().toISOString(),
+    })
+    if (!error) {
+      alert('スコアを保存しました！')
+    } else {
+      alert('保存に失敗しました')
+    }
+    setSaving(false)
+  }
+
+  const greenTitle =
+    greenSide === 'left' ? '左グリーンセンターまで' :
+    greenSide === 'right' ? '右グリーンセンターまで' :
+    'グリーンセンターまで'
+
+  const currentPar = DEFAULT_PARS[hole - 1] ?? 4
+  const currentScore = scores[hole - 1]
+  const scoreDiff = currentScore > 0 ? currentScore - currentPar : null
 
   // コース選択画面
   if (!selected) {
@@ -211,7 +261,6 @@ export default function GpsPage() {
               </span>
             </div>
           </div>
-          {/* 検索窓 */}
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--line)', padding: '8px 12px', gap: 8 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -223,7 +272,6 @@ export default function GpsPage() {
               />
             </div>
           </div>
-          {/* エリアタブ */}
           <div style={{ display: 'flex', gap: 5, marginTop: 8, overflowX: 'auto' }}>
             {['広島県', '山口県', '岡山県', '島根県'].map(f => (
               <button key={f} onClick={() => fetchCourses(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)', flexShrink: 0, fontWeight: 500 }}>{f}</button>
@@ -270,7 +318,6 @@ export default function GpsPage() {
         </div>
         <BottomNav />
 
-        {/* プランアップグレードモーダル（コース選択画面） */}
         {showUpgradeModal && (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
             <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
@@ -328,57 +375,132 @@ export default function GpsPage() {
           </div>
         </div>
 
-        {/* 距離パネル */}
-        <div style={{ position: 'absolute', bottom: 80, left: 0, right: 0, background: 'white', borderRadius: '18px 18px 0 0', padding: '16px 14px 16px', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)' }}>
-          <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
+        {/* 下部スクロールパネル */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '78vh', overflowY: 'auto', background: 'white', borderRadius: '18px 18px 0 0', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)' }}>
+          <div style={{ padding: '16px 14px 0' }}>
+            <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
 
-          {/* ホール選択 */}
-          <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
-            {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
-              <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
-            ))}
+            {/* ホール選択 */}
+            <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
+              {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
+                <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
+              ))}
+            </div>
+
+            {/* グリーン選択トグル */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {(['single', 'left', 'right'] as const).map((side) => {
+                const label = side === 'single' ? '1グリーン' : side === 'left' ? '左グリーン' : '右グリーン'
+                const active = greenSide === side
+                return (
+                  <button key={side} onClick={() => setGreenSide(side)} style={{ flex: 1, padding: '5px 0', fontSize: 10, fontWeight: active ? 700 : 500, color: active ? 'var(--g1)' : 'var(--mute)', background: active ? 'rgba(13,61,43,.08)' : 'var(--surf)', border: active ? '1px solid rgba(13,61,43,.25)' : '1px solid var(--line)', borderRadius: 7, cursor: 'pointer' }}>{label}</button>
+                )
+              })}
+            </div>
+
+            {greenDist ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 11 }}>
+                  <div>
+                    <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                      <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
+                      <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+                    </div>
+                    <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
+                  </div>
+                  <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderLeft: '2.5px solid var(--g3)', borderRadius: 7, padding: '9px 13px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>推奨クラブ</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: 'var(--g1)', marginTop: 2 }}>{getClub(greenDist.center)}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 5 }}>
+                  {[
+                    { label: 'FRONT', val: greenDist.front, color: '#3a7a3a', bg: 'var(--off)', border: 'var(--line)' },
+                    { label: 'CENTER', val: greenDist.center, color: 'var(--g1)', bg: 'rgba(13,61,43,.06)', border: 'rgba(13,61,43,.18)' },
+                    { label: 'BACK', val: greenDist.back, color: '#c05050', bg: 'var(--off)', border: 'var(--line)' },
+                  ].map((d) => (
+                    <div key={d.label} style={{ flex: 1, background: d.bg, borderRadius: 6, padding: 7, textAlign: 'center', border: `1px solid ${d.border}` }}>
+                      <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>{d.label}</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: d.color }}>{d.val}</div>
+                      <div style={{ fontSize: 7, color: 'var(--pale)' }}>y</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
+                GPS取得中...現在地からの距離を計算します
+              </div>
+            )}
+
+            {/* スコア入力セクション */}
+            <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
+
+            {/* ホール番号と前後移動 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <button
+                onClick={() => setHole(h => Math.max(1, h - 1))}
+                style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+              </button>
+              <div style={{ background: 'var(--g1)', borderRadius: 12, padding: '8px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter', letterSpacing: '.15em' }}>HOLE</div>
+                <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: '#A8E063', lineHeight: 1 }}>{hole}</div>
+              </div>
+              <button
+                onClick={() => setHole(h => Math.min(18, h + 1))}
+                style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+              </button>
+            </div>
+
+            {/* スコア入力コントロール */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              {/* 左：Par + 判定 */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 500 }}>Par {currentPar}</div>
+                {scoreDiff !== null && (
+                  <div style={{ fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: 2 }}>{getJudgment(scoreDiff)}</div>
+                )}
+              </div>
+
+              {/* 中央：スコア数字（大） */}
+              <div style={{ fontFamily: 'Inter', fontSize: 52, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1, minWidth: 60, textAlign: 'center' }}>
+                {currentScore === 0 ? '-' : currentScore}
+              </div>
+
+              {/* 右：− ／ + ボタン */}
+              <div style={{ flex: 1, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar - 1 : currentScore - 1)}
+                  style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >−</button>
+                <button
+                  onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar : currentScore + 1)}
+                  style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >+</button>
+              </div>
+            </div>
+
+            {/* ラウンド終了・スコア保存ボタン */}
+            <button
+              onClick={handleSaveRound}
+              disabled={saving}
+              style={{ width: '100%', background: saving ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginBottom: 4 }}
+            >
+              {saving ? '保存中...' : 'ラウンド終了・スコア保存'}
+            </button>
           </div>
 
-          {greenDist ? (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 11 }}>
-                <div>
-                  <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>グリーン センター</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
-                    <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
-                  </div>
-                  <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
-                </div>
-                <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderLeft: '2.5px solid var(--g3)', borderRadius: 7, padding: '9px 13px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>推奨クラブ</div>
-                  <div style={{ fontFamily: 'Inter', fontSize: 19, fontWeight: 700, color: 'var(--g1)', marginTop: 2 }}>{getClub(greenDist.center)}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 5 }}>
-                {[
-                  { label: 'FRONT', val: greenDist.front, color: '#3a7a3a', bg: 'var(--off)', border: 'var(--line)' },
-                  { label: 'CENTER', val: greenDist.center, color: 'var(--g1)', bg: 'rgba(13,61,43,.06)', border: 'rgba(13,61,43,.18)' },
-                  { label: 'BACK', val: greenDist.back, color: '#c05050', bg: 'var(--off)', border: 'var(--line)' },
-                ].map((d) => (
-                  <div key={d.label} style={{ flex: 1, background: d.bg, borderRadius: 6, padding: 7, textAlign: 'center', border: `1px solid ${d.border}` }}>
-                    <div style={{ fontSize: 7, color: 'var(--mute)', letterSpacing: '.1em', fontFamily: 'Inter' }}>{d.label}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 20, fontWeight: 700, color: d.color }}>{d.val}</div>
-                    <div style={{ fontSize: 7, color: 'var(--pale)' }}>y</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
-              GPS取得中...現在地からの距離を計算します
-            </div>
-          )}
+          {/* BottomNav分の余白 */}
+          <div style={{ height: 90 }} />
         </div>
       </div>
       <BottomNav />
 
-      {/* プランアップグレードモーダル */}
       {showUpgradeModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
