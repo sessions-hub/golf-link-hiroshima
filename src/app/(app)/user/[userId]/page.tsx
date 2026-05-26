@@ -468,7 +468,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90, ...(isBlockedByThem ? { filter: 'blur(3px)', opacity: .3, pointerEvents: 'none' } : {}) }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (

@@ -423,7 +423,7 @@ export default function ChatRoomPage() {
       {/* ブロックバナー */}
       {isBlockedByThem && (
         <div style={{ padding: '10px 16px', background: 'rgba(200,60,60,.08)', borderTop: '1px solid rgba(200,60,60,.15)', textAlign: 'center', fontSize: 12, color: '#c05050', flexShrink: 0 }}>
-          ブロックのためメッセージを送れません
+          メッセージが送れません
         </div>
       )}
 
@@ -440,7 +440,7 @@ export default function ChatRoomPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-          placeholder={isBlockedByThem ? 'ブロックのためメッセージを送れません' : 'メッセージを入力...'}
+          placeholder={isBlockedByThem ? 'メッセージが送れません' : 'メッセージを入力...'}
           style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
         />
         <button onClick={sendMsg} disabled={sending || isBlockedByThem} style={{ width: 38, height: 38, borderRadius: '50%', background: sending || isBlockedByThem ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
