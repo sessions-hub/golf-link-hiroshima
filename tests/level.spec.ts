@@ -16,11 +16,11 @@ test.describe('/level レベルガイドページ', () => {
     await expect(page.locator('text=レベルガイド')).toBeVisible({ timeout: 10_000 })
   })
 
-  test('現在のレベルカードが表示される', async ({ page }) => {
+  test('説明カードが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/level')
 
-    await expect(page.locator('text=本日 +').first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('text=GLH レベル').first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('全レベル一覧が表示される', async ({ page }) => {
@@ -39,7 +39,8 @@ test.describe('/level レベルガイドページ', () => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/level')
 
-    await expect(page.locator('text=ポイント獲得方法')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('summary', { hasText: 'ポイント獲得方法' })).toBeVisible({ timeout: 10_000 })
+    await page.locator('summary', { hasText: 'ポイント獲得方法' }).click()
     await expect(page.locator('text=毎日ログイン')).toBeVisible()
     await expect(page.locator('text=投稿する')).toBeVisible()
     await expect(page.locator('text=スコアを記録する')).toBeVisible()

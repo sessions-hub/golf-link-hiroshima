@@ -651,12 +651,8 @@ export default function ProfilePage() {
                   <div style={{ height: 5, background: 'var(--surf)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
                     <div style={{ height: '100%', width: `${myLevelInfo.progress * 100}%`, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 3 }} />
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{myLevelInfo.name}</span>
-                    {myLevelInfo.next
-                      ? <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{myLevelInfo.next.name}まで {myLevelInfo.ptToNext.toLocaleString()}pt</span>
-                      : <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter', fontWeight: 700 }}>MAX LEVEL</span>
-                    }
+                  <div>
+                    <span style={{ fontSize: 9, color: 'var(--mute)' }}>アプリ内アクティビティでポイントGETしてレベルアップ</span>
                   </div>
                 </div>
               </div>

@@ -184,8 +184,8 @@ const POINT_ACTIONS = [
 export default function LevelPage() {
   const router = useRouter()
   const [totalPts, setTotalPts] = useState(0)
-  const [todayPts, setTodayPts] = useState(0)
   const [pageLoading, setPageLoading] = useState(true)
+  const [pointsOpen, setPointsOpen] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -193,15 +193,13 @@ export default function LevelPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login'); return }
 
-      const today = new Date().toISOString().split('T')[0]
       const { data } = await supabase
         .from('user_points')
-        .select('total_points, today_points, today_date')
+        .select('total_points')
         .eq('user_id', user.id)
         .maybeSingle()
 
       setTotalPts(data?.total_points ?? 0)
-      setTodayPts(data?.today_date === today ? (data?.today_points ?? 0) : 0)
       setPageLoading(false)
     }
     init()
@@ -210,9 +208,6 @@ export default function LevelPage() {
   if (pageLoading) return <PageLoading />
 
   const lv = getLevelInfo(totalPts)
-  const lvColor = lv.color
-  const lvBorder = `${lvColor}4d`
-  const lvBg = `${lvColor}0a`
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--off)', paddingBottom: 90 }}>
@@ -222,44 +217,27 @@ export default function LevelPage() {
           onClick={() => router.back()}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--txt)', display: 'flex', alignItems: 'center' }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </button>
-        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>レベルガイド</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>GLHレベルガイド</span>
       </div>
 
-      {/* Current Level Card (Large) */}
-      <div style={{ margin: '16px', background: 'white', border: '1px solid var(--line)', borderRadius: 16, padding: '20px', boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}>
-        <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 16 }}>
-          {/* Lv Block */}
-          <div style={{ border: `2px solid ${lvBorder}`, borderRadius: 14, padding: '12px 16px', background: lvBg, minWidth: 90, textAlign: 'center', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', lineHeight: 1 }}>
-              <span style={{ fontSize: 18, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>Lv</span>
-              <span style={{ fontSize: 10, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>.</span>
-              <span style={{ fontSize: 42, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>{lv.level}</span>
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: lvColor, fontFamily: 'Inter', marginTop: 6 }}>{lv.name}</div>
-          </div>
-
-          {/* Points & Progress */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 600, color: 'var(--txt)', lineHeight: 1 }}>
-                {totalPts.toLocaleString()}
-                <span style={{ fontSize: 13, color: 'var(--mute)', marginLeft: 4 }}>pt</span>
-              </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--g2)', fontFamily: 'Inter', lineHeight: 1 }}>本日 +{todayPts}pt</span>
-            </div>
-            <div style={{ height: 7, background: 'var(--surf)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-              <div style={{ height: '100%', width: `${lv.progress * 100}%`, background: `linear-gradient(90deg,${lvColor}99,${lvColor})`, borderRadius: 4, transition: 'width .5s' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>{lv.name}</span>
-              {lv.next
-                ? <span style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>{lv.next.name}まで <b style={{ color: lvColor }}>{lv.ptToNext.toLocaleString()}pt</b></span>
-                : <span style={{ fontSize: 10, color: lvColor, fontFamily: 'Inter', fontWeight: 700 }}>MAX LEVEL</span>
-              }
-            </div>
-          </div>
+      {/* Description Card */}
+      <div style={{ margin: '16px', background: 'white', border: '1px solid var(--line)', borderRadius: 16, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="17" x2="12" y2="21"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <path d="M7 4h10l-1 7a5 5 0 01-10 0z"/>
+            <path d="M5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4"/>
+          </svg>
+          <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>GLH レベル</span>
+        </div>
+        <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--mid)', lineHeight: 1.8 }}>
+          コミュニティの活性化を目的にアプリ内でのアクティビティをレベル別に表示しています。
+        </p>
+        <div style={{ background: 'var(--surf)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
+          レベルに応じて参加できる限定コンテンツや情報、プレゼント抽選など様々な企画をご用意しています。
         </div>
       </div>
 
@@ -300,8 +278,16 @@ export default function LevelPage() {
       </div>
 
       {/* Point Earning Methods */}
-      <div style={{ margin: '0 16px 16px', background: 'white', borderRadius: 16, border: '1px solid var(--line)', overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>ポイント獲得方法</div>
+      <details
+        onToggle={(e) => setPointsOpen((e.currentTarget as HTMLDetailsElement).open)}
+        style={{ margin: '0 16px 16px', background: 'white', borderRadius: 16, border: '1px solid var(--line)', overflow: 'hidden' }}
+      >
+        <summary style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', cursor: 'pointer', listStyle: 'none', borderBottom: '1px solid var(--surf)' }}>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>ポイント獲得方法</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round" style={{ transform: pointsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .2s', flexShrink: 0 }}>
+            <polyline points="6,9 12,15 18,9"/>
+          </svg>
+        </summary>
         {POINT_ACTIONS.map((action, i) => (
           <div
             key={action.label}
@@ -314,7 +300,7 @@ export default function LevelPage() {
             <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)', flexShrink: 0 }}>+{action.pt}pt</div>
           </div>
         ))}
-      </div>
+      </details>
 
       <BottomNav />
     </div>
