@@ -281,8 +281,8 @@ export default function ScorePage() {
                   const holePar = pars[hole] ?? 4
                   return (
                     <div key={hole} style={{ background: 'white', borderRadius: 10, border: `1px solid ${scores[hole] > 0 ? 'rgba(22,101,52,.2)' : 'var(--line)'}`, padding: '10px 8px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter', marginBottom: 2 }}>HOLE {hole + 1}</div>
-                      <div style={{ fontSize: 8, color: 'var(--mute)', marginBottom: 6 }}>Par {holePar}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mid)', fontFamily: 'Inter', marginBottom: 2 }}>HOLE {hole + 1}</div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g2)', fontFamily: 'Inter', marginBottom: 6 }}>Par {holePar}</div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
                         <button onClick={() => updateScore(hole, scores[hole] - 1)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', fontSize: 14, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                         <span style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: scoreColor(scores[hole], holePar), minWidth: 28, textAlign: 'center' }}>{scores[hole] === 0 ? '-' : scores[hole]}</span>
