@@ -323,23 +323,27 @@ export default function GpsPage() {
     )
   }
 
+  const allFilled = scores.every(s => s > 0)
+
   // GPS計測画面
   return (
-    <div style={{ minHeight: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ height: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column' }}>
       {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <svg width="100%" height="100%" viewBox="0 0 390 600" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="xMidYMid slice">
-          <rect width="390" height="600" fill="#080f08"/>
-          <path d="M130 600 Q124 500 140 400 Q155 300 145 220 Q135 148 158 106 Q170 80 185 70 Q200 62 205 61 Q210 62 225 72 Q250 90 238 148 Q226 208 240 290 Q254 370 244 460 Q238 520 240 600Z" fill="#1c3e10" opacity="0.82"/>
-          <ellipse cx="200" cy="78" rx="46" ry="30" fill="#1d5612"/>
-          <ellipse cx="200" cy="78" rx="38" ry="24" fill="#246c18"/>
-          <circle cx="200" cy="78" r="4" fill="rgba(255,255,255,.8)"/>
-          <line x1="200" y1="82" x2="200" y2="98" stroke="#608040" strokeWidth="1.5"/>
-          <polygon points="200,62 214,74 200,86" fill="#A8E063" opacity="0.95"/>
-          <line x1="200" y1="490" x2="200" y2="84" stroke="rgba(168,224,99,0.2)" strokeWidth="1" strokeDasharray="5,4"/>
-          <circle cx="200" cy="490" r="18" fill="rgba(168,224,99,0.08)" stroke="rgba(168,224,99,0.28)" strokeWidth="1.2"/>
-          <circle cx="200" cy="490" r="7" fill="#A8E063"/>
-          <circle cx="200" cy="490" r="3" fill="rgba(0,0,0,.85)"/>
+
+      {/* マップエリア（固定高さ） */}
+      <div style={{ height: '32vh', position: 'relative', flexShrink: 0 }}>
+        <svg width="100%" height="100%" viewBox="0 0 390 240" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="240" fill="#080f08"/>
+          <path d="M130 240 Q124 200 140 160 Q155 120 145 88 Q135 59 158 42 Q170 32 185 28 Q200 25 205 24 Q210 25 225 29 Q250 36 238 59 Q226 83 240 116 Q254 148 244 184 Q238 208 240 240Z" fill="#1c3e10" opacity="0.82"/>
+          <ellipse cx="200" cy="31" rx="46" ry="22" fill="#1d5612"/>
+          <ellipse cx="200" cy="31" rx="38" ry="17" fill="#246c18"/>
+          <circle cx="200" cy="31" r="4" fill="rgba(255,255,255,.8)"/>
+          <line x1="200" y1="35" x2="200" y2="48" stroke="#608040" strokeWidth="1.5"/>
+          <polygon points="200,15 214,27 200,39" fill="#A8E063" opacity="0.95"/>
+          <line x1="200" y1="196" x2="200" y2="35" stroke="rgba(168,224,99,0.2)" strokeWidth="1" strokeDasharray="5,4"/>
+          <circle cx="200" cy="196" r="14" fill="rgba(168,224,99,0.08)" stroke="rgba(168,224,99,0.28)" strokeWidth="1.2"/>
+          <circle cx="200" cy="196" r="6" fill="#A8E063"/>
+          <circle cx="200" cy="196" r="2.5" fill="rgba(0,0,0,.85)"/>
         </svg>
 
         {/* ヘッダー */}
@@ -349,9 +353,7 @@ export default function GpsPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ background: 'rgba(168,224,99,.25)', border: '1px solid rgba(168,224,99,.5)', borderRadius: 20, padding: '2px 9px', fontSize: 9, color: '#C5F08A', fontFamily: 'Inter', fontWeight: 600 }}>HOLE {hole}</div>
-              </div>
+              <div style={{ fontSize: 9, color: '#C5F08A', fontFamily: 'Inter', fontWeight: 600, letterSpacing: '.1em' }}>HOLE {hole}</div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,.6)', marginTop: 1 }}>{selected.golfCourseName}</div>
             </div>
           </div>
@@ -362,109 +364,138 @@ export default function GpsPage() {
             </span>
           </div>
         </div>
+      </div>
 
-        {/* 下部スクロールパネル */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '78vh', overflowY: 'auto', background: 'white', borderRadius: '18px 18px 0 0', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)' }}>
-          <div style={{ padding: '16px 14px 0' }}>
-            <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
+      {/* スクロールパネル（flex: 1 で残り全高を占有） */}
+      <div style={{ flex: 1, overflowY: 'auto', background: 'white', borderRadius: '18px 18px 0 0', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+        <div style={{ padding: '16px 14px 0' }}>
+          <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
 
-            {/* ホール選択 */}
-            <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
-              {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
-                <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
-              ))}
+          {/* ホール選択 */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
+            {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
+              <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
+            ))}
+          </div>
+
+          {/* グリーン選択トグル */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            {(['single', 'left', 'right'] as const).map((side) => {
+              const label = side === 'single' ? '1グリーン' : side === 'left' ? '左グリーン' : '右グリーン'
+              const active = greenSide === side
+              return (
+                <button key={side} onClick={() => setGreenSide(side)} style={{ flex: 1, padding: '5px 0', fontSize: 10, fontWeight: active ? 700 : 500, color: active ? 'var(--g1)' : 'var(--mute)', background: active ? 'rgba(13,61,43,.08)' : 'var(--surf)', border: active ? '1px solid rgba(13,61,43,.25)' : '1px solid var(--line)', borderRadius: 7, cursor: 'pointer' }}>{label}</button>
+              )
+            })}
+          </div>
+
+          {greenDist ? (
+            <div>
+              <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
+                <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+              </div>
+              <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
             </div>
-
-            {/* グリーン選択トグル */}
-            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-              {(['single', 'left', 'right'] as const).map((side) => {
-                const label = side === 'single' ? '1グリーン' : side === 'left' ? '左グリーン' : '右グリーン'
-                const active = greenSide === side
-                return (
-                  <button key={side} onClick={() => setGreenSide(side)} style={{ flex: 1, padding: '5px 0', fontSize: 10, fontWeight: active ? 700 : 500, color: active ? 'var(--g1)' : 'var(--mute)', background: active ? 'rgba(13,61,43,.08)' : 'var(--surf)', border: active ? '1px solid rgba(13,61,43,.25)' : '1px solid var(--line)', borderRadius: 7, cursor: 'pointer' }}>{label}</button>
-                )
-              })}
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
+              GPS取得中...現在地からの距離を計算します
             </div>
+          )}
 
-            {greenDist ? (
-              <div>
-                <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
-                  <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
-                </div>
-                <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
-                GPS取得中...現在地からの距離を計算します
-              </div>
-            )}
+          {/* スコア入力セクション */}
+          <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
 
-            {/* スコア入力セクション */}
-            <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
-
-            {/* ホール番号と前後移動 */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <button
-                onClick={() => setHole(h => Math.max(1, h - 1))}
-                style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
-              </button>
-              <div style={{ background: 'var(--g1)', borderRadius: 12, padding: '8px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter', letterSpacing: '.15em' }}>HOLE</div>
-                <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: '#A8E063', lineHeight: 1 }}>{hole}</div>
-              </div>
-              <button
-                onClick={() => setHole(h => Math.min(18, h + 1))}
-                style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
-              </button>
-            </div>
-
-            {/* スコア入力コントロール */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              {/* 左：Par + 判定 */}
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 500 }}>Par {currentPar}</div>
-                {scoreDiff !== null && (
-                  <div style={{ fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: 2 }}>{getJudgment(scoreDiff)}</div>
-                )}
-              </div>
-
-              {/* 中央：スコア数字（大） */}
-              <div style={{ fontFamily: 'Inter', fontSize: 52, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1, minWidth: 60, textAlign: 'center' }}>
-                {currentScore === 0 ? '-' : currentScore}
-              </div>
-
-              {/* 右：− ／ + ボタン */}
-              <div style={{ flex: 1, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button
-                  onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar - 1 : currentScore - 1)}
-                  style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >−</button>
-                <button
-                  onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar : currentScore + 1)}
-                  style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >+</button>
-              </div>
-            </div>
-
-            {/* ラウンド終了・スコア保存ボタン */}
+          {/* ホール番号と前後移動 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <button
-              onClick={handleSaveRound}
-              disabled={saving}
-              style={{ width: '100%', background: saving ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginBottom: 4 }}
+              onClick={() => setHole(h => Math.max(1, h - 1))}
+              style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
             >
-              {saving ? '保存中...' : 'ラウンド終了・スコア保存'}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+            </button>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.1em' }}>HOLE</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 30, fontWeight: 800, color: 'var(--txt)', lineHeight: 1 }}>{hole}</span>
+            </div>
+            <button
+              onClick={() => setHole(h => Math.min(18, h + 1))}
+              style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
             </button>
           </div>
 
-          {/* BottomNav分の余白 */}
-          <div style={{ height: 90 }} />
+          {/* スコア入力コントロール */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 500 }}>Par {currentPar}</div>
+              {scoreDiff !== null && (
+                <div style={{ fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: 2 }}>{getJudgment(scoreDiff)}</div>
+              )}
+            </div>
+            <div style={{ fontFamily: 'Inter', fontSize: 52, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1, minWidth: 60, textAlign: 'center' }}>
+              {currentScore === 0 ? '-' : currentScore}
+            </div>
+            <div style={{ flex: 1, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar - 1 : currentScore - 1)}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >−</button>
+              <button
+                onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar : currentScore + 1)}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >+</button>
+            </div>
+          </div>
+
+          {/* 18ホールスコアサマリー */}
+          <div style={{ borderTop: '1px solid var(--line)', marginBottom: 14, paddingTop: 14 }}>
+            <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>OUT（1〜9H）</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 3, marginBottom: 12 }}>
+              {scores.slice(0, 9).map((s, i) => {
+                const par = DEFAULT_PARS[i]
+                const diff = s > 0 ? s - par : null
+                return (
+                  <div key={i} onClick={() => setHole(i + 1)} style={{ textAlign: 'center', cursor: 'pointer', padding: '4px 0', borderRadius: 5, background: hole === i + 1 ? 'rgba(13,61,43,.08)' : 'transparent' }}>
+                    <div style={{ fontSize: 8, color: 'var(--mute)', fontFamily: 'Inter' }}>{i + 1}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: diff !== null ? getJudgmentColor(diff) : 'var(--line)' }}>{s || '—'}</div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>IN（10〜18H）</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 3, marginBottom: 10 }}>
+              {scores.slice(9, 18).map((s, i) => {
+                const par = DEFAULT_PARS[i + 9]
+                const diff = s > 0 ? s - par : null
+                return (
+                  <div key={i} onClick={() => setHole(i + 10)} style={{ textAlign: 'center', cursor: 'pointer', padding: '4px 0', borderRadius: 5, background: hole === i + 10 ? 'rgba(13,61,43,.08)' : 'transparent' }}>
+                    <div style={{ fontSize: 8, color: 'var(--mute)', fontFamily: 'Inter' }}>{i + 10}</div>
+                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: diff !== null ? getJudgmentColor(diff) : 'var(--line)' }}>{s || '—'}</div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <span style={{ fontSize: 10, color: 'var(--mute)' }}>OUT {scores.slice(0, 9).reduce((a, b) => a + b, 0) || '—'}</span>
+              <span style={{ fontSize: 10, color: 'var(--mute)' }}>IN {scores.slice(9).reduce((a, b) => a + b, 0) || '—'}</span>
+              <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 800, color: 'var(--g1)' }}>TOTAL {scores.reduce((a, b) => a + b, 0) || '—'}</span>
+            </div>
+          </div>
+
+          {/* ラウンド終了・スコア保存ボタン */}
+          <button
+            onClick={allFilled && !saving ? handleSaveRound : undefined}
+            style={{ width: '100%', background: saving ? 'var(--mute)' : allFilled ? 'var(--g1)' : '#c8cfc8', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: allFilled && !saving ? 'pointer' : 'default', marginBottom: 4, transition: 'background .2s' }}
+          >
+            {saving ? '保存中...' : allFilled ? 'ラウンド終了・スコア保存' : `ラウンド終了・スコア保存（${scores.filter(s => s > 0).length}/18）`}
+          </button>
         </div>
+
+        {/* BottomNav分の余白 */}
+        <div style={{ height: 90 }} />
       </div>
       <BottomNav />
 
