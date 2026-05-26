@@ -631,28 +631,24 @@ export default function ProfilePage() {
             return (
               <div
                 onClick={() => router.push('/level')}
-                style={{ margin: '10px 16px 0', background: 'white', border: '1px solid var(--line)', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 6px rgba(0,0,0,.04)', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}
+                style={{ margin: '10px 16px 0', background: 'white', border: '1px solid var(--line)', borderRadius: 14, padding: '16px', boxShadow: '0 1px 6px rgba(0,0,0,.04)', display: 'flex', gap: 16, alignItems: 'center', cursor: 'pointer' }}
               >
-                <div style={{ border: `1.5px solid ${lvBorder}`, borderRadius: 10, padding: '8px 12px', background: lvBg, minWidth: 68, textAlign: 'center', flexShrink: 0 }}>
+                <div style={{ border: `2px solid ${lvBorder}`, borderRadius: 12, padding: '10px 14px', background: lvBg, minWidth: 80, textAlign: 'center', flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', lineHeight: 1 }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>Lv</span>
-                    <span style={{ fontSize: 8, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>.</span>
-                    <span style={{ fontSize: 30, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>{myLevelInfo.level}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>Lv</span>
+                    <span style={{ fontSize: 9, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>.</span>
+                    <span style={{ fontSize: 40, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>{myLevelInfo.level}</span>
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: lvColor, fontFamily: 'Inter', marginTop: 5 }}>{myLevelInfo.name}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: lvColor, fontFamily: 'Inter', marginTop: 6 }}>{myLevelInfo.name}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
-                    <span style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 500, color: 'var(--txt)', lineHeight: 1 }}>
-                      {totalPts.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 3 }}>pt</span>
-                    </span>
-                    <span style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>レベルガイド ›</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>GLHレベルガイド</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9,18 15,12 9,6"/></svg>
                   </div>
-                  <div style={{ height: 5, background: 'var(--surf)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-                    <div style={{ height: '100%', width: `${myLevelInfo.progress * 100}%`, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 3 }} />
-                  </div>
-                  <div>
-                    <span style={{ fontSize: 9, color: 'var(--mute)' }}>アプリ内アクティビティでポイントGETしてレベルアップ</span>
+                  <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.8 }}>
+                    アプリ内アクティビティで<br/>
+                    ポイントGETしてレベルアップ
                   </div>
                 </div>
               </div>
