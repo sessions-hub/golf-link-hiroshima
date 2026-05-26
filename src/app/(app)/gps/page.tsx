@@ -371,13 +371,6 @@ export default function GpsPage() {
         <div style={{ padding: '16px 14px 0' }}>
           <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
 
-          {/* ホール選択 */}
-          <div style={{ display: 'flex', gap: 5, marginBottom: 13, overflowX: 'auto' }}>
-            {Array.from({ length: 18 }, (_, i) => i + 1).map((h) => (
-              <button key={h} onClick={() => setHole(h)} style={{ width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', flexShrink: 0, background: hole === h ? 'var(--g1)' : 'var(--surf)', color: hole === h ? 'var(--lime)' : 'var(--mute)', fontFamily: 'Inter', fontSize: 11, fontWeight: 700 }}>{h}</button>
-            ))}
-          </div>
-
           {/* グリーン選択トグル */}
           <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
             {(['single', 'left', 'right'] as const).map((side) => {
@@ -389,20 +382,29 @@ export default function GpsPage() {
             })}
           </div>
 
-          {greenDist ? (
-            <div>
-              <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
-                <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+          {/* 距離表示 + HOLEボックス */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            {greenDist ? (
+              <div>
+                <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+                </div>
+                <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
               </div>
-              <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
+            ) : (
+              <div style={{ padding: '12px 0', color: 'var(--mute)', fontSize: 13 }}>
+                GPS取得中...
+              </div>
+            )}
+
+            {/* HOLE ボックス（罫線付き・２行） */}
+            <div style={{ border: '1.5px solid var(--line)', borderRadius: 10, padding: '8px 18px', textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 9, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.18em' }}>HOLE</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 34, fontWeight: 800, color: 'var(--g1)', lineHeight: 1.1 }}>{hole}</div>
             </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--mute)', fontSize: 13 }}>
-              GPS取得中...現在地からの距離を計算します
-            </div>
-          )}
+          </div>
 
           {/* スコア入力セクション */}
           <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
