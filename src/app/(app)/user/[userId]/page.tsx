@@ -445,16 +445,16 @@ export default function UserProfilePage() {
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button
-                onClick={isBlocked ? undefined : handleChat}
-                disabled={isBlocked}
-                style={{ flex: 1, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: isBlocked ? 'not-allowed' : 'pointer', opacity: isBlocked ? .4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                onClick={isBlockedByThem ? undefined : handleChat}
+                disabled={isBlockedByThem}
+                style={{ flex: 1, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: isBlockedByThem ? 'not-allowed' : 'pointer', opacity: isBlockedByThem ? .4 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                 チャットする
               </button>
               <button
-                onClick={isBlocked ? undefined : toggleFav}
-                disabled={isBlocked}
-                style={{ width: 42, height: 42, borderRadius: 10, border: '1px solid var(--line)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBlocked ? 'not-allowed' : 'pointer', flexShrink: 0, opacity: isBlocked ? .4 : 1 }}>
+                onClick={isBlockedByThem ? undefined : toggleFav}
+                disabled={isBlockedByThem}
+                style={{ width: 42, height: 42, borderRadius: 10, border: '1px solid var(--line)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0, opacity: isBlockedByThem ? .4 : 1 }}>
                 {isFav ? Icons.heart(17, '#e05070', true) : Icons.heart(17, 'var(--mute)')}
               </button>
               <button
@@ -468,7 +468,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90, ...(isBlocked ? { filter: 'blur(3px)', opacity: .3, pointerEvents: 'none' } : {}) }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90, ...(isBlockedByThem ? { filter: 'blur(3px)', opacity: .3, pointerEvents: 'none' } : {}) }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (
@@ -665,7 +665,7 @@ export default function UserProfilePage() {
             {!isBlocked ? (
               <>
                 <div style={{ fontSize: 13, color: 'var(--mid)', lineHeight: 1.9, marginBottom: 10 }}>
-                  ブロックすると以下の操作ができなくなります：<br/>
+                  ブロックすると相手からの以下の操作ができなくなります：<br/>
                   ・チャット・いいね・コメント<br/>
                   ・マッチング一覧に表示されなくなります
                 </div>

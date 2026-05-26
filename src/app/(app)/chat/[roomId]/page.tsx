@@ -421,14 +421,14 @@ export default function ChatRoomPage() {
       )}
 
       {/* ブロックバナー */}
-      {(isBlocked || isBlockedByThem) && (
+      {isBlockedByThem && (
         <div style={{ padding: '10px 16px', background: 'rgba(200,60,60,.08)', borderTop: '1px solid rgba(200,60,60,.15)', textAlign: 'center', fontSize: 12, color: '#c05050', flexShrink: 0 }}>
           ブロックのためメッセージを送れません
         </div>
       )}
 
       {/* 入力エリア */}
-      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, opacity: (isBlocked || isBlockedByThem) ? .5 : 1 }}>
+      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, opacity: isBlockedByThem ? .5 : 1 }}>
         {/* 画像ボタン */}
         <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>{Icons.camera(16, 'var(--mid)')}</button>
         {/* ファイルボタン */}
@@ -440,10 +440,10 @@ export default function ChatRoomPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()}
-          placeholder={(isBlocked || isBlockedByThem) ? 'ブロックのためメッセージを送れません' : 'メッセージを入力...'}
+          placeholder={isBlockedByThem ? 'ブロックのためメッセージを送れません' : 'メッセージを入力...'}
           style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
         />
-        <button onClick={sendMsg} disabled={sending || isBlocked || isBlockedByThem} style={{ width: 38, height: 38, borderRadius: '50%', background: sending || isBlocked || isBlockedByThem ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || isBlocked || isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+        <button onClick={sendMsg} disabled={sending || isBlockedByThem} style={{ width: 38, height: 38, borderRadius: '50%', background: sending || isBlockedByThem ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22,2 15,22 11,13 2,9"/>
