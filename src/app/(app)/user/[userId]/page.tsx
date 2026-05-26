@@ -324,7 +324,7 @@ export default function UserProfilePage() {
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
-    if (!myId) return
+    if (!myId || isBlocked || isBlockedByThem) return
     const { data: theyBlock } = await supabase.from('blocks').select('id')
       .eq('blocker_id', userId).eq('blocked_id', myId).maybeSingle()
     if (theyBlock) return
