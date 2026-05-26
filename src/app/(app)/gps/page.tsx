@@ -409,48 +409,37 @@ export default function GpsPage() {
           {/* スコア入力セクション */}
           <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
 
-          {/* ホール番号と前後移動 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <button
-              onClick={() => setHole(h => Math.max(1, h - 1))}
-              style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
-            </button>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span style={{ fontFamily: 'Inter', fontSize: 11, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.1em' }}>HOLE</span>
-              <span style={{ fontFamily: 'Inter', fontSize: 30, fontWeight: 800, color: 'var(--txt)', lineHeight: 1 }}>{hole}</span>
-            </div>
-            <button
-              onClick={() => setHole(h => Math.min(18, h + 1))}
-              style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid var(--line)', background: 'var(--surf)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mid)' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
-            </button>
-          </div>
-
           {/* スコア入力コントロール */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 500 }}>Par {currentPar}</div>
-              {scoreDiff !== null && (
-                <div style={{ fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: 2 }}>{getJudgment(scoreDiff)}</div>
-              )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+            {/* 左：HOLE ボックス（罫線・２行） */}
+            <div style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 14px', textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'Inter', fontSize: 8, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.15em' }}>HOLE</div>
+              <div style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 800, color: 'var(--g1)', lineHeight: 1.1 }}>{hole}</div>
             </div>
-            <div style={{ fontFamily: 'Inter', fontSize: 52, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1, minWidth: 60, textAlign: 'center' }}>
-              {currentScore === 0 ? '-' : currentScore}
-            </div>
-            <div style={{ flex: 1, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+
+            {/* 右：− [スコア / Par] + */}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
               <button
                 onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar - 1 : currentScore - 1)}
-                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >−</button>
+              <div style={{ textAlign: 'center', minWidth: 52 }}>
+                <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1.15 }}>
+                  {currentScore === 0 ? '−' : currentScore}
+                </div>
+                <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 600, color: 'var(--mute)', lineHeight: 1.15 }}>
+                  Par {currentPar}
+                </div>
+              </div>
               <button
                 onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar : currentScore + 1)}
-                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >+</button>
             </div>
           </div>
+          {scoreDiff !== null && (
+            <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: -12, marginBottom: 16 }}>{getJudgment(scoreDiff)}</div>
+          )}
 
           {/* 18ホールスコアサマリー */}
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: 14, paddingTop: 14 }}>
