@@ -410,31 +410,22 @@ export default function GpsPage() {
           <div style={{ borderTop: '1px solid var(--line)', margin: '16px 0 14px' }} />
 
           {/* スコア入力コントロール */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-            {/* 左：HOLE ボックス（罫線・２行） */}
-            <div style={{ border: '1.5px solid var(--line)', borderRadius: 8, padding: '6px 14px', textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 8, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.15em' }}>HOLE</div>
-              <div style={{ fontFamily: 'Inter', fontSize: 24, fontWeight: 800, color: 'var(--g1)', lineHeight: 1.1 }}>{hole}</div>
-            </div>
-
-            {/* 右：− [スコア / Par] + */}
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
               <button
                 onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar - 1 : currentScore - 1)}
                 style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--line)', background: 'var(--surf)', fontSize: 20, fontWeight: 700, color: 'var(--mid)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >−</button>
-              <div style={{ textAlign: 'center', minWidth: 52 }}>
-                <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', lineHeight: 1.15 }}>
-                  {currentScore === 0 ? '−' : currentScore}
-                </div>
-                <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 600, color: 'var(--mute)', lineHeight: 1.15 }}>
-                  Par {currentPar}
-                </div>
+              <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color: scoreDiff !== null ? getJudgmentColor(scoreDiff) : 'var(--line)', minWidth: 40, textAlign: 'center', lineHeight: 1 }}>
+                {currentScore === 0 ? '−' : currentScore}
               </div>
               <button
                 onClick={() => updateScore(hole - 1, currentScore === 0 ? currentPar : currentScore + 1)}
                 style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid var(--g3)', background: 'rgba(13,61,43,.06)', fontSize: 20, fontWeight: 700, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
               >+</button>
+            </div>
+            <div style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 600, color: 'var(--mute)', marginTop: 4 }}>
+              Par {currentPar}
             </div>
           </div>
           {scoreDiff !== null && (
