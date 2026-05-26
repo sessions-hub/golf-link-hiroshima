@@ -623,6 +623,46 @@ export default function ProfilePage() {
       {activeTab === 'settings' && (
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
 
+          {/* レベルバナー */}
+          {(() => {
+            const lvColor = myLevelInfo.color
+            const lvBorder = `${lvColor}4d`
+            const lvBg = `${lvColor}0a`
+            return (
+              <div
+                onClick={() => router.push('/level')}
+                style={{ margin: '10px 16px 0', background: 'white', border: '1px solid var(--line)', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 6px rgba(0,0,0,.04)', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer' }}
+              >
+                <div style={{ border: `1.5px solid ${lvBorder}`, borderRadius: 10, padding: '8px 12px', background: lvBg, minWidth: 68, textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', lineHeight: 1 }}>
+                    <span style={{ fontSize: 15, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>Lv</span>
+                    <span style={{ fontSize: 8, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>.</span>
+                    <span style={{ fontSize: 30, fontWeight: 900, color: lvColor, fontFamily: 'Inter' }}>{myLevelInfo.level}</span>
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: lvColor, fontFamily: 'Inter', marginTop: 5 }}>{myLevelInfo.name}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+                    <span style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 500, color: 'var(--txt)', lineHeight: 1 }}>
+                      {totalPts.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--mute)', marginLeft: 3 }}>pt</span>
+                    </span>
+                    <span style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>レベルガイド ›</span>
+                  </div>
+                  <div style={{ height: 5, background: 'var(--surf)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
+                    <div style={{ height: '100%', width: `${myLevelInfo.progress * 100}%`, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 3 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{myLevelInfo.name}</span>
+                    {myLevelInfo.next
+                      ? <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter' }}>{myLevelInfo.next.name}まで {myLevelInfo.ptToNext.toLocaleString()}pt</span>
+                      : <span style={{ fontSize: 9, color: 'var(--mute)', fontFamily: 'Inter', fontWeight: 700 }}>MAX LEVEL</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
           {/* プレミアム限定 */}
           {isPremium(userPlan) ? (
             <div style={{ background: 'white', marginBottom: 8 }}>
