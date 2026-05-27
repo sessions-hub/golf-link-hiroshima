@@ -7,15 +7,17 @@ import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
-import { type CourseEntry, searchVenues, getVenueCourses } from '@/lib/courses'
+import { type CourseEntry, type CourseCombo, searchVenues, getVenueCourses, getGroupCombos, getCourseById } from '@/lib/courses'
 
 const DEFAULT_PARS = [4,3,5,4,4,3,5,4,4,4,3,5,4,4,3,5,4,4]
+
+type ActiveCombo = { label: string; courses: CourseEntry[] }
 
 export default function ScorePage() {
   const router = useRouter()
   const supabase = createClient()
   const [userPlan, setUserPlan] = useState<Plan>('free')
-  const [scores, setScores] = useState<number[]>(Array(18).fill(0))
+  const [scores, setScores] = useState<number[]>(Array(27).fill(0))
   const [roundDate, setRoundDate] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
@@ -33,10 +35,17 @@ export default function ScorePage() {
   const [selectedVenueName, setSelectedVenueName] = useState<string | null>(null)
   const [subCourseOptions, setSubCourseOptions] = useState<CourseEntry[]>([])
   const [selectedCourse, setSelectedCourse] = useState<CourseEntry | null>(null)
+  const [roundFormatFor, setRoundFormatFor] = useState<CourseEntry | null>(null)
+  const [selectedCombo, setSelectedCombo] = useState<ActiveCombo | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const pars = selectedCourse ? selectedCourse.pars : DEFAULT_PARS
-  const holeCount = selectedCourse?.holes ?? 18
+  // アクティブなpar・ホール数
+  const activePars: number[] = selectedCombo
+    ? selectedCombo.courses.flatMap(c => c.pars)
+    : selectedCourse ? selectedCourse.pars : DEFAULT_PARS
+  const holeCount = selectedCombo
+    ? selectedCombo.courses.reduce((a, c) => a + c.holes, 0)
+    : selectedCourse?.holes ?? 18
 
   const calcStats = (data: any[]) => {
     if (data.length === 0) return
@@ -73,11 +82,15 @@ export default function ScorePage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const resetScores = () => setScores(Array(27).fill(0))
+
   const handleSearchChange = (val: string) => {
     setCourseSearch(val)
     setSelectedVenueName(null)
     setSelectedCourse(null)
     setSubCourseOptions([])
+    setRoundFormatFor(null)
+    setSelectedCombo(null)
     if (!val.trim()) { setSuggestions([]); setShowSuggestions(false); return }
     setSuggestions(searchVenues(val))
     setShowSuggestions(true)
@@ -87,11 +100,18 @@ export default function ScorePage() {
     setSelectedVenueName(venueName)
     setCourseSearch(venueName)
     setShowSuggestions(false)
+    setRoundFormatFor(null)
+    setSelectedCombo(null)
     const courses = getVenueCourses(venueName)
     if (courses.length === 1) {
-      setSelectedCourse(courses[0])
+      if (courses[0].holes === 9) {
+        setRoundFormatFor(courses[0])
+        setSelectedCourse(null)
+      } else {
+        setSelectedCourse(courses[0])
+      }
       setSubCourseOptions([])
-      setScores(Array(18).fill(0))
+      resetScores()
     } else {
       setSelectedCourse(null)
       setSubCourseOptions(courses)
@@ -99,8 +119,31 @@ export default function ScorePage() {
   }
 
   const handleSelectSubCourse = (course: CourseEntry) => {
-    setSelectedCourse(course)
-    setScores(Array(18).fill(0))
+    if (course.holes === 9) {
+      setRoundFormatFor(course)
+      setSelectedCourse(null)
+    } else {
+      setSelectedCourse(course)
+      setRoundFormatFor(null)
+    }
+    setSelectedCombo(null)
+    resetScores()
+  }
+
+  const handleSelectSingle = () => {
+    if (!roundFormatFor) return
+    setSelectedCourse(roundFormatFor)
+    setRoundFormatFor(null)
+    setSelectedCombo(null)
+    resetScores()
+  }
+
+  const handleSelectCombo = (combo: CourseCombo) => {
+    const entries = combo.courses.map(id => getCourseById(id)).filter(Boolean) as CourseEntry[]
+    setSelectedCombo({ label: combo.label, courses: entries })
+    setSelectedCourse(null)
+    setRoundFormatFor(null)
+    resetScores()
   }
 
   const handleClearCourse = () => {
@@ -109,7 +152,9 @@ export default function ScorePage() {
     setSelectedCourse(null)
     setSubCourseOptions([])
     setSuggestions([])
-    setScores(Array(18).fill(0))
+    setRoundFormatFor(null)
+    setSelectedCombo(null)
+    resetScores()
   }
 
   const updateScore = (hole: number, val: number) => {
@@ -119,11 +164,13 @@ export default function ScorePage() {
   }
 
   const outTotal = scores.slice(0, 9).reduce((a, b) => a + b, 0)
-  const inTotal = holeCount === 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : 0
-  const total = outTotal + inTotal
-  const outPar = pars.slice(0, 9).reduce((a, b) => a + b, 0)
-  const inPar = holeCount === 18 ? pars.slice(9, 18).reduce((a, b) => a + b, 0) : 0
-  const totalPar = outPar + inPar
+  const inTotal = holeCount >= 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : 0
+  const thirdTotal = holeCount >= 27 ? scores.slice(18, 27).reduce((a, b) => a + b, 0) : 0
+  const total = scores.slice(0, holeCount).reduce((a, b) => a + b, 0)
+  const outPar = activePars.slice(0, 9).reduce((a, b) => a + b, 0)
+  const inPar = holeCount >= 18 ? activePars.slice(9, 18).reduce((a, b) => a + b, 0) : 0
+  const thirdPar = holeCount >= 27 ? activePars.slice(18, 27).reduce((a, b) => a + b, 0) : 0
+  const totalPar = outPar + inPar + thirdPar
 
   const scoreColor = (score: number, par: number) => {
     if (score === 0) return 'var(--line)'
@@ -135,21 +182,42 @@ export default function ScorePage() {
     return '#ef4444'
   }
 
+  // スコアセクション（OUT / IN / 3rd）
+  const scoreSections: { label: string; startHole: number; pars: number[] }[] = selectedCombo
+    ? selectedCombo.courses.map((c, idx) => ({
+        label: idx === 0 ? 'OUT (1-9H)' : idx === 1 ? 'IN (10-18H)' : '3rd (19-27H)',
+        startHole: idx * 9,
+        pars: c.pars,
+      }))
+    : holeCount >= 18
+      ? [
+          { label: 'OUT (1-9H)', startHole: 0, pars: activePars.slice(0, 9) },
+          { label: 'IN (10-18H)', startHole: 9, pars: activePars.slice(9, 18) },
+        ]
+      : [{ label: 'OUT (1-9H)', startHole: 0, pars: activePars.slice(0, 9) }]
+
   const handleSave = async () => {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
-    if (!selectedCourse) { alert('コースを選択してください'); return }
+    if (!selectedCourse && !selectedCombo) { alert('コースを選択してください'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const courseName = selectedCombo
+      ? `${selectedVenueName ?? ''} ${selectedCombo.label}`.trim()
+      : selectedCourse!.name
+    const holeScores = scores.slice(0, holeCount)
+    const totalScore = holeScores.reduce((a, b) => a + b, 0)
+    const outScore = holeScores.slice(0, 9).reduce((a, b) => a + b, 0)
+    const inScore = holeCount >= 18 ? holeScores.slice(9, 18).reduce((a, b) => a + b, 0) : null
     const { error } = await supabase.from('scorecards').insert({
       user_id: user.id,
-      course_name: selectedCourse.name,
+      course_name: courseName,
       round_date: roundDate,
       played_at: roundDate,
-      total_score: total,
-      out_score: outTotal,
-      in_score: holeCount === 18 ? inTotal : null,
-      hole_scores: scores.slice(0, holeCount),
+      total_score: totalScore,
+      out_score: outScore,
+      in_score: inScore,
+      hole_scores: holeScores,
     })
     if (!error) {
       addPoints(supabase, user.id, 50)
@@ -161,7 +229,6 @@ export default function ScorePage() {
         .order('created_at', { ascending: false })
         .limit(20)
       if (newHistory) { setHistory(newHistory); calcStats(newHistory) }
-      setScores(Array(18).fill(0))
       handleClearCourse()
       setView('history')
       alert('スコアを保存しました！')
@@ -191,6 +258,118 @@ export default function ScorePage() {
     </div>
   )
 
+  // コース選択エリア
+  const renderCourseSelector = () => {
+    // コンボ確定済み
+    if (selectedCombo) {
+      return (
+        <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedVenueName} {selectedCombo.label}</div>
+            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{holeCount}ホール / Par {totalPar}</div>
+          </div>
+          <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>コースを変更する</button>
+        </div>
+      )
+    }
+    // 単独コース確定済み
+    if (selectedCourse) {
+      return (
+        <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedCourse.name}</div>
+            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{selectedCourse.holes}ホール / Par {selectedCourse.par}</div>
+          </div>
+          <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>コースを変更する</button>
+        </div>
+      )
+    }
+    // 9Hコース選択済み → ラウンド形式を選択
+    if (roundFormatFor) {
+      const availableCombos = getGroupCombos(selectedVenueName ?? roundFormatFor.venueName)
+        .filter(combo => combo.courses.includes(roundFormatFor.id))
+      return (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{roundFormatFor.name}</div>
+            <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>変更する</button>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 6 }}>ラウンド形式を選択</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button
+              onClick={handleSelectSingle}
+              style={{ width: '100%', background: 'white', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', textAlign: 'left', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            >
+              <span>単独ラウンド（9H）</span>
+              <span style={{ fontSize: 11, color: 'var(--mute)' }}>Par {roundFormatFor.par}</span>
+            </button>
+            {availableCombos.map(combo => (
+              <button
+                key={combo.label}
+                onClick={() => handleSelectCombo(combo)}
+                style={{ width: '100%', background: 'rgba(13,61,43,.04)', border: '1px solid rgba(13,61,43,.2)', borderRadius: 8, padding: '10px 12px', textAlign: 'left', fontSize: 13, color: 'var(--g1)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600 }}
+              >
+                <span>{combo.label}</span>
+                <span style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 400 }}>
+                  {combo.courses.reduce((a, id) => {
+                    const c = getCourseById(id); return a + (c?.holes ?? 0)
+                  }, 0)}H
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )
+    }
+    // 複数コース会場選択済み → サブコース選択
+    if (selectedVenueName && subCourseOptions.length > 0) {
+      return (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedVenueName}</div>
+            <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>変更する</button>
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 4 }}>コースを選択</div>
+          <select
+            defaultValue=""
+            onChange={e => {
+              const c = subCourseOptions.find(o => o.id === e.target.value)
+              if (c) handleSelectSubCourse(c)
+            }}
+            style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', background: 'white', outline: 'none', boxSizing: 'border-box' }}
+          >
+            <option value="" disabled>コースを選んでください</option>
+            {subCourseOptions.map(c => (
+              <option key={c.id} value={c.id}>{c.subCourse}</option>
+            ))}
+          </select>
+        </div>
+      )
+    }
+    // 検索入力
+    return (
+      <div ref={searchRef} style={{ position: 'relative', marginBottom: 10 }}>
+        <input
+          value={courseSearch}
+          onChange={e => handleSearchChange(e.target.value)}
+          onFocus={() => courseSearch && setShowSuggestions(true)}
+          placeholder="コース名で検索..."
+          style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--line)', borderRadius: 8, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,.1)', marginTop: 2, overflow: 'hidden' }}>
+            {suggestions.map(name => (
+              <div key={name} onMouseDown={() => handleSelectVenue(name)} style={{ padding: '10px 14px', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'white')}
+              >{name}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
@@ -216,71 +395,18 @@ export default function ScorePage() {
 
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 12 }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 6 }}>コース名</div>
-
-            {selectedCourse ? (
-              <div>
-                <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedCourse.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 2 }}>{selectedCourse.holes}ホール / Par {selectedCourse.par}</div>
-                  </div>
-                  <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>コースを変更する</button>
-                </div>
-              </div>
-            ) : selectedVenueName && subCourseOptions.length > 0 ? (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedVenueName}</div>
-                  <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>変更する</button>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 4 }}>コースを選択</div>
-                <select
-                  defaultValue=""
-                  onChange={e => {
-                    const c = subCourseOptions.find(o => o.id === e.target.value)
-                    if (c) handleSelectSubCourse(c)
-                  }}
-                  style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', background: 'white', outline: 'none', boxSizing: 'border-box' }}
-                >
-                  <option value="" disabled>コースを選んでください</option>
-                  {subCourseOptions.map(c => (
-                    <option key={c.id} value={c.id}>{c.subCourse}</option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div ref={searchRef} style={{ position: 'relative', marginBottom: 10 }}>
-                <input
-                  value={courseSearch}
-                  onChange={e => handleSearchChange(e.target.value)}
-                  onFocus={() => courseSearch && setShowSuggestions(true)}
-                  placeholder="コース名で検索..."
-                  style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }}
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid var(--line)', borderRadius: 8, zIndex: 100, boxShadow: '0 4px 16px rgba(0,0,0,.1)', marginTop: 2, overflow: 'hidden' }}>
-                    {suggestions.map(name => (
-                      <div key={name} onMouseDown={() => handleSelectVenue(name)} style={{ padding: '10px 14px', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'white')}
-                      >{name}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
+            {renderCourseSelector()}
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 6 }}>ラウンド日</div>
             <input type="date" value={roundDate} onChange={e => setRoundDate(e.target.value)} style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', boxSizing: 'border-box' }} />
           </div>
 
-          {(['OUT (1-9H)', ...(holeCount === 18 ? ['IN (10-18H)'] : [])] as string[]).map((label, half) => (
-            <div key={half}>
-              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>{label}</div>
+          {scoreSections.map((section, sIdx) => (
+            <div key={sIdx}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>{section.label}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
                 {Array.from({ length: 9 }, (_, i) => {
-                  const hole = half * 9 + i
-                  const holePar = pars[hole] ?? 4
+                  const hole = section.startHole + i
+                  const holePar = section.pars[i] ?? 4
                   return (
                     <div key={hole} style={{ background: 'white', borderRadius: 10, border: `1px solid ${scores[hole] > 0 ? 'rgba(22,101,52,.2)' : 'var(--line)'}`, padding: '10px 8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--mid)', fontFamily: 'Inter', marginBottom: 2 }}>HOLE {hole + 1}</div>
@@ -300,7 +426,8 @@ export default function ScorePage() {
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 14 }}>
             {[
               { label: 'OUT', score: outTotal, par: outPar },
-              ...(holeCount === 18 ? [{ label: 'IN', score: inTotal, par: inPar }] : []),
+              ...(holeCount >= 18 ? [{ label: 'IN', score: inTotal, par: inPar }] : []),
+              ...(holeCount >= 27 ? [{ label: '3rd', score: thirdTotal, par: thirdPar }] : []),
               { label: 'TOTAL', score: total, par: totalPar },
             ].map(r => (
               <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: r.label !== 'TOTAL' ? '1px solid var(--surf)' : 'none' }}>

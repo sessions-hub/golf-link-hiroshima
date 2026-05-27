@@ -557,6 +557,50 @@ export const COURSES: CourseEntry[] = [
   },
 ]
 
+export type CourseCombo = {
+  label: string
+  courses: string[]
+}
+
+export type CourseComboGroup = {
+  groupName: string
+  combos: CourseCombo[]
+}
+
+export const COURSE_COMBOS: CourseComboGroup[] = [
+  {
+    groupName: '広島紅葉カントリークラブ',
+    combos: [
+      { label: '丸子 + 三倉コース', courses: ['hiroshima-momiji-maruko', 'hiroshima-momiji-mikura'] },
+      { label: '丸子 + 三ノ瀬コース', courses: ['hiroshima-momiji-maruko', 'hiroshima-momiji-minosegawa'] },
+      { label: '三倉 + 三ノ瀬コース', courses: ['hiroshima-momiji-mikura', 'hiroshima-momiji-minosegawa'] },
+    ],
+  },
+  {
+    groupName: '太田川ゴルフ場',
+    combos: [
+      { label: '祇園 + 戸坂コース', courses: ['otagawa-gion', 'otagawa-hesaka'] },
+    ],
+  },
+  {
+    groupName: '京覧カントリークラブ',
+    combos: [
+      { label: '東 + 中コース', courses: ['kyoran-cc-east', 'kyoran-cc-middle'] },
+      { label: '東 + 西コース', courses: ['kyoran-cc-east', 'kyoran-cc-west'] },
+      { label: '中 + 西コース', courses: ['kyoran-cc-middle', 'kyoran-cc-west'] },
+      { label: '東 + 中 + 西コース（27H）', courses: ['kyoran-cc-east', 'kyoran-cc-middle', 'kyoran-cc-west'] },
+    ],
+  },
+  {
+    groupName: '八千代カントリークラブ',
+    combos: [
+      { label: 'リバー + ルートコース', courses: ['yachiyo-cc-river', 'yachiyo-cc-route'] },
+      { label: 'リバー + レイクコース', courses: ['yachiyo-cc-river', 'yachiyo-cc-lake'] },
+      { label: 'ルート + レイクコース', courses: ['yachiyo-cc-route', 'yachiyo-cc-lake'] },
+    ],
+  },
+]
+
 export const VENUE_NAMES = [...new Set(COURSES.map(c => c.venueName))]
 
 export function searchVenues(query: string): string[] {
@@ -567,4 +611,12 @@ export function searchVenues(query: string): string[] {
 
 export function getVenueCourses(venueName: string): CourseEntry[] {
   return COURSES.filter(c => c.venueName === venueName)
+}
+
+export function getCourseById(id: string): CourseEntry | undefined {
+  return COURSES.find(c => c.id === id)
+}
+
+export function getGroupCombos(venueName: string): CourseCombo[] {
+  return COURSE_COMBOS.find(g => g.groupName === venueName)?.combos ?? []
 }
