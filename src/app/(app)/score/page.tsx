@@ -227,6 +227,27 @@ export default function ScorePage() {
                   <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>コースを変更する</button>
                 </div>
               </div>
+            ) : selectedVenueName && subCourseOptions.length > 0 ? (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '10px 12px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{selectedVenueName}</div>
+                  <button onClick={handleClearCourse} style={{ fontSize: 11, color: 'var(--g2)', background: 'none', border: '1px solid var(--g2)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}>変更する</button>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 4 }}>コースを選択</div>
+                <select
+                  defaultValue=""
+                  onChange={e => {
+                    const c = subCourseOptions.find(o => o.id === e.target.value)
+                    if (c) handleSelectSubCourse(c)
+                  }}
+                  style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', background: 'white', outline: 'none', boxSizing: 'border-box' }}
+                >
+                  <option value="" disabled>コースを選んでください</option>
+                  {subCourseOptions.map(c => (
+                    <option key={c.id} value={c.id}>{c.subCourse}</option>
+                  ))}
+                </select>
+              </div>
             ) : (
               <div ref={searchRef} style={{ position: 'relative', marginBottom: 10 }}>
                 <input
@@ -244,25 +265,6 @@ export default function ScorePage() {
                         onMouseLeave={e => (e.currentTarget.style.background = 'white')}
                       >{name}</div>
                     ))}
-                  </div>
-                )}
-
-                {selectedVenueName && subCourseOptions.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 4 }}>コースを選択</div>
-                    <select
-                      defaultValue=""
-                      onChange={e => {
-                        const c = subCourseOptions.find(o => o.id === e.target.value)
-                        if (c) handleSelectSubCourse(c)
-                      }}
-                      style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 7, padding: '9px 12px', fontSize: 13, color: 'var(--txt)', background: 'white', outline: 'none', boxSizing: 'border-box' }}
-                    >
-                      <option value="" disabled>コースを選んでください</option>
-                      {subCourseOptions.map(c => (
-                        <option key={c.id} value={c.id}>{c.subCourse}</option>
-                      ))}
-                    </select>
                   </div>
                 )}
               </div>

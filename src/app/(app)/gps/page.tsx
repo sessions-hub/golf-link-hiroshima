@@ -9,6 +9,7 @@ import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
+import { getVenueCourses, type CourseEntry } from '@/lib/courses'
 
 interface GoraCourse {
   golfCourseId: number
@@ -80,6 +81,8 @@ export default function GpsPage() {
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [scores, setScores] = useState<number[]>(Array(18).fill(0))
   const [saving, setSaving] = useState(false)
+  const [subCourseOptions, setSubCourseOptions] = useState<CourseEntry[]>([])
+  const [selectedSubCourse, setSelectedSubCourse] = useState<CourseEntry | null>(null)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
   const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -181,6 +184,17 @@ export default function GpsPage() {
 
   const selectCourse = (course: GoraCourse & { distKm: number }) => {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
+    const matchingCourses = getVenueCourses(course.golfCourseName)
+    if (matchingCourses.length > 1) {
+      setSubCourseOptions(matchingCourses)
+      setSelectedSubCourse(null)
+    } else if (matchingCourses.length === 1) {
+      setSubCourseOptions([])
+      setSelectedSubCourse(matchingCourses[0])
+    } else {
+      setSubCourseOptions([])
+      setSelectedSubCourse(null)
+    }
     setSelected(course)
     setHole(1)
     setScores(Array(18).fill(0))
@@ -206,13 +220,15 @@ export default function GpsPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSaving(false); return }
-    const total = scores.reduce((a, b) => a + b, 0)
+    const holeCount = selectedSubCourse?.holes ?? 18
+    const total = scores.slice(0, holeCount).reduce((a, b) => a + b, 0)
     const outScore = scores.slice(0, 9).reduce((a, b) => a + b, 0)
-    const inScore = scores.slice(9, 18).reduce((a, b) => a + b, 0)
+    const inScore = holeCount === 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : null
+    const courseName = selectedSubCourse ? selectedSubCourse.name : (selected?.golfCourseName ?? '')
     const { error } = await supabase.from('scorecards').insert({
       user_id: user.id,
-      course_name: selected?.golfCourseName ?? '',
-      hole_scores: scores,
+      course_name: courseName,
+      hole_scores: scores.slice(0, holeCount),
       total_score: total,
       out_score: outScore,
       in_score: inScore,
@@ -231,9 +247,11 @@ export default function GpsPage() {
     greenSide === 'right' ? '右グリーンセンターまで' :
     'グリーンセンターまで'
 
-  const currentPar = DEFAULT_PARS[hole - 1] ?? 4
+  const holeCount = selectedSubCourse?.holes ?? 18
+  const currentPar = selectedSubCourse ? (selectedSubCourse.pars[hole - 1] ?? 4) : (DEFAULT_PARS[hole - 1] ?? 4)
   const currentScore = scores[hole - 1]
   const scoreDiff = currentScore > 0 ? currentScore - currentPar : null
+  const allFilled = scores.slice(0, holeCount).every(s => s > 0)
 
   // コース選択画面
   if (!selected) {
@@ -323,7 +341,35 @@ export default function GpsPage() {
     )
   }
 
-  const allFilled = scores.every(s => s > 0)
+  // サブコース選択画面
+  if (selected && subCourseOptions.length > 0 && !selectedSubCourse) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div onClick={() => { setSelected(null); setSubCourseOptions([]); setSelectedSubCourse(null) }} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+              コース一覧
+            </div>
+          </div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{selected.golfCourseName}</div>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 90px' }}>
+          <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 12 }}>コースを選択してください</div>
+          {subCourseOptions.map(c => (
+            <div key={c.id} onClick={() => setSelectedSubCourse(c)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 10, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.subCourse}</div>
+                <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.holes}ホール / Par {c.par}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+            </div>
+          ))}
+        </div>
+        <BottomNav />
+      </div>
+    )
+  }
 
   // GPS計測画面
   return (
@@ -349,7 +395,7 @@ export default function GpsPage() {
         {/* ヘッダー */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: 'calc(env(safe-area-inset-top) + 8px) 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div onClick={() => setSelected(null)} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
+            <div onClick={() => { setSelected(null); setSubCourseOptions([]); setSelectedSubCourse(null) }} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             </div>
             <div>
@@ -432,12 +478,12 @@ export default function GpsPage() {
             <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: -12, marginBottom: 16 }}>{getJudgment(scoreDiff)}</div>
           )}
 
-          {/* 18ホールスコアサマリー */}
+          {/* ホールスコアサマリー */}
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: 14, paddingTop: 14 }}>
             <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>OUT（1〜9H）</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 3, marginBottom: 12 }}>
               {scores.slice(0, 9).map((s, i) => {
-                const par = DEFAULT_PARS[i]
+                const par = selectedSubCourse ? (selectedSubCourse.pars[i] ?? 4) : DEFAULT_PARS[i]
                 const diff = s > 0 ? s - par : null
                 return (
                   <div key={i} onClick={() => setHole(i + 1)} style={{ textAlign: 'center', cursor: 'pointer', padding: '4px 0', borderRadius: 5, background: hole === i + 1 ? 'rgba(13,61,43,.08)' : 'transparent' }}>
@@ -447,23 +493,27 @@ export default function GpsPage() {
                 )
               })}
             </div>
-            <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>IN（10〜18H）</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 3, marginBottom: 10 }}>
-              {scores.slice(9, 18).map((s, i) => {
-                const par = DEFAULT_PARS[i + 9]
-                const diff = s > 0 ? s - par : null
-                return (
-                  <div key={i} onClick={() => setHole(i + 10)} style={{ textAlign: 'center', cursor: 'pointer', padding: '4px 0', borderRadius: 5, background: hole === i + 10 ? 'rgba(13,61,43,.08)' : 'transparent' }}>
-                    <div style={{ fontSize: 8, color: 'var(--mute)', fontFamily: 'Inter' }}>{i + 10}</div>
-                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: diff !== null ? getJudgmentColor(diff) : 'var(--line)' }}>{s || '—'}</div>
-                  </div>
-                )
-              })}
-            </div>
+            {holeCount === 18 && (
+              <>
+                <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.12em', marginBottom: 8 }}>IN（10〜18H）</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 3, marginBottom: 10 }}>
+                  {scores.slice(9, 18).map((s, i) => {
+                    const par = selectedSubCourse ? (selectedSubCourse.pars[i + 9] ?? 4) : DEFAULT_PARS[i + 9]
+                    const diff = s > 0 ? s - par : null
+                    return (
+                      <div key={i} onClick={() => setHole(i + 10)} style={{ textAlign: 'center', cursor: 'pointer', padding: '4px 0', borderRadius: 5, background: hole === i + 10 ? 'rgba(13,61,43,.08)' : 'transparent' }}>
+                        <div style={{ fontSize: 8, color: 'var(--mute)', fontFamily: 'Inter' }}>{i + 10}</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: diff !== null ? getJudgmentColor(diff) : 'var(--line)' }}>{s || '—'}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
               <span style={{ fontSize: 10, color: 'var(--mute)' }}>OUT {scores.slice(0, 9).reduce((a, b) => a + b, 0) || '—'}</span>
-              <span style={{ fontSize: 10, color: 'var(--mute)' }}>IN {scores.slice(9).reduce((a, b) => a + b, 0) || '—'}</span>
-              <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 800, color: 'var(--g1)' }}>TOTAL {scores.reduce((a, b) => a + b, 0) || '—'}</span>
+              {holeCount === 18 && <span style={{ fontSize: 10, color: 'var(--mute)' }}>IN {scores.slice(9, 18).reduce((a, b) => a + b, 0) || '—'}</span>}
+              <span style={{ fontFamily: 'Inter', fontSize: 15, fontWeight: 800, color: 'var(--g1)' }}>TOTAL {scores.slice(0, holeCount).reduce((a, b) => a + b, 0) || '—'}</span>
             </div>
           </div>
 
@@ -472,7 +522,7 @@ export default function GpsPage() {
             onClick={allFilled && !saving ? handleSaveRound : undefined}
             style={{ width: '100%', background: saving ? 'var(--mute)' : allFilled ? 'var(--g1)' : '#c8cfc8', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: allFilled && !saving ? 'pointer' : 'default', marginBottom: 4, transition: 'background .2s' }}
           >
-            {saving ? '保存中...' : allFilled ? 'ラウンド終了・スコア保存' : `ラウンド終了・スコア保存（${scores.filter(s => s > 0).length}/18）`}
+            {saving ? '保存中...' : allFilled ? 'ラウンド終了・スコア保存' : `ラウンド終了・スコア保存（${scores.slice(0, holeCount).filter(s => s > 0).length}/${holeCount}）`}
           </button>
         </div>
 
