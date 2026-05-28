@@ -271,7 +271,13 @@ export default function GpsPage() {
     }
 
     if (!courseId) {
-      setGreenDist(null)
+      // courses.tsに存在しないコース：GoraCourseのlat/lngで概算
+      if (selected?.latitude && selected?.longitude) {
+        const distM = calcDistance(position.lat, position.lng, selected.latitude, selected.longitude) * 1000
+        setGreenDist({ center: mToY(distM), isApprox: true })
+      } else {
+        setGreenDist(null)
+      }
       return
     }
 

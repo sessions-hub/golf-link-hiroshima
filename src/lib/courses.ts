@@ -609,8 +609,46 @@ export function searchVenues(query: string): string[] {
   return VENUE_NAMES.filter(n => n.toLowerCase().includes(q)).slice(0, 8)
 }
 
-export function getVenueCourses(venueName: string): CourseEntry[] {
-  return COURSES.filter(c => c.venueName === venueName)
+// GORA APIが返す名称と courses.ts の venueName が大きく異なるケースの明示マッピング
+const GORA_VENUE_ALIASES: Record<string, string> = {
+  'スポーツヴィレッジ白竜湖': '白竜湖カントリークラブ',
+}
+
+function normalizeCourseName(s: string): string {
+  return s
+    .replace(/\s+|　/g, '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+}
+
+// GORAのgolfCourseNameを受け取り、courses.tsの対応エントリを返す
+// スコアページではVENUE_NAMESから渡るため完全一致が優先される
+export function getVenueCourses(goraOrVenueName: string): CourseEntry[] {
+  // 1. 明示エイリアス
+  const aliased = GORA_VENUE_ALIASES[goraOrVenueName]
+  if (aliased) {
+    const r = COURSES.filter(c => c.venueName === aliased)
+    if (r.length > 0) return r
+  }
+
+  // 2. venueName 完全一致
+  const byVenue = COURSES.filter(c => c.venueName === goraOrVenueName)
+  if (byVenue.length > 0) return byVenue
+
+  const normQuery = normalizeCourseName(goraOrVenueName)
+
+  // 3. name 正規化完全一致（"リージャスクレストゴルフクラブ グランド" → "リージャスクレストゴルフクラブグランド"）
+  const byName = COURSES.filter(c => normalizeCourseName(c.name) === normQuery)
+  if (byName.length > 0) return byName
+
+  // 4. venueName 正規化完全一致（スペース差異を吸収）
+  const byNormVenue = COURSES.filter(c => normalizeCourseName(c.venueName) === normQuery)
+  if (byNormVenue.length > 0) return byNormVenue
+
+  // 5. 包含一致（GORA名がvenueNameを含む、またはその逆）
+  return COURSES.filter(c => {
+    const normVenue = normalizeCourseName(c.venueName)
+    return normQuery.includes(normVenue) || normVenue.includes(normQuery)
+  })
 }
 
 export function getCourseById(id: string): CourseEntry | undefined {
