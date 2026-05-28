@@ -76,8 +76,8 @@ export default function GpsPage() {
   const [loadingCourses, setLoadingCourses] = useState(false)
   const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
   const [hole, setHole] = useState(1)
-  const [greenDist, setGreenDist] = useState<{ center: number | '—' } | null>(null)
-  const [greenSide, setGreenSide] = useState<'single' | 'left' | 'right'>('single')
+  const [greenDist, setGreenDist] = useState<{ center: number | '—'; isApprox?: boolean } | null>(null)
+  const [greenSide, setGreenSide] = useState<'left' | 'right'>('left')
   const [searchText, setSearchText] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
@@ -212,7 +212,7 @@ export default function GpsPage() {
     }
     setSelected(course)
     setHole(1)
-    setGreenSide('single')
+    setGreenSide('left')
     if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
   }
 
@@ -280,7 +280,12 @@ export default function GpsPage() {
     const holeData = courseData?.holes.find(h => h.hole === holeInCourse)
 
     if (!holeData?.green) {
-      setGreenDist({ center: '—' })
+      if (selected?.latitude && selected?.longitude) {
+        const distM = calcDistance(position.lat, position.lng, selected.latitude, selected.longitude) * 1000
+        setGreenDist({ center: mToY(distM), isApprox: true })
+      } else {
+        setGreenDist({ center: '—' })
+      }
       return
     }
 
@@ -302,7 +307,7 @@ export default function GpsPage() {
 
     const distM = calcDistance(position.lat, position.lng, coord.lat, coord.lng) * 1000
     setGreenDist({ center: mToY(distM) })
-  }, [position, hole, greenSide, selectedSubCourse, gpsCombo])
+  }, [position, hole, greenSide, selectedSubCourse, gpsCombo, selected])
 
   const filteredCourses = courses.filter(c =>
     c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
@@ -350,10 +355,25 @@ export default function GpsPage() {
     setSaving(false)
   }
 
+  // アクティブコースのグリーンタイプ
+  let activeCourseIdForGreen: string | null = null
+  if (gpsCombo) {
+    let offset = 0
+    for (const course of gpsCombo.courses) {
+      if (hole <= offset + course.holes) { activeCourseIdForGreen = course.id; break }
+      offset += course.holes
+    }
+  } else if (selectedSubCourse) {
+    activeCourseIdForGreen = selectedSubCourse.id
+  }
+  const activeGreenKey = activeCourseIdForGreen ? COURSE_ID_TO_GREEN_KEY[activeCourseIdForGreen] : undefined
+  const activeCourseGreenData = activeGreenKey ? GREEN_COORDS[activeGreenKey] : undefined
+  const activeGreenType = activeCourseGreenData?.greenType ?? 'single'
+
   const greenTitle =
-    greenSide === 'left' ? '左グリーンセンターまで' :
-    greenSide === 'right' ? '右グリーンセンターまで' :
-    'グリーンセンターまで'
+    activeGreenType === 'double'
+      ? (greenSide === 'left' ? '左グリーンセンターまで' : '右グリーンセンターまで')
+      : 'グリーンセンターまで'
 
   const currentPar = gpsActivePars[hole - 1] ?? 4
   const currentScore = scores[hole - 1]
@@ -585,16 +605,23 @@ export default function GpsPage() {
         <div style={{ padding: '16px 14px 0' }}>
           <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
 
-          {/* グリーン選択トグル */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
-            {(['single', 'left', 'right'] as const).map((side) => {
-              const label = side === 'single' ? '1グリーン' : side === 'left' ? '左グリーン' : '右グリーン'
-              const active = greenSide === side
-              return (
-                <button key={side} onClick={() => setGreenSide(side)} style={{ flex: 1, padding: '5px 0', fontSize: 10, fontWeight: active ? 700 : 500, color: active ? 'var(--g1)' : 'var(--mute)', background: active ? 'rgba(13,61,43,.08)' : 'var(--surf)', border: active ? '1px solid rgba(13,61,43,.25)' : '1px solid var(--line)', borderRadius: 7, cursor: 'pointer' }}>{label}</button>
-              )
-            })}
-          </div>
+          {/* グリーン選択トグル（ダブルグリーンのみ表示） */}
+          {activeGreenType === 'double' && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {(['left', 'right'] as const).map((side) => {
+                const active = greenSide === side
+                return (
+                  <button key={side} onClick={() => setGreenSide(side)} style={{ flex: 1, padding: '6px 0', fontSize: 11, fontWeight: active ? 700 : 500, color: active ? 'white' : 'var(--mute)', background: active ? 'var(--g2)' : 'var(--surf)', border: active ? '1px solid var(--g2)' : '1px solid var(--line)', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                    {side === 'left'
+                      ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+                      : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+                    }
+                    {side === 'left' ? '左グリーン' : '右グリーン'}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
           {/* 距離表示 + HOLEボックス */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
@@ -605,6 +632,7 @@ export default function GpsPage() {
                   <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist?.center ?? '—'}</span>
                   {typeof greenDist?.center === 'number' && <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>}
                 </div>
+                {greenDist?.isApprox && <div style={{ fontSize: 8, color: 'var(--mute)', marginTop: 1 }}>※概算</div>}
                 <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position.accuracy}m</div>
               </div>
             ) : (
