@@ -16,7 +16,8 @@ test.describe('/gps GPS計測ページ', () => {
     await expect(
       page.locator('input[placeholder*="コース名・エリアで検索"]')
     ).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('button', { hasText: '広島県' })).toBeVisible()
+    // greenCoordsベースのコース一覧が表示される
+    await expect(page.locator('text=/件のコース/')).toBeVisible({ timeout: 10_000 })
   })
 
   test('スタンダードプランではコース検索画面が表示される', async ({ page }) => {
@@ -37,13 +38,13 @@ test.describe('/gps GPS計測ページ', () => {
     await expect(gpsStatus.first()).toBeVisible({ timeout: 10_000 })
   })
 
-  test('スタンダードプランではエリアフィルターボタンが表示される', async ({ page }) => {
+  test('スタンダードプランではgreenCoordsベースのコース一覧が表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'standard')
     await page.goto('/gps')
 
-    await expect(page.locator('button', { hasText: '広島県' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('button', { hasText: '山口県' })).toBeVisible()
-    await expect(page.locator('button', { hasText: '岡山県' })).toBeVisible()
-    await expect(page.locator('button', { hasText: '島根県' })).toBeVisible()
+    // greenCoordsに登録された全コースの件数が表示される
+    await expect(page.locator('text=/件のコース/')).toBeVisible({ timeout: 10_000 })
+    // コース検索が使える
+    await expect(page.locator('input[placeholder*="コース名・エリアで検索"]')).toBeVisible()
   })
 })

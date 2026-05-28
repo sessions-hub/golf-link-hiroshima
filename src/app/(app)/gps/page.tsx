@@ -1,6 +1,5 @@
 'use client'
 import { Icons } from '@/components/icons'
-import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
@@ -12,16 +11,19 @@ import PointToast from '@/components/PointToast'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
 
-interface GoraCourse {
-  golfCourseId: number
-  golfCourseName: string
-  address: string
-  latitude: number
-  longitude: number
-  golfCourseDetailUrl: string
-  holes: number
-  evaluation: number
-}
+// greenCoordsに登録されている全会場リスト（venueName重複排除）
+type VenueItem = { venueName: string; address: string; lat: number; lng: number }
+const VENUES_WITH_COORDS: VenueItem[] = (() => {
+  const seen = new Set<string>()
+  const result: VenueItem[] = []
+  for (const courseId of Object.keys(COURSE_ID_TO_GREEN_KEY)) {
+    const c = getCourseById(courseId)
+    if (!c || seen.has(c.venueName)) continue
+    seen.add(c.venueName)
+    result.push({ venueName: c.venueName, address: c.address, lat: c.lat, lng: c.lng })
+  }
+  return result
+})()
 
 interface GPSPosition {
   lat: number
@@ -72,9 +74,7 @@ export default function GpsPage() {
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [position, setPosition] = useState<GPSPosition | null>(null)
   const [gpsError, setGpsError] = useState('')
-  const [courses, setCourses] = useState<(GoraCourse & { distKm: number })[]>([])
-  const [loadingCourses, setLoadingCourses] = useState(false)
-  const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
+  const [selected, setSelected] = useState<VenueItem | null>(null)
   const [hole, setHole] = useState(1)
   const [greenDist, setGreenDist] = useState<{ center: number | '—'; isApprox?: boolean } | null>(null)
   const [greenSide, setGreenSide] = useState<'left' | 'right'>('left')
@@ -90,7 +90,6 @@ export default function GpsPage() {
   const [gpsCombo, setGpsCombo] = useState<ActiveCombo | null>(null)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
-  const lastSortRef = useRef<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -133,60 +132,6 @@ export default function GpsPage() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchCourses('広島県')
-  }, [])
-
-  useEffect(() => {
-    if (!position) return
-    const last = lastSortRef.current
-    if (last && calcDistance(last.lat, last.lng, position.lat, position.lng) < 0.1) return
-    lastSortRef.current = { lat: position.lat, lng: position.lng }
-    setCourses(prev => {
-      if (prev.length === 0) return prev
-      return [...prev.map(c => ({
-        ...c,
-        distKm: c.latitude && c.longitude
-          ? calcDistance(position.lat, position.lng, c.latitude, c.longitude)
-          : 999,
-      }))].sort((a, b) => a.distKm - b.distKm)
-    })
-  }, [position])
-
-  const fetchCourses = async (keyword: string, retryCount = 0) => {
-    setLoadingCourses(true)
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000)
-      const res = await fetch(`/api/gora?keyword=${encodeURIComponent(keyword)}`, {
-        signal: controller.signal,
-      })
-      clearTimeout(timeoutId)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      if (data.Items && data.Items.length > 0) {
-        const pos = lastPositionRef.current
-        const list = data.Items.map((item: any) => ({
-          ...item.Item,
-          distKm: pos && item.Item.latitude && item.Item.longitude
-            ? calcDistance(pos.lat, pos.lng, item.Item.latitude, item.Item.longitude)
-            : 999,
-        })).sort((a: any, b: any) => a.distKm - b.distKm)
-        setCourses(list)
-        if (pos) lastSortRef.current = { lat: pos.lat, lng: pos.lng }
-      } else if (retryCount < 2) {
-        setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
-        return
-      }
-    } catch (e: any) {
-      if (retryCount < 2 && e.name !== 'AbortError') {
-        setTimeout(() => fetchCourses(keyword, retryCount + 1), 2000)
-        return
-      }
-    }
-    setLoadingCourses(false)
-  }
-
   const resetAllCourseState = () => {
     setSubCourseOptions([])
     setSelectedSubCourse(null)
@@ -196,9 +141,9 @@ export default function GpsPage() {
     setGreenDist(null)
   }
 
-  const selectCourse = (course: GoraCourse & { distKm: number }) => {
+  const selectVenue = (venue: VenueItem) => {
     if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
-    const matchingCourses = getVenueCourses(course.golfCourseName)
+    const matchingCourses = getVenueCourses(venue.venueName)
     resetAllCourseState()
     if (matchingCourses.length > 1) {
       setSubCourseOptions(matchingCourses)
@@ -210,7 +155,7 @@ export default function GpsPage() {
         setSelectedSubCourse(mc)
       }
     }
-    setSelected(course)
+    setSelected(venue)
     setHole(1)
     setGreenSide('left')
     if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
@@ -271,9 +216,8 @@ export default function GpsPage() {
     }
 
     if (!courseId) {
-      // courses.tsに存在しないコース：GoraCourseのlat/lngで概算
-      if (selected?.latitude && selected?.longitude) {
-        const distM = calcDistance(position.lat, position.lng, selected.latitude, selected.longitude) * 1000
+      if (selected?.lat && selected?.lng) {
+        const distM = calcDistance(position.lat, position.lng, selected.lat, selected.lng) * 1000
         setGreenDist({ center: mToY(distM), isApprox: true })
       } else {
         setGreenDist(null)
@@ -286,8 +230,8 @@ export default function GpsPage() {
     const holeData = courseData?.holes.find(h => h.hole === holeInCourse)
 
     if (!holeData?.green) {
-      if (selected?.latitude && selected?.longitude) {
-        const distM = calcDistance(position.lat, position.lng, selected.latitude, selected.longitude) * 1000
+      if (selected?.lat && selected?.lng) {
+        const distM = calcDistance(position.lat, position.lng, selected.lat, selected.lng) * 1000
         setGreenDist({ center: mToY(distM), isApprox: true })
       } else {
         setGreenDist({ center: '—' })
@@ -315,8 +259,16 @@ export default function GpsPage() {
     setGreenDist({ center: mToY(distM) })
   }, [position, hole, greenSide, selectedSubCourse, gpsCombo, selected])
 
-  const filteredCourses = courses.filter(c =>
-    c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
+  // 距離順ソート済み会場リスト
+  const venueList = VENUES_WITH_COORDS.map(v => ({
+    ...v,
+    distKm: position
+      ? calcDistance(position.lat, position.lng, v.lat, v.lng)
+      : 999,
+  })).sort((a, b) => a.distKm - b.distKm)
+
+  const filteredVenues = venueList.filter(v =>
+    v.venueName.includes(searchText) || v.address.includes(searchText)
   )
 
   const updateScore = (holeIdx: number, val: number) => {
@@ -334,8 +286,8 @@ export default function GpsPage() {
 
   // コース名
   const activeCourseName = gpsCombo
-    ? `${selected?.golfCourseName ?? ''} ${gpsCombo.label}`.trim()
-    : selectedSubCourse ? selectedSubCourse.name : (selected?.golfCourseName ?? '')
+    ? `${selected?.venueName ?? ''} ${gpsCombo.label}`.trim()
+    : selectedSubCourse ? selectedSubCourse.name : (selected?.venueName ?? '')
 
   const handleSaveRound = async () => {
     setSaving(true)
@@ -344,6 +296,7 @@ export default function GpsPage() {
     const total = scores.slice(0, gpsHoleCount).reduce((a, b) => a + b, 0)
     const outScore = scores.slice(0, 9).reduce((a, b) => a + b, 0)
     const inScore = gpsHoleCount >= 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : null
+    const today = new Date().toISOString().split('T')[0]
     const { error } = await supabase.from('scorecards').insert({
       user_id: user.id,
       course_name: activeCourseName,
@@ -352,9 +305,13 @@ export default function GpsPage() {
       out_score: outScore,
       in_score: inScore,
       played_at: new Date().toISOString(),
+      round_date: today,
     })
     if (!error) {
+      addPoints(supabase, user.id, 50)
+      setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 }))
       alert('スコアを保存しました！')
+      router.push('/score')
     } else {
       alert('保存に失敗しました')
     }
@@ -400,7 +357,7 @@ export default function GpsPage() {
         ]
       : [{ label: 'OUT（1〜9H）', startHole: 0, pars: gpsActivePars.slice(0, 9) }]
 
-  // コース選択画面
+  // ─── コース選択画面 ───────────────────────────────────────
   if (!selected) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -414,21 +371,17 @@ export default function GpsPage() {
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--line)', padding: '8px 12px', gap: 8 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="コース名・エリアで検索"
-                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--txt)' }}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 5, marginTop: 8, overflowX: 'auto' }}>
-            {['広島県', '山口県', '岡山県', '島根県'].map(f => (
-              <button key={f} onClick={() => fetchCourses(f)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 10, cursor: 'pointer', border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)', flexShrink: 0, fontWeight: 500 }}>{f}</button>
-            ))}
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surf)', borderRadius: 8, border: '1px solid var(--line)', padding: '8px 12px', gap: 8 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="コース名・エリアで検索"
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, color: 'var(--txt)' }}
+            />
+            {searchText && (
+              <button onClick={() => setSearchText('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', padding: 0, fontSize: 14 }}>✕</button>
+            )}
           </div>
         </div>
 
@@ -438,26 +391,23 @@ export default function GpsPage() {
               ⚠️ {gpsError}
             </div>
           )}
-          {loadingCourses && <SectionLoading text="コースを読み込み中" />}
-          {!loadingCourses && (
-            <div style={{ padding: '4px 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>
-              {filteredCourses.length}件のコース
-            </div>
-          )}
-          {filteredCourses.map((c) => (
-            <div key={c.golfCourseId} onClick={() => selectCourse(c)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+          <div style={{ padding: '4px 16px 8px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>
+            {filteredVenues.length}件のコース
+          </div>
+          {filteredVenues.map((v) => (
+            <div key={v.venueName} onClick={() => selectVenue(v)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
               <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
                 <div style={{ width: 46, height: 46, borderRadius: 10, background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--g2)' }}>{Icons.golf(22, 'var(--g2)')}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 600, marginBottom: 2 }}>{c.golfCourseName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--mute)' }}>{c.address}</div>
-                  {c.distKm < 999 && (
+                  <div style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 600, marginBottom: 2 }}>{v.venueName}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.address}</div>
+                  {v.distKm < 999 && (
                     <div style={{ fontSize: 10, color: 'var(--g3)', marginTop: 3 }}>
-                      📍 {c.distKm < 1 ? `${Math.round(c.distKm * 1000)}m` : `${c.distKm.toFixed(1)}km`}
+                      📍 {v.distKm < 1 ? `${Math.round(v.distKm * 1000)}m` : `${v.distKm.toFixed(1)}km`}
                     </div>
                   )}
                 </div>
-                {c.distKm < 5 && (
+                {v.distKm < 5 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(74,222,128,.1)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, padding: '3px 8px', flexShrink: 0 }}>
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--lime)' }} />
                     <span style={{ fontSize: 9, color: 'var(--g2)', fontFamily: 'Inter' }}>近い</span>
@@ -486,7 +436,7 @@ export default function GpsPage() {
     )
   }
 
-  // サブコース選択画面
+  // ─── サブコース選択画面 ───────────────────────────────────
   if (selected && subCourseOptions.length > 0 && !selectedSubCourse && !pendingSubCourse && !gpsCombo) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -497,7 +447,7 @@ export default function GpsPage() {
               コース一覧
             </div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{selected.golfCourseName}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{selected.venueName}</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 90px' }}>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 12 }}>コースを選択してください</div>
@@ -516,7 +466,7 @@ export default function GpsPage() {
     )
   }
 
-  // ラウンド形式選択画面（9Hコース選択後）
+  // ─── ラウンド形式選択画面（9Hコース選択後） ─────────────
   if (selected && pendingSubCourse && !selectedSubCourse && !gpsCombo) {
     const venueName = pendingSubCourse.venueName
     const availableCombos = getGroupCombos(venueName)
@@ -565,7 +515,7 @@ export default function GpsPage() {
     )
   }
 
-  // GPS計測画面
+  // ─── GPS計測画面 ─────────────────────────────────────────
   return (
     <div style={{ height: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column' }}>
       {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
@@ -606,7 +556,7 @@ export default function GpsPage() {
         </div>
       </div>
 
-      {/* スクロールパネル（flex: 1 で残り全高を占有） */}
+      {/* スクロールパネル */}
       <div style={{ flex: 1, overflowY: 'auto', background: 'white', borderRadius: '18px 18px 0 0', boxShadow: '0 -8px 32px rgba(0,0,0,.25)', borderTop: '2px solid rgba(168,224,99,.2)', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div style={{ padding: '16px 14px 0' }}>
           <div style={{ width: 32, height: 2.5, background: 'linear-gradient(90deg,var(--g3),var(--lime))', borderRadius: 2, margin: '0 auto 13px' }} />
@@ -647,7 +597,7 @@ export default function GpsPage() {
               </div>
             )}
 
-            {/* HOLE ボックス（罫線付き・２行） */}
+            {/* HOLE ボックス */}
             <div style={{ border: '1.5px solid var(--line)', borderRadius: 10, padding: '8px 18px', textAlign: 'center', flexShrink: 0 }}>
               <div style={{ fontFamily: 'Inter', fontSize: 9, fontWeight: 600, color: 'var(--mute)', letterSpacing: '.18em' }}>HOLE</div>
               <div style={{ fontFamily: 'Inter', fontSize: 34, fontWeight: 800, color: 'var(--g1)', lineHeight: 1.1 }}>{hole}</div>
@@ -679,6 +629,26 @@ export default function GpsPage() {
           {scoreDiff !== null && (
             <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: getJudgmentColor(scoreDiff), marginTop: -12, marginBottom: 16 }}>{getJudgment(scoreDiff)}</div>
           )}
+
+          {/* ホール移動 */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+            <button
+              onClick={() => setHole(h => Math.max(1, h - 1))}
+              disabled={hole === 1}
+              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, color: hole === 1 ? 'var(--line)' : 'var(--g2)', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, cursor: hole === 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
+              前のホール
+            </button>
+            <button
+              onClick={() => setHole(h => Math.min(gpsHoleCount, h + 1))}
+              disabled={hole === gpsHoleCount}
+              style={{ flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, color: hole === gpsHoleCount ? 'var(--line)' : 'var(--g2)', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, cursor: hole === gpsHoleCount ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+            >
+              次のホール
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+            </button>
+          </div>
 
           {/* ホールスコアサマリー */}
           <div style={{ borderTop: '1px solid var(--line)', marginBottom: 14, paddingTop: 14 }}>
@@ -714,7 +684,7 @@ export default function GpsPage() {
             onClick={allFilled && !saving ? handleSaveRound : undefined}
             style={{ width: '100%', background: saving ? 'var(--mute)' : allFilled ? 'var(--g1)' : '#c8cfc8', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: allFilled && !saving ? 'pointer' : 'default', marginBottom: 4, transition: 'background .2s' }}
           >
-            {saving ? '保存中...' : allFilled ? 'ラウンド終了・スコア保存' : `ラウンド終了・スコア保存（${scores.slice(0, gpsHoleCount).filter(s => s > 0).length}/${gpsHoleCount}）`}
+            {saving ? '保存中...' : allFilled ? 'ラウンド終了・スコアを保存する' : `ラウンド終了・スコアを保存する（${scores.slice(0, gpsHoleCount).filter(s => s > 0).length}/${gpsHoleCount}）`}
           </button>
         </div>
 
