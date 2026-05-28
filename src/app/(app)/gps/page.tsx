@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
+import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
 
 interface GoraCourse {
   golfCourseId: number
@@ -75,7 +76,7 @@ export default function GpsPage() {
   const [loadingCourses, setLoadingCourses] = useState(false)
   const [selected, setSelected] = useState<GoraCourse & { distKm: number } | null>(null)
   const [hole, setHole] = useState(1)
-  const [greenDist, setGreenDist] = useState<{ center: number } | null>(null)
+  const [greenDist, setGreenDist] = useState<{ center: number | '—' } | null>(null)
   const [greenSide, setGreenSide] = useState<'single' | 'left' | 'right'>('single')
   const [searchText, setSearchText] = useState('')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
@@ -192,6 +193,7 @@ export default function GpsPage() {
     setPendingSubCourse(null)
     setGpsCombo(null)
     setScores(Array(27).fill(0))
+    setGreenDist(null)
   }
 
   const selectCourse = (course: GoraCourse & { distKm: number }) => {
@@ -212,10 +214,6 @@ export default function GpsPage() {
     setHole(1)
     setGreenSide('single')
     if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
-    if (position && course.latitude && course.longitude) {
-      const distM = calcDistance(position.lat, position.lng, course.latitude, course.longitude) * 1000
-      setGreenDist({ center: mToY(distM) })
-    }
   }
 
   const handlePickSubCourse = (c: CourseEntry) => {
@@ -247,6 +245,64 @@ export default function GpsPage() {
     setScores(Array(27).fill(0))
     setHole(1)
   }
+
+  useEffect(() => {
+    if (!position) {
+      setGreenDist(null)
+      return
+    }
+
+    let courseId: string | null = null
+    let holeInCourse = hole
+
+    if (gpsCombo) {
+      let offset = 0
+      for (const course of gpsCombo.courses) {
+        if (hole <= offset + course.holes) {
+          courseId = course.id
+          holeInCourse = hole - offset
+          break
+        }
+        offset += course.holes
+      }
+    } else if (selectedSubCourse) {
+      courseId = selectedSubCourse.id
+      holeInCourse = hole
+    }
+
+    if (!courseId) {
+      setGreenDist(null)
+      return
+    }
+
+    const greenKey = COURSE_ID_TO_GREEN_KEY[courseId]
+    const courseData = greenKey ? GREEN_COORDS[greenKey] : undefined
+    const holeData = courseData?.holes.find(h => h.hole === holeInCourse)
+
+    if (!holeData?.green) {
+      setGreenDist({ center: '—' })
+      return
+    }
+
+    const { green } = holeData
+    let coord: { lat: number; lng: number } | null | undefined
+
+    if (green.type === 'single') {
+      coord = green.center
+    } else if (greenSide === 'right') {
+      coord = green.right ?? green.left
+    } else {
+      coord = green.left
+    }
+
+    if (!coord) {
+      setGreenDist({ center: '—' })
+      return
+    }
+
+    const distM = calcDistance(position.lat, position.lng, coord.lat, coord.lng) * 1000
+    setGreenDist({ center: mToY(distM) })
+  }, [position, hole, greenSide, selectedSubCourse, gpsCombo])
 
   const filteredCourses = courses.filter(c =>
     c.golfCourseName?.includes(searchText) || c.address?.includes(searchText)
@@ -542,14 +598,14 @@ export default function GpsPage() {
 
           {/* 距離表示 + HOLEボックス */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            {greenDist ? (
+            {position ? (
               <div>
                 <div style={{ fontSize: 8, color: 'var(--mute)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 2 }}>{greenTitle}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist.center}</span>
-                  <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: 56, fontWeight: 700, color: 'var(--g1)', lineHeight: 1, letterSpacing: '-.03em' }}>{greenDist?.center ?? '—'}</span>
+                  {typeof greenDist?.center === 'number' && <span style={{ fontFamily: 'Inter', fontSize: 17, color: 'var(--g3)', opacity: .7, fontWeight: 500 }}>y</span>}
                 </div>
-                <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position?.accuracy ?? '?'}m</div>
+                <div style={{ fontSize: 8, color: 'var(--pale)', marginTop: 1 }}>GPS精度 ±{position.accuracy}m</div>
               </div>
             ) : (
               <div style={{ padding: '12px 0', color: 'var(--mute)', fontSize: 13 }}>
