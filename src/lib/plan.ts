@@ -26,30 +26,30 @@ export async function getUserPlan(): Promise<Plan> {
 }
 
 
-export function canUseGPS(plan: Plan) {
-  return plan === 'premium' || plan === 'executive'
+export function canUseGPS(_plan: Plan) {
+  return true
 }
 
-export function canJoinComp(plan: Plan) {
-  return plan === 'premium' || plan === 'executive'
+export function canJoinComp(_plan: Plan) {
+  return true
 }
 
 export function canHostComp(plan: Plan) {
-  return plan === 'executive'
+  return plan === 'premium' || plan === 'executive'
 }
 
 export function canSeeWhoLiked(plan: Plan) {
-  return plan === 'executive'
+  return plan === 'premium' || plan === 'executive'
 }
 
 export function canSeeWhoVisited(plan: Plan) {
-  return plan === 'executive'
+  return plan === 'premium' || plan === 'executive'
 }
 
 export function isPremium(plan: Plan) {
-  return plan === 'executive'
+  return plan === 'premium' || plan === 'executive'
 }
 
 export function canSeeInterest(plan: Plan) {
-  return plan === 'executive'
+  return plan === 'premium' || plan === 'executive'
 }

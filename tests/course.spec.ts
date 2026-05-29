@@ -47,13 +47,13 @@ test.describe('/course コース・コンペページ', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('フリープランのコンペタブにエグゼクティブへの誘導がある', async ({ page }) => {
+  test('フリープランのコンペタブにプレミアムへの誘導がある', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/course')
 
     await page.locator('button', { hasText: /^コンペ$/ }).click()
     await expect(
-      page.locator('button', { hasText: 'エグゼクティブに申し込む' })
+      page.locator('button', { hasText: 'プレミアムに申し込む' })
     ).toBeVisible({ timeout: 10_000 })
   })
 

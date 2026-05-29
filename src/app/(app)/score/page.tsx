@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
@@ -33,7 +32,6 @@ type ActiveCombo = { label: string; courses: CourseEntry[] }
 export default function ScorePage() {
   const router = useRouter()
   const supabase = createClient()
-  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [scores, setScores] = useState<number[]>(Array(27).fill(0))
   const [roundDate, setRoundDate] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
@@ -44,7 +42,6 @@ export default function ScorePage() {
   const [roundCount, setRoundCount] = useState(0)
   const [scoreBreakdown, setScoreBreakdown] = useState<{ birdie: number; par: number; bogey: number; dbl: number } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
 
   // コース検索
@@ -100,8 +97,6 @@ export default function ScorePage() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const plan = await getUserPlan()
-      setUserPlan(plan)
       const { data } = await supabase
         .from('scorecards')
         .select('*')
@@ -199,7 +194,6 @@ export default function ScorePage() {
   }
 
   const updateScore = (hole: number, val: number) => {
-    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     if (val < 1 || val > 15) return
     setScores(prev => { const n = [...prev]; n[hole] = val; return n })
   }
@@ -238,7 +232,6 @@ export default function ScorePage() {
       : [{ label: 'OUT (1-9H)', startHole: 0, pars: activePars.slice(0, 9) }]
 
   const handleSave = async () => {
-    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     if (!selectedCourse && !selectedCombo) { alert('コースを選択してください'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -689,21 +682,6 @@ export default function ScorePage() {
       )}
 
       <BottomNav />
-
-      {/* プランアップグレードモーダル */}
-      {showUpgradeModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--g1),var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>スコア記録はプレミアムプラン以上</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>プレミアムプラン（月額490円）にアップグレードすると、スコア記録・GPS計測・コンペ参加など全機能が使えます。</div>
-            <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
-            <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

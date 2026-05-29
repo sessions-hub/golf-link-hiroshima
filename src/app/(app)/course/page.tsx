@@ -4,7 +4,7 @@ import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, canJoinComp, canHostComp, type Plan } from '@/lib/plan'
+import { getUserPlan, canHostComp, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
@@ -346,10 +346,10 @@ export default function CoursePage() {
       {activeTab === 'comp' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
           <div style={{ padding: '8px 16px 4px', display: 'flex', justifyContent: 'flex-end' }}>
-            {myPlan === 'executive' ? (
+            {canHostComp(userPlan) ? (
               <button onClick={() => setShowCreateModal(true)} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>＋ 主催する</button>
             ) : (
-              <button onClick={() => router.push('/subscription')} style={{ background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>エグゼクティブで主催する</button>
+              <button onClick={() => router.push('/subscription')} style={{ background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>プレミアム以上で主催する</button>
             )}
           </div>
           {loading && <SectionLoading />}
@@ -358,9 +358,9 @@ export default function CoursePage() {
             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
               <div style={{ marginBottom: 12, color: "var(--mute)" }}>{Icons.trophy(32, "var(--mute)")}</div>
               <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>コンペがまだありません</div>
-              <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>エグゼクティブ会員になるとコンペを主催できます</div>
-              {myPlan !== 'executive' && (
-                <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>エグゼクティブに申し込む</button>
+              <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>プレミアム以上の会員になるとコンペを主催できます</div>
+              {!canHostComp(userPlan) && (
+                <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>プレミアムに申し込む</button>
               )}
             </div>
           )}

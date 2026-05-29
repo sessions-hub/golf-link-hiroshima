@@ -9,7 +9,7 @@ test.describe('/score スコアページ', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('フリープランではページにアクセスでき、スコア操作時にアップグレード案内が表示される', async ({ page }) => {
+  test('フリープランでもスコアページにアクセスでき制限なく操作できる', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/score')
 
@@ -19,8 +19,7 @@ test.describe('/score スコアページ', () => {
     await plusBtn.click()
     await expect(
       page.locator('text=スコア記録はプレミアムプラン以上')
-    ).toBeVisible({ timeout: 3_000 })
-    await expect(page.locator('button', { hasText: 'プランをアップグレード' })).toBeVisible()
+    ).not.toBeVisible()
   })
 
   test('プレミアムプランではスコア入力画面が表示される', async ({ page }) => {

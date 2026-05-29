@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
-import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
@@ -71,7 +70,6 @@ export default function GpsPage() {
   const router = useRouter()
   const supabase = createClient()
   const [myId, setMyId] = useState('')
-  const [userPlan, setUserPlan] = useState<Plan>('free')
   const [position, setPosition] = useState<GPSPosition | null>(null)
   const [gpsError, setGpsError] = useState('')
   const [selected, setSelected] = useState<VenueItem | null>(null)
@@ -79,7 +77,6 @@ export default function GpsPage() {
   const [greenDist, setGreenDist] = useState<{ center: number | '—'; isApprox?: boolean } | null>(null)
   const [greenSide, setGreenSide] = useState<'left' | 'right'>('left')
   const [searchText, setSearchText] = useState('')
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [scores, setScores] = useState<number[]>(Array(27).fill(0))
   const [saving, setSaving] = useState(false)
@@ -96,7 +93,6 @@ export default function GpsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
-      getUserPlan().then(setUserPlan)
     }
     init()
   }, [])
@@ -142,7 +138,6 @@ export default function GpsPage() {
   }
 
   const selectVenue = (venue: VenueItem) => {
-    if (!canUseGPS(userPlan)) { setShowUpgradeModal(true); return }
     const matchingCourses = getVenueCourses(venue.venueName)
     resetAllCourseState()
     if (matchingCourses.length > 1) {
@@ -418,20 +413,6 @@ export default function GpsPage() {
           ))}
         </div>
         <BottomNav />
-
-        {showUpgradeModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
-            <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--g1),var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                {Icons.pin(26, 'white')}
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>GPS計測はプレミアムプラン以上</div>
-              <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>プレミアムプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コンペ参加など全機能が使えます。</div>
-              <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
-              <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -692,20 +673,6 @@ export default function GpsPage() {
         <div style={{ height: 90 }} />
       </div>
       <BottomNav />
-
-      {showUpgradeModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '32px 24px 48px', textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--g1),var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              {Icons.pin(26, 'white')}
-            </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>GPS計測はプレミアムプラン以上</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 28 }}>プレミアムプラン（月額490円）にアップグレードすると、GPS距離計測・スコア記録・コンペ参加など全機能が使えます。</div>
-            <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
-            <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'none', border: 'none', fontSize: 13, color: 'var(--mute)', cursor: 'pointer', padding: '8px' }}>キャンセル</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

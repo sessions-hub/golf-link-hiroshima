@@ -13,13 +13,12 @@ const PLANS = [
     price: 490,
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
-      'ゴルファー検索・フレンド',
-      'メッセージ送受信',
-      'コンペ参加',
-      'GPS距離計測',
-      'コース予約',
+      'FREEの全機能',
+      'コンペ主催',
+      '気になるタブ（足跡・お気に入り確認）',
     ],
-    recommended: false,
+    recommended: true,
+    secret: false,
   },
   {
     id: 'executive',
@@ -27,14 +26,11 @@ const PLANS = [
     price: 990,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '',
     features: [
-      'プレミアムの全機能',
-      '相性診断フィルター',
-      'コンペ主催',
-      'レッスン予約',
-      'プロフィール優先表示',
-      '月次ラウンドレポート',
+      'PREMIUMの全機能',
+      '会員カード',
     ],
-    recommended: true,
+    recommended: false,
+    secret: true,
   },
 ]
 
@@ -177,7 +173,7 @@ export default function SubscriptionPage() {
               <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: 'var(--mute)' }}>現在のプラン</div>
             )}
           </div>
-          {['プロフィール作成', 'ゴルファー検索（閲覧のみ）', 'コンペ閲覧'].map((f) => (
+          {['基本プロフィール・マッチング', 'チャット・投稿・いいね・コメント', 'GPS計測・スコア記録', 'コース検索・予約', 'コンペ参加'].map((f) => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>
@@ -190,8 +186,11 @@ export default function SubscriptionPage() {
         {/* 有料プラン */}
         {PLANS.map((plan) => (
           <div key={plan.id} style={{ background: plan.recommended ? 'var(--g1)' : 'white', borderRadius: 14, border: plan.recommended ? '2px solid rgba(168,224,99,.4)' : '1px solid var(--line)', padding: '16px 18px', marginBottom: 14, boxShadow: plan.recommended ? '0 8px 24px rgba(13,61,43,.2)' : '0 2px 8px rgba(13,61,43,.05)', position: 'relative', overflow: 'hidden' }}>
-            {plan.recommended && (
+            {plan.recommended && !plan.secret && (
               <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--lime)', color: 'var(--g1)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>おすすめ</div>
+            )}
+            {plan.secret && (
+              <div style={{ position: 'absolute', top: 0, right: 0, background: '#6366f1', color: 'white', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>シークレット</div>
             )}
             {currentPlan === plan.id && (
               <div style={{ position: 'absolute', top: 0, left: 0, background: 'rgba(168,224,99,.3)', color: 'var(--lime)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '14px 0 8px 0' }}>現在のプラン</div>
