@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canSeeInterest, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
-import PointToast from '@/components/PointToast'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
@@ -101,7 +100,6 @@ export default function MatchPage() {
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>('footprint')
   const [footprints, setFootprints] = useState<any[]>([])
   const [favoritedBy, setFavoritedBy] = useState<any[]>([])
@@ -238,13 +236,11 @@ export default function MatchPage() {
       const favKey = `ptsf_${myId}_${targetId}`
       if (!localStorage.getItem(favKey)) {
         addPoints(supabase, myId, 5)
-        setToast(t => ({ pts: 5, k: (t?.k ?? 0) + 1 }))
         const { data: reverse } = await supabase.from('favorites')
           .select('id').eq('user_id', targetId).eq('target_id', myId).maybeSingle()
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, targetId, 20)
-          setToast(t => ({ pts: 20, k: (t?.k ?? 0) + 1 }))
         }
         localStorage.setItem(favKey, '1')
       }
@@ -273,7 +269,6 @@ export default function MatchPage() {
 
     if (newRoom) {
       addPoints(supabase, myId, 10)
-      setToast(t => ({ pts: 10, k: (t?.k ?? 0) + 1 }))
       router.push(`/chat/${newRoom.id}`)
     }
     setChatLoading(null)
@@ -333,7 +328,6 @@ export default function MatchPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Logo variant="screen" />
         {(() => { const b = getPlanBadge(userPlan); return <span style={{ background: b.bg, color: b.color, borderRadius: 5, padding: '3px 9px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em' }}>{b.label}</span> })()}

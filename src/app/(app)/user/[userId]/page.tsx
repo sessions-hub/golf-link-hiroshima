@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
-import PointToast from '@/components/PointToast'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
@@ -98,7 +97,6 @@ export default function UserProfilePage() {
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [profilePts, setProfilePts] = useState(0)
-  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [commentReactions, setCommentReactions] = useState<Record<string, Record<string, string[]>>>({})
   const [commentReactionPaletteId, setCommentReactionPaletteId] = useState<string | null>(null)
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
@@ -203,13 +201,11 @@ export default function UserProfilePage() {
       const favKey = `ptsf_${myId}_${userId}`
       if (!localStorage.getItem(favKey)) {
         addPoints(supabase, myId, 5)
-        setToast(t => ({ pts: 5, k: (t?.k ?? 0) + 1 }))
         const { data: reverse } = await supabase.from('favorites')
           .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, userId, 20)
-          setToast(t => ({ pts: 20, k: (t?.k ?? 0) + 1 }))
         }
         localStorage.setItem(favKey, '1')
       }
@@ -370,8 +366,6 @@ export default function UserProfilePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
-
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>

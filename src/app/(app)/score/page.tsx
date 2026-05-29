@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
-import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { type CourseEntry, type CourseCombo, searchVenues, getVenueCourses, getGroupCombos, getCourseById, COURSES, COURSE_COMBOS } from '@/lib/courses'
@@ -42,8 +41,6 @@ export default function ScorePage() {
   const [roundCount, setRoundCount] = useState(0)
   const [scoreBreakdown, setScoreBreakdown] = useState<{ birdie: number; par: number; bogey: number; dbl: number } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
-
   // コース検索
   const [courseSearch, setCourseSearch] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -255,7 +252,6 @@ export default function ScorePage() {
     })
     if (!error) {
       addPoints(supabase, user.id, 50)
-      setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 }))
       const { data: newHistory } = await supabase
         .from('scorecards')
         .select('*')
@@ -419,7 +415,6 @@ export default function ScorePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div onClick={() => router.push('/home')} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>

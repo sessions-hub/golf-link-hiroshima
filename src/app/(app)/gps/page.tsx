@@ -6,7 +6,6 @@ import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
-import PointToast from '@/components/PointToast'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
 
@@ -77,7 +76,6 @@ export default function GpsPage() {
   const [greenDist, setGreenDist] = useState<{ center: number | '—'; isApprox?: boolean } | null>(null)
   const [greenSide, setGreenSide] = useState<'left' | 'right'>('left')
   const [searchText, setSearchText] = useState('')
-  const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
   const [scores, setScores] = useState<number[]>(Array(27).fill(0))
   const [saving, setSaving] = useState(false)
   // サブコース・コンボ選択
@@ -153,7 +151,7 @@ export default function GpsPage() {
     setSelected(venue)
     setHole(1)
     setGreenSide('left')
-    if (myId) { addPoints(supabase, myId, 50); setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 })) }
+    if (myId) { addPoints(supabase, myId, 50) }
   }
 
   const handlePickSubCourse = (c: CourseEntry) => {
@@ -304,7 +302,6 @@ export default function GpsPage() {
     })
     if (!error) {
       addPoints(supabase, user.id, 50)
-      setToast(t => ({ pts: 50, k: (t?.k ?? 0) + 1 }))
       alert('スコアを保存しました！')
       router.push('/score')
     } else {
@@ -499,8 +496,6 @@ export default function GpsPage() {
   // ─── GPS計測画面 ─────────────────────────────────────────
   return (
     <div style={{ height: '100vh', background: '#070f07', display: 'flex', flexDirection: 'column' }}>
-      {toast && <PointToast key={toast.k} amount={toast.pts} onDone={() => setToast(null)} />}
-
       {/* マップエリア（固定高さ） */}
       <div style={{ height: '32vh', position: 'relative', flexShrink: 0 }}>
         <svg width="100%" height="100%" viewBox="0 0 390 240" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="xMidYMid slice">
