@@ -20,8 +20,8 @@ test.describe('/gps GPS計測ページ', () => {
     await expect(page.locator('text=/件のコース/')).toBeVisible({ timeout: 10_000 })
   })
 
-  test('スタンダードプランではコース検索画面が表示される', async ({ page }) => {
-    await mockAuthenticatedUser(page, 'standard')
+  test('プレミアムプランではコース検索画面が表示される', async ({ page }) => {
+    await mockAuthenticatedUser(page, 'premium')
     await page.goto('/gps')
 
     await expect(
@@ -29,8 +29,8 @@ test.describe('/gps GPS計測ページ', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('スタンダードプランでは GPS 状態インジケーターがある', async ({ page }) => {
-    await mockAuthenticatedUser(page, 'standard')
+  test('プレミアムプランでは GPS 状態インジケーターがある', async ({ page }) => {
+    await mockAuthenticatedUser(page, 'premium')
     await page.goto('/gps')
 
     // GPS取得中 or GPS未取得 のいずれかが表示される
@@ -38,8 +38,8 @@ test.describe('/gps GPS計測ページ', () => {
     await expect(gpsStatus.first()).toBeVisible({ timeout: 10_000 })
   })
 
-  test('スタンダードプランではgreenCoordsベースのコース一覧が表示される', async ({ page }) => {
-    await mockAuthenticatedUser(page, 'standard')
+  test('プレミアムプランではgreenCoordsベースのコース一覧が表示される', async ({ page }) => {
+    await mockAuthenticatedUser(page, 'premium')
     await page.goto('/gps')
 
     // greenCoordsに登録された全コースの件数が表示される

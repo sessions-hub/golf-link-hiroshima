@@ -71,7 +71,7 @@ async function injectAuthCookie(context: BrowserContext) {
 // 認証済みユーザーとして全 Supabase API をモックする
 export async function mockAuthenticatedUser(
   page: Page,
-  plan: 'free' | 'standard' | 'premium' = 'free'
+  plan: 'free' | 'premium' | 'executive' = 'free'
 ) {
   await injectAuthCookie(page.context())
 

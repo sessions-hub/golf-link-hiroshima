@@ -35,7 +35,7 @@ export default function DeleteAccountPage() {
     init()
   }, [])
 
-  const isPaidActive = (plan === 'standard' || plan === 'premium') && !cancelAtPeriodEnd
+  const isPaidActive = (plan === 'premium' || plan === 'executive') && !cancelAtPeriodEnd
 
   const handleDelete = async () => {
     if (emailInput !== userEmail) {

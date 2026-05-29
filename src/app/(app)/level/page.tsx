@@ -160,7 +160,7 @@ const POINT_ACTIONS = [
     ),
   },
   {
-    label: 'スタンダードプランに加入',
+    label: 'プレミアムプランに加入',
     pt: 50,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -170,7 +170,7 @@ const POINT_ACTIONS = [
     ),
   },
   {
-    label: 'プレミアムプランに加入',
+    label: 'エグゼクティブプランに加入',
     pt: 100,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

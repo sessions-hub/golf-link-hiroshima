@@ -108,8 +108,8 @@ const getHdcpLabel = (handicap: number) => {
 }
 
 const getPlanBadge = (plan: Plan) => {
-  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
-  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  if (plan === 'executive') return { label: 'EXECUTIVE', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
   return { label: 'FREE', bg: '#eef3ee', color: 'var(--mute)' }
 }
 
@@ -230,8 +230,8 @@ export default function ProfilePage() {
         setPosts(postsWithLikes as any)
       }
 
-      // プレミアム限定
-      if (plan === 'premium') {
+      // エグゼクティブ限定
+      if (plan === 'executive') {
         const { data: visits } = await supabase
           .from('footprints')
           .select('visitor_id, created_at, profiles!footprints_visitor_id_fkey(user_id, nickname, avatar_url)')
@@ -658,7 +658,7 @@ export default function ProfilePage() {
           {/* プレミアム限定 */}
           {isPremium(userPlan) ? (
             <div style={{ background: 'white', marginBottom: 8 }}>
-              <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>👑 PREMIUM限定</div>
+              <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>👑 EXECUTIVE限定</div>
               <div style={{ display: 'flex', gap: 12, padding: '8px 16px 4px', overflowX: 'auto' }}>
                 {whoVisited.map((v: any) => {
                   const p = v.profiles
@@ -699,9 +699,9 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div style={{ margin: '10px 16px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 プレミアムプランで解放</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 エグゼクティブプランで解放</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 12, lineHeight: 1.6 }}>足跡を見た人・お気に入りしてくれた人<br/>マッチング上位表示など</div>
-              <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>プレミアムにアップグレード</button>
+              <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>エグゼクティブにアップグレード</button>
             </div>
           )}
 

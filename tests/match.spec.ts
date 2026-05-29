@@ -37,15 +37,15 @@ test.describe('/match マッチングページ', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('気になるタブに切り替えるとプレミアム誘導バナーが表示される', async ({ page }) => {
+  test('気になるタブに切り替えるとエグゼクティブ誘導バナーが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/match')
 
     await page.locator('button', { hasText: '気になる' }).click()
 
-    // フリープランではプレミアム誘導バナーが表示される
+    // フリープランではエグゼクティブ誘導バナーが表示される
     await expect(page.locator('text=気になるを見るには')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=プレミアムにアップグレード')).toBeVisible()
+    await expect(page.locator('text=エグゼクティブにアップグレード')).toBeVisible()
   })
 
   test('お気に入りフィルターでお気に入りがない場合のメッセージが表示される', async ({ page }) => {

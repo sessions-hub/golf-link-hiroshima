@@ -26,9 +26,9 @@ function SuccessInner() {
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (sub?.plan === 'premium') {
+      if (sub?.plan === 'executive') {
         addPoints(supabase, user.id, 100)
-      } else if (sub?.plan === 'standard') {
+      } else if (sub?.plan === 'premium') {
         addPoints(supabase, user.id, 50)
       }
       localStorage.setItem(storageKey, '1')
@@ -54,7 +54,7 @@ export default function SubscriptionSuccessPage() {
       <div style={{ fontSize: 26, fontWeight: 700, color: 'white', marginBottom: 10 }}>お申し込み完了！</div>
       <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', lineHeight: 1.85, marginBottom: 30 }}>
         <span style={{ color: 'var(--lime)' }}>Golf Link Hiroshima</span> の<br/>
-        プレミアム機能をお楽しみください！<br/>
+        プレミアム・エグゼクティブ機能をお楽しみください！<br/>
         3秒後にホームへ移動します...
       </div>
       <Suspense fallback={

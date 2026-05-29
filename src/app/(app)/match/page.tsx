@@ -84,8 +84,8 @@ const getHdcpLabel = (handicap: number) => {
 
 
 const getPlanBadge = (plan: Plan) => {
-  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
-  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
+  if (plan === 'executive') return { label: 'EXECUTIVE', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
   return { label: 'FREE', bg: 'var(--surf)', color: 'var(--mute)' }
 }
 
@@ -155,7 +155,7 @@ export default function MatchPage() {
       const plan = await getUserPlan()
       setUserPlan(plan)
 
-      if (plan === 'premium') {
+      if (plan === 'executive') {
         // 足跡（自分のページを見た人）
         const { data: fp } = await supabase
           .from('footprints')
@@ -433,7 +433,7 @@ export default function MatchPage() {
                     />
                     <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => router.push(`/user/${m.user_id}`)}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
-                        {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
+                        {m.plan === 'executive' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
                         {m.nickname}
                         {m.gender && (
                           <span style={{ width: 14, height: 14, borderRadius: 3, background: m.gender === 'male' ? '#3b82f6' : m.gender === 'female' ? '#ec4899' : '#9ca3af', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -482,7 +482,7 @@ export default function MatchPage() {
       {activeTab === 'interest' && (
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
           {!canSeeInterest(userPlan) ? (
-            /* フリープラン：プレミアム誘導 */
+            /* フリープラン：エグゼクティブ誘導 */
             <div style={{ position: 'relative' }}>
               {/* ぼかしダミーカード */}
               <div style={{ filter: 'blur(4px)', pointerEvents: 'none', padding: '8px 0' }}>
@@ -507,13 +507,13 @@ export default function MatchPage() {
                     あなたのプロフィールを見た人<br />お気に入りに追加した人・された人を<br />確認できます
                   </div>
                   <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    プレミアムにアップグレード →
+                    エグゼクティブにアップグレード →
                   </button>
                 </div>
               </div>
             </div>
           ) : (
-            /* プレミアムプラン */
+            /* エグゼクティブプラン */
             <>
               {/* サブタブ */}
               <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>

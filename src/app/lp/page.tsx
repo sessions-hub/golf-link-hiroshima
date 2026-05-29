@@ -140,8 +140,8 @@ export default function LPPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 18 }}>
             {[
               { name: '無料', price: '¥0', period: '/月', features: ['プロフィール作成', 'ゴルファー検索（閲覧）', 'コンペ閲覧', 'タイムライン閲覧'], cta: '無料で始める', recommended: false, dark: false },
-              { name: 'スタンダード', price: '¥490', period: '/月', features: ['マッチング・メッセージ', 'GPS距離計測', 'コンペ参加', 'コース予約', 'SNS投稿・いいね'], cta: '申し込む', recommended: false, dark: false },
-              { name: 'プレミアム', price: '¥990', period: '/月', features: ['スタンダード全機能', '相性診断フィルター', 'コンペ主催', 'レッスン予約', 'プロフィール優先表示'], cta: '申し込む', recommended: true, dark: true },
+              { name: 'プレミアム', price: '¥490', period: '/月', features: ['マッチング・メッセージ', 'GPS距離計測', 'コンペ参加', 'コース予約', 'SNS投稿・いいね'], cta: '申し込む', recommended: false, dark: false },
+              { name: 'エグゼクティブ', price: '¥990', period: '/月', features: ['プレミアム全機能', '相性診断フィルター', 'コンペ主催', 'レッスン予約', 'プロフィール優先表示'], cta: '申し込む', recommended: true, dark: true },
             ].map((plan) => (
               <div key={plan.name} style={{ background: plan.dark ? '#0D3D2B' : 'white', borderRadius: 16, padding: '28px 22px', border: plan.recommended ? '2px solid rgba(168,224,99,.5)' : '1px solid #D4E8DC', position: 'relative', boxShadow: plan.recommended ? '0 12px 32px rgba(13,61,43,.2)' : '0 2px 12px rgba(13,61,43,.06)' }}>
                 {plan.recommended && (

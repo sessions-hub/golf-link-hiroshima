@@ -60,7 +60,7 @@ test.describe('/profile プロフィールページ', () => {
 
     await page.locator('button', { hasText: '設定・メニュー' }).click()
     await expect(
-      page.locator('text=プレミアムプランで解放')
+      page.locator('text=エグゼクティブプランで解放')
     ).toBeVisible({ timeout: 5_000 })
   })
 })

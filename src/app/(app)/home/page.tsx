@@ -58,8 +58,8 @@ interface Post {
 }
 
 const getPlanBadge = (plan: string) => {
-  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
-  if (plan === 'standard') return { label: 'STANDARD', bg: 'linear-gradient(135deg, #15803d, #16a34a)', color: 'white' }
+  if (plan === 'executive') return { label: 'EXECUTIVE', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
+  if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, #15803d, #16a34a)', color: 'white' }
   return { label: 'FREE', bg: '#eef3ee', color: '#7a9a7a' }
 }
 

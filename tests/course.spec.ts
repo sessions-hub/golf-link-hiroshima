@@ -47,18 +47,18 @@ test.describe('/course コース・コンペページ', () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('フリープランのコンペタブにプレミアムへの誘導がある', async ({ page }) => {
+  test('フリープランのコンペタブにエグゼクティブへの誘導がある', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/course')
 
     await page.locator('button', { hasText: /^コンペ$/ }).click()
     await expect(
-      page.locator('button', { hasText: 'プレミアムに申し込む' })
+      page.locator('button', { hasText: 'エグゼクティブに申し込む' })
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('プレミアムプランではコンペ主催ボタンがヘッダーに表示される', async ({ page }) => {
-    await mockAuthenticatedUser(page, 'premium')
+  test('エグゼクティブプランではコンペ主催ボタンがヘッダーに表示される', async ({ page }) => {
+    await mockAuthenticatedUser(page, 'executive')
     await page.goto('/course')
 
     // コンペタブへ移動

@@ -7,8 +7,8 @@ import Logo from '@/components/layout/Logo'
 
 const PLANS = [
   {
-    id: 'standard',
-    name: 'スタンダード',
+    id: 'premium',
+    name: 'プレミアム',
     price: 490,
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
@@ -21,12 +21,12 @@ const PLANS = [
     recommended: false,
   },
   {
-    id: 'premium',
-    name: 'プレミアム',
+    id: 'executive',
+    name: 'エグゼクティブ',
     price: 990,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '',
     features: [
-      'スタンダードの全機能',
+      'プレミアムの全機能',
       '相性診断フィルター',
       'コンペ主催',
       'レッスン予約',
