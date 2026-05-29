@@ -431,7 +431,7 @@ export default function MatchPage() {
                       textColor={avatarColor.text}
                       onClick={() => router.push(`/user/${m.user_id}`)}
                     />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => router.push(`/user/${m.user_id}`)}>
                       <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4 }}>
                         {m.plan === 'premium' && <span style={{ color: '#f59e0b' }}>{Icons.crown(13, '#f59e0b')}</span>}
                         {m.nickname}
