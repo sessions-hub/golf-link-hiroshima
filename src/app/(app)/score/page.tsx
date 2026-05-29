@@ -23,8 +23,9 @@ export default function ScorePage() {
   const [history, setHistory] = useState<any[]>([])
   const [view, setView] = useState<'input' | 'history'>('input')
   const [bestScore, setBestScore] = useState<number | null>(null)
-  const [lastScore, setLastScore] = useState<number | null>(null)
+  const [avgScore, setAvgScore] = useState<number | null>(null)
   const [roundCount, setRoundCount] = useState(0)
+  const [scoreBreakdown, setScoreBreakdown] = useState<{ birdie: number; par: number; bogey: number; dbl: number } | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
 
@@ -51,8 +52,27 @@ export default function ScorePage() {
     if (data.length === 0) return
     const s = data.map((d: any) => d.total_score).filter(Boolean)
     setBestScore(s.length > 0 ? Math.min(...s) : null)
-    setLastScore(data[0]?.total_score ?? null)
+    setAvgScore(s.length > 0 ? Math.round(s.reduce((a: number, b: number) => a + b, 0) / s.length) : null)
     setRoundCount(data.length)
+
+    // ホールスコア内訳（par 4基準で集計）
+    let birdie = 0, par = 0, bogey = 0, dbl = 0, total = 0
+    for (const d of data) {
+      for (const score of (d.hole_scores ?? []) as number[]) {
+        if (!score) continue
+        total++
+        if (score <= 3) birdie++
+        else if (score === 4) par++
+        else if (score === 5) bogey++
+        else dbl++
+      }
+    }
+    if (total > 0) {
+      const b = Math.round(birdie / total * 100)
+      const p = Math.round(par / total * 100)
+      const bo = Math.round(bogey / total * 100)
+      setScoreBreakdown({ birdie: b, par: p, bogey: bo, dbl: 100 - b - p - bo })
+    }
   }
 
   useEffect(() => {
@@ -245,7 +265,7 @@ export default function ScorePage() {
       <div style={{ display: 'flex' }}>
         {[
           { v: bestScore ?? '-', label: 'BEST', sub: '自己ベスト' },
-          { v: lastScore ?? '-', label: 'LAST', sub: '直近スコア' },
+          { v: avgScore ?? '-', label: 'AVG', sub: '平均スコア' },
           { v: roundCount, label: 'ROUNDS', sub: '累計ラウンド' },
         ].map((s, i) => (
           <div key={s.label} style={{ flex: 1, textAlign: 'center', borderRight: i < 2 ? '1px solid rgba(255,255,255,.1)' : 'none' }}>
@@ -478,6 +498,35 @@ export default function ScorePage() {
                     )
                   })
                 })()}
+              </div>
+            </div>
+          )}
+
+          {scoreBreakdown && (
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '12px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 12 }}>スコア内訳</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 12 }}>
+                {[
+                  { pct: scoreBreakdown.birdie, label: 'バーディ以下', color: '#f59e0b' },
+                  { pct: scoreBreakdown.par,    label: 'パー',         color: '#16a34a' },
+                  { pct: scoreBreakdown.bogey,  label: 'ボギー',       color: '#3b82f6' },
+                  { pct: scoreBreakdown.dbl,    label: 'ダブル+',      color: '#ef4444' },
+                ].map(({ pct, label, color }) => (
+                  <div key={label} style={{ textAlign: 'center', background: 'var(--surf)', borderRadius: 8, padding: '10px 4px' }}>
+                    <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color, lineHeight: 1, marginBottom: 4 }}>{pct}%</div>
+                    <div style={{ fontSize: 9, color: 'var(--mute)', lineHeight: 1.4 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden' }}>
+                {[
+                  { pct: scoreBreakdown.birdie, color: '#f59e0b' },
+                  { pct: scoreBreakdown.par,    color: '#16a34a' },
+                  { pct: scoreBreakdown.bogey,  color: '#3b82f6' },
+                  { pct: scoreBreakdown.dbl,    color: '#ef4444' },
+                ].filter(({ pct }) => pct > 0).map(({ pct, color }, i) => (
+                  <div key={i} style={{ width: `${pct}%`, background: color }} />
+                ))}
               </div>
             </div>
           )}
