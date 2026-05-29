@@ -146,16 +146,10 @@ export default function MatchPage() {
         ...(blockedByData?.map((b: any) => b.blocker_id) ?? []),
       ]))
 
-      // 足跡を記録
-      await supabase.from('footprints').insert({
-        user_id: user.id,
-        target_id: user.id,
-      }).then(() => {})
-
       const plan = await getUserPlan()
       setUserPlan(plan)
 
-      if (plan === 'executive') {
+      if (canSeeInterest(plan)) {
         // 足跡（自分のページを見た人）
         const { data: fp } = await supabase
           .from('footprints')
@@ -219,8 +213,8 @@ export default function MatchPage() {
   const recordFootprint = async (targetId: string) => {
     if (!myId || myId === targetId) return
     await supabase.from('footprints').insert({
-      user_id: myId,
-      target_id: targetId,
+      visitor_id: myId,
+      visited_id: targetId,
     })
   }
 
