@@ -7,7 +7,24 @@ import { addPoints } from '@/lib/points'
 import PointToast from '@/components/PointToast'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
-import { type CourseEntry, type CourseCombo, searchVenues, getVenueCourses, getGroupCombos, getCourseById } from '@/lib/courses'
+import { type CourseEntry, type CourseCombo, searchVenues, getVenueCourses, getGroupCombos, getCourseById, COURSES, COURSE_COMBOS } from '@/lib/courses'
+
+// コース名からpar配列を取得（実際のpar基準で集計するため）
+function getScoreCardPars(courseName: string, holeCount: number): number[] {
+  const norm = (s: string) => s.replace(/\s+|　/g, '')
+  const cn = courseName ?? ''
+  const exact = COURSES.find(c => c.name === cn || norm(c.name) === norm(cn))
+  if (exact) return exact.pars.slice(0, holeCount)
+  for (const group of COURSE_COMBOS) {
+    for (const combo of group.combos) {
+      if (norm(`${group.groupName}${combo.label}`) === norm(cn)) {
+        const pars = combo.courses.map(id => getCourseById(id)).filter(Boolean).flatMap(c => c!.pars)
+        if (pars.length >= holeCount) return pars.slice(0, holeCount)
+      }
+    }
+  }
+  return Array(holeCount).fill(4)
+}
 
 const DEFAULT_PARS = [4,3,5,4,4,3,5,4,4,4,3,5,4,4,3,5,4,4]
 
@@ -26,6 +43,7 @@ export default function ScorePage() {
   const [avgScore, setAvgScore] = useState<number | null>(null)
   const [roundCount, setRoundCount] = useState(0)
   const [scoreBreakdown, setScoreBreakdown] = useState<{ birdie: number; par: number; bogey: number; dbl: number } | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [toast, setToast] = useState<{ pts: number; k: number } | null>(null)
 
@@ -55,17 +73,20 @@ export default function ScorePage() {
     setAvgScore(s.length > 0 ? Math.round(s.reduce((a: number, b: number) => a + b, 0) / s.length) : null)
     setRoundCount(data.length)
 
-    // ホールスコア内訳（par 4基準で集計）
+    // ホールスコア内訳（実際のpar基準で集計）
     let birdie = 0, par = 0, bogey = 0, dbl = 0, total = 0
     for (const d of data) {
-      for (const score of (d.hole_scores ?? []) as number[]) {
-        if (!score) continue
+      const holes = (d.hole_scores ?? []) as number[]
+      const pars = getScoreCardPars(d.course_name ?? '', holes.length)
+      holes.forEach((score, i) => {
+        if (!score) return
         total++
-        if (score <= 3) birdie++
-        else if (score === 4) par++
-        else if (score === 5) bogey++
+        const diff = score - (pars[i] ?? 4)
+        if (diff <= -1) birdie++
+        else if (diff === 0) par++
+        else if (diff === 1) bogey++
         else dbl++
-      }
+      })
     }
     if (total > 0) {
       const b = Math.round(birdie / total * 100)
@@ -537,34 +558,110 @@ export default function ScorePage() {
               <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだスコアの記録がありません</div>
               <button onClick={() => setView('input')} style={{ marginTop: 12, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>スコアを記録する</button>
             </div>
-          ) : history.map((h: any) => (
-            <div key={h.id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{h.course_name ?? 'コース未設定'}</div>
-                  <div style={{ fontSize: 10, color: 'var(--mute)' }}>{h.round_date ? new Date(h.round_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date(h.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: 'var(--g1)', lineHeight: 1 }}>{h.total_score}</div>
-                  <div style={{ fontSize: 9, color: 'var(--mute)' }}>TOTAL</div>
-                </div>
-              </div>
-              {(h.out_score || h.in_score) && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.out_score}</div>
-                    <div style={{ fontSize: 9, color: 'var(--mute)' }}>OUT</div>
+          ) : history.map((h: any) => {
+            const isExpanded = expandedId === h.id
+            const holeScores: number[] = h.hole_scores ?? []
+            const pars = getScoreCardPars(h.course_name ?? '', holeScores.length)
+            const dateStr = h.round_date
+              ? new Date(h.round_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+              : new Date(h.created_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+            // セクション（OUT/IN/3rdを9H単位で分割）
+            const sectionCount = Math.ceil(holeScores.length / 9) || 2
+            const sectionLabels = ['OUT（1〜9H）', 'IN（10〜18H）', '3rd（19〜27H）']
+            return (
+              <div key={h.id} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', marginBottom: 10, overflow: 'hidden' }}>
+                {/* ヘッダー（常時表示・タップで展開） */}
+                <div onClick={() => setExpandedId(isExpanded ? null : h.id)} style={{ padding: 14, cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.course_name ?? 'コース未設定'}</div>
+                      <div style={{ fontSize: 10, color: 'var(--mute)' }}>{dateStr}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontFamily: 'Inter', fontSize: 28, fontWeight: 800, color: 'var(--g1)', lineHeight: 1 }}>{h.total_score}</div>
+                        <div style={{ fontSize: 9, color: 'var(--mute)' }}>TOTAL</div>
+                      </div>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .2s', flexShrink: 0 }}>
+                        <polyline points="6,9 12,15 18,9"/>
+                      </svg>
+                    </div>
                   </div>
-                  {h.in_score && (
-                    <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: 6, textAlign: 'center' }}>
-                      <div style={{ fontFamily: 'Inter', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>{h.in_score}</div>
-                      <div style={{ fontSize: 9, color: 'var(--mute)' }}>IN</div>
+                  {/* 折りたたみ時はOUT/INチップを表示 */}
+                  {!isExpanded && (h.out_score || h.in_score) && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      {h.out_score != null && (
+                        <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: '4px 0', textAlign: 'center' }}>
+                          <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>{h.out_score}</span>
+                          <span style={{ fontSize: 9, color: 'var(--mute)', marginLeft: 3 }}>OUT</span>
+                        </div>
+                      )}
+                      {h.in_score != null && (
+                        <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 6, padding: '4px 0', textAlign: 'center' }}>
+                          <span style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>{h.in_score}</span>
+                          <span style={{ fontSize: 9, color: 'var(--mute)', marginLeft: 3 }}>IN</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          ))}
+
+                {/* 展開時：ホール別スコア詳細 */}
+                {isExpanded && holeScores.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--surf)', padding: '10px 14px 14px' }}>
+                    {Array.from({ length: sectionCount }, (_, sIdx) => {
+                      const start = sIdx * 9
+                      const sectionScores = holeScores.slice(start, start + 9)
+                      const sectionPars = pars.slice(start, start + 9)
+                      const sectionTotal = sectionScores.reduce((a, b) => a + (b || 0), 0)
+                      const sectionParTotal = sectionPars.reduce((a, b) => a + b, 0)
+                      const sectionLabel = sectionLabels[sIdx] ?? `${sIdx * 9 + 1}〜${sIdx * 9 + 9}H`
+                      return (
+                        <div key={sIdx} style={{ marginBottom: sIdx < sectionCount - 1 ? 12 : 0 }}>
+                          <div style={{ fontSize: 9, color: 'var(--mute)', letterSpacing: '.1em', marginBottom: 6 }}>{sectionLabel}</div>
+                          {/* ホールグリッド */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 2, marginBottom: 4 }}>
+                            {/* 行1: ホール番号 */}
+                            {Array.from({ length: 9 }, (_, i) => (
+                              <div key={i} style={{ textAlign: 'center', fontSize: 8, color: 'var(--mute)', fontFamily: 'Inter' }}>{start + i + 1}</div>
+                            ))}
+                            {/* 行2: par */}
+                            {sectionPars.map((p, i) => (
+                              <div key={i} style={{ textAlign: 'center', fontSize: 8, color: 'var(--g3)', fontFamily: 'Inter' }}>P{p}</div>
+                            ))}
+                            {/* 行3: スコア（色付き） */}
+                            {Array.from({ length: 9 }, (_, i) => {
+                              const sc = sectionScores[i] ?? 0
+                              const par = sectionPars[i] ?? 4
+                              const diff = sc > 0 ? sc - par : null
+                              return (
+                                <div key={i} style={{ textAlign: 'center', fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: diff === null ? 'var(--line)' : scoreColor(sc, par) }}>
+                                  {sc || '—'}
+                                </div>
+                              )
+                            })}
+                          </div>
+                          {/* セクション合計 */}
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontSize: 9, color: 'var(--mute)' }}>Par {sectionParTotal}</span>
+                            <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'var(--g2)' }}>
+                              {['OUT', 'IN', '3rd'][sIdx]} {sectionTotal || '—'}
+                            </span>
+                            {sectionTotal > 0 && (
+                              <span style={{ fontSize: 9, fontWeight: 600, color: sectionTotal - sectionParTotal > 0 ? '#3b82f6' : '#16a34a' }}>
+                                {sectionTotal - sectionParTotal > 0 ? `+${sectionTotal - sectionParTotal}` : sectionTotal - sectionParTotal}
+                              </span>
+                            )}
+                          </div>
+                          {sIdx < sectionCount - 1 && <div style={{ borderBottom: '1px solid var(--surf)', marginTop: 8 }} />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
