@@ -43,9 +43,9 @@ test.describe('/match マッチングページ', () => {
 
     await page.locator('button', { hasText: '気になる' }).click()
 
-    // フリープランではエグゼクティブ誘導バナーが表示される
+    // フリープランではプレミアム以上への誘導バナーが表示される
     await expect(page.locator('text=気になるを見るには')).toBeVisible({ timeout: 5_000 })
-    await expect(page.locator('text=エグゼクティブにアップグレード')).toBeVisible()
+    await expect(page.locator('text=プレミアム以上にアップグレード')).toBeVisible()
   })
 
   test('お気に入りフィルターでお気に入りがない場合のメッセージが表示される', async ({ page }) => {

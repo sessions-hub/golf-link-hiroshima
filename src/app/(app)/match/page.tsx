@@ -148,28 +148,43 @@ export default function MatchPage() {
       setUserPlan(plan)
 
       if (canSeeInterest(plan)) {
-        // 足跡（自分のページを見た人）
-        const { data: fp } = await supabase
+        // 足跡（自分のページを見た人）— 2ステップで確実に取得
+        const { data: fpRaw } = await supabase
           .from('footprints')
-          .select('visitor_id, created_at, profiles!footprints_visitor_id_fkey(user_id, nickname, avatar_url, handicap, areas)')
+          .select('visitor_id, created_at')
           .eq('visited_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30)
-        if (fp) setFootprints(fp)
+        if (fpRaw && fpRaw.length > 0) {
+          const visitorIds = [...new Set(fpRaw.map((f: any) => f.visitor_id))]
+          const { data: fpProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url, handicap, areas')
+            .in('user_id', visitorIds)
+          const pm = new Map(fpProfiles?.map((p: any) => [p.user_id, p]) ?? [])
+          setFootprints(fpRaw.map((f: any) => ({ ...f, profiles: pm.get(f.visitor_id) ?? null })))
+        }
 
-        // お気に入りされた
-        const { data: fb } = await supabase
+        // お気に入りされた — 2ステップ
+        const { data: fbRaw } = await supabase
           .from('favorites')
-          .select('user_id, created_at, profiles!favorites_user_id_fkey(user_id, nickname, avatar_url, handicap, areas)')
+          .select('user_id, created_at')
           .eq('target_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30)
-        if (fb) {
-          setFavoritedBy(fb)
-          setFavoritedByIds(new Set(fb.map((f: any) => f.user_id)))
+        if (fbRaw && fbRaw.length > 0) {
+          const fbIds = fbRaw.map((f: any) => f.user_id)
+          const { data: fbProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url, handicap, areas')
+            .in('user_id', fbIds)
+          const pm = new Map(fbProfiles?.map((p: any) => [p.user_id, p]) ?? [])
+          const enriched = fbRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null }))
+          setFavoritedBy(enriched)
+          setFavoritedByIds(new Set(fbRaw.map((f: any) => f.user_id)))
         }
 
-        // お気に入りした（2ステップ）
+        // お気に入りした — 2ステップ
         const { data: myFavIds } = await supabase
           .from('favorites')
           .select('target_id, created_at')
@@ -183,10 +198,7 @@ export default function MatchPage() {
             .select('user_id, nickname, avatar_url, handicap, areas')
             .in('user_id', ids)
           const pm = new Map(favProfiles?.map((p: any) => [p.user_id, p]) ?? [])
-          setFavoritingList(myFavIds.map((f: any) => ({
-            ...f,
-            profiles: pm.get(f.target_id) ?? null,
-          })))
+          setFavoritingList(myFavIds.map((f: any) => ({ ...f, profiles: pm.get(f.target_id) ?? null })))
         }
       }
 
@@ -495,7 +507,7 @@ export default function MatchPage() {
                     あなたのプロフィールを見た人<br />お気に入りに追加した人・された人を<br />確認できます
                   </div>
                   <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 10, padding: '11px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                    エグゼクティブにアップグレード →
+                    プレミアム以上にアップグレード →
                   </button>
                 </div>
               </div>
