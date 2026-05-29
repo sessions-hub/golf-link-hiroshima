@@ -9,7 +9,8 @@ import Logo from '@/components/layout/Logo'
 const PLANS = [
   {
     id: 'premium',
-    name: 'プレミアム',
+    nameEn: 'PREMIUM',
+    nameJa: 'プレミアム',
     price: 490,
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
@@ -22,12 +23,13 @@ const PLANS = [
   },
   {
     id: 'executive',
-    name: 'エグゼクティブ',
+    nameEn: 'EXECUTIVE',
+    nameJa: 'エグゼクティブ',
     price: 990,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '',
     features: [
       'PREMIUMの全機能',
-      '会員カード',
+      'メンバーズカード',
     ],
     recommended: false,
     secret: true,
@@ -162,11 +164,14 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* 無料プラン */}
+        {/* FREEプラン */}
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--line)', padding: '16px 18px', marginBottom: 14, boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>無料</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--txt)', fontFamily: 'Inter', letterSpacing: '-.01em' }}>FREE</span>
+                <span style={{ fontSize: 11, color: 'var(--mute)', fontWeight: 500 }}>無料</span>
+              </div>
               <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--g2)', marginTop: 2 }}>¥0<span style={{ fontSize: 12, color: 'var(--mute)', fontWeight: 400 }}>/月</span></div>
             </div>
             {currentPlan === 'free' && (
@@ -184,51 +189,95 @@ export default function SubscriptionPage() {
         </div>
 
         {/* 有料プラン */}
-        {PLANS.map((plan) => (
-          <div key={plan.id} style={{ background: plan.recommended ? 'var(--g1)' : 'white', borderRadius: 14, border: plan.recommended ? '2px solid rgba(168,224,99,.4)' : '1px solid var(--line)', padding: '16px 18px', marginBottom: 14, boxShadow: plan.recommended ? '0 8px 24px rgba(13,61,43,.2)' : '0 2px 8px rgba(13,61,43,.05)', position: 'relative', overflow: 'hidden' }}>
-            {plan.recommended && !plan.secret && (
-              <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--lime)', color: 'var(--g1)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>おすすめ</div>
-            )}
-            {plan.secret && (
-              <div style={{ position: 'absolute', top: 0, right: 0, background: '#6366f1', color: 'white', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>シークレット</div>
-            )}
-            {currentPlan === plan.id && (
-              <div style={{ position: 'absolute', top: 0, left: 0, background: 'rgba(168,224,99,.3)', color: 'var(--lime)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '14px 0 8px 0' }}>現在のプラン</div>
-            )}
-            <div style={{ marginBottom: 14, marginTop: currentPlan === plan.id ? 16 : 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: plan.recommended ? 'white' : 'var(--txt)' }}>{plan.name}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
-                <span style={{ fontSize: 28, fontWeight: 700, color: plan.recommended ? 'var(--lime)' : 'var(--g2)', fontFamily: 'Inter' }}>¥{plan.price.toLocaleString()}</span>
-                <span style={{ fontSize: 12, color: plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)' }}>/月</span>
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              {plan.features.map((f) => (
-                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', background: plan.recommended ? 'rgba(168,224,99,.2)' : 'var(--surf)', border: `1px solid ${plan.recommended ? 'rgba(168,224,99,.4)' : 'var(--line)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={plan.recommended ? 'var(--lime)' : 'var(--g3)'} strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>
-                  </div>
-                  <span style={{ fontSize: 12, color: plan.recommended ? 'rgba(255,255,255,.85)' : 'var(--txt)' }}>{f}</span>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => handleSubscribe(plan)}
-              disabled={loading === plan.id || currentPlan === plan.id}
-              style={{ width: '100%', background: currentPlan === plan.id ? 'rgba(255,255,255,.1)' : plan.recommended ? 'var(--lime)' : 'var(--g1)', color: currentPlan === plan.id ? 'rgba(255,255,255,.4)' : plan.recommended ? 'var(--g1)' : 'white', border: 'none', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: loading === plan.id || currentPlan === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? 0.7 : 1 }}>
-              {loading === plan.id ? '処理中...' : currentPlan === plan.id ? '契約中' : `${plan.name}に申し込む`}
-            </button>
+        {PLANS.map((plan) => {
+          const isExec = plan.secret
+          const cardBg = isExec ? '#0d0d0d' : plan.recommended ? 'var(--g1)' : 'white'
+          const cardBorder = isExec ? '2px solid #c8962a' : plan.recommended ? '2px solid rgba(168,224,99,.4)' : '1px solid var(--line)'
+          const cardShadow = isExec ? '0 8px 28px rgba(0,0,0,.5)' : plan.recommended ? '0 8px 24px rgba(13,61,43,.2)' : '0 2px 8px rgba(13,61,43,.05)'
+          const nameColor = isExec ? 'white' : plan.recommended ? 'white' : 'var(--txt)'
+          const nameSubColor = isExec ? '#c8962a' : plan.recommended ? 'rgba(255,255,255,.6)' : 'var(--mute)'
+          const priceColor = isExec ? '#f0c060' : plan.recommended ? 'var(--lime)' : 'var(--g2)'
+          const priceSubColor = isExec ? 'rgba(240,192,96,.5)' : plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)'
+          const featIconBg = isExec ? 'rgba(200,150,42,.15)' : plan.recommended ? 'rgba(168,224,99,.2)' : 'var(--surf)'
+          const featIconBorder = isExec ? 'rgba(200,150,42,.4)' : plan.recommended ? 'rgba(168,224,99,.4)' : 'var(--line)'
+          const featIconStroke = isExec ? '#c8962a' : plan.recommended ? 'var(--lime)' : 'var(--g3)'
+          const featTextColor = isExec ? 'rgba(255,255,255,.85)' : plan.recommended ? 'rgba(255,255,255,.85)' : 'var(--txt)'
+          const curPlanBadgeBg = isExec ? 'rgba(200,150,42,.25)' : 'rgba(168,224,99,.3)'
+          const curPlanBadgeColor = isExec ? '#f0c060' : 'var(--lime)'
+          const cancelBtnColor = isExec ? 'rgba(240,192,96,.5)' : plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)'
+          const cancelBtnBorder = isExec ? 'rgba(200,150,42,.3)' : plan.recommended ? 'rgba(255,255,255,.2)' : 'var(--line)'
 
-            {/* 解約ボタン */}
-            {currentPlan === plan.id && !cancelAtPeriodEnd && (
-              <button
-                onClick={() => setShowCancelModal(true)}
-                style={{ width: '100%', marginTop: 10, background: 'transparent', color: plan.recommended ? 'rgba(255,255,255,.5)' : 'var(--mute)', border: `1px solid ${plan.recommended ? 'rgba(255,255,255,.2)' : 'var(--line)'}`, borderRadius: 8, padding: '10px', fontSize: 12, cursor: 'pointer' }}>
-                解約する
-              </button>
-            )}
-          </div>
-        ))}
+          return (
+            <div key={plan.id} style={{ background: cardBg, borderRadius: 14, border: cardBorder, padding: '16px 18px', marginBottom: 14, boxShadow: cardShadow, position: 'relative', overflow: 'hidden' }}>
+              {/* バッジ */}
+              {plan.recommended && !isExec && (
+                <div style={{ position: 'absolute', top: 0, right: 0, background: 'var(--lime)', color: 'var(--g1)', fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '0 14px 0 8px' }}>おすすめ</div>
+              )}
+              {isExec && (
+                <div style={{ position: 'absolute', top: 0, right: 0, background: 'linear-gradient(135deg, #c8962a, #f0c060)', color: '#0d0d0d', fontSize: 10, fontWeight: 800, padding: '4px 12px', borderRadius: '0 14px 0 8px', letterSpacing: '.06em' }}>SECRET</div>
+              )}
+              {currentPlan === plan.id && (
+                <div style={{ position: 'absolute', top: 0, left: 0, background: curPlanBadgeBg, color: curPlanBadgeColor, fontSize: 10, fontWeight: 700, padding: '4px 12px', borderRadius: '14px 0 8px 0' }}>現在のプラン</div>
+              )}
+
+              {/* プラン名・価格 */}
+              <div style={{ marginBottom: 14, marginTop: currentPlan === plan.id ? 16 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: nameColor, fontFamily: 'Inter', letterSpacing: '-.01em' }}>{plan.nameEn}</span>
+                  <span style={{ fontSize: 11, color: nameSubColor, fontWeight: 500 }}>{plan.nameJa}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 2, marginTop: 2 }}>
+                  <span style={{ fontSize: 28, fontWeight: 700, color: priceColor, fontFamily: 'Inter' }}>¥{plan.price.toLocaleString()}</span>
+                  <span style={{ fontSize: 12, color: priceSubColor }}>/月</span>
+                </div>
+              </div>
+
+              {/* 機能リスト */}
+              <div style={{ marginBottom: 16 }}>
+                {plan.features.map((f) => (
+                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: featIconBg, border: `1px solid ${featIconBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={featIconStroke} strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>
+                    </div>
+                    <span style={{ fontSize: 12, color: featTextColor }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 申し込みボタン / 条件表示 */}
+              {isExec ? (
+                currentPlan === plan.id ? (
+                  <button
+                    disabled
+                    style={{ width: '100%', background: 'rgba(200,150,42,.12)', color: 'rgba(240,192,96,.5)', border: '1px solid rgba(200,150,42,.2)', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: 'not-allowed' }}>
+                    契約中
+                  </button>
+                ) : (
+                  <div style={{ width: '100%', background: 'rgba(200,150,42,.08)', border: '1px solid rgba(200,150,42,.25)', borderRadius: 8, padding: '12px 14px', textAlign: 'center', lineHeight: 1.7 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#f0c060' }}>招待・審査制</div>
+                    <div style={{ fontSize: 11, color: 'rgba(240,192,96,.65)' }}>申し込みには条件があります</div>
+                  </div>
+                )
+              ) : (
+                <button
+                  onClick={() => handleSubscribe(plan as any)}
+                  disabled={loading === plan.id || currentPlan === plan.id}
+                  style={{ width: '100%', background: currentPlan === plan.id ? 'rgba(255,255,255,.1)' : 'var(--lime)', color: currentPlan === plan.id ? 'rgba(255,255,255,.4)' : 'var(--g1)', border: 'none', borderRadius: 8, padding: 14, fontSize: 14, fontWeight: 700, cursor: loading === plan.id || currentPlan === plan.id ? 'not-allowed' : 'pointer', opacity: loading === plan.id ? 0.7 : 1 }}>
+                  {loading === plan.id ? '処理中...' : currentPlan === plan.id ? '契約中' : `${plan.nameEn}に申し込む`}
+                </button>
+              )}
+
+              {/* 解約ボタン */}
+              {currentPlan === plan.id && !cancelAtPeriodEnd && (
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  style={{ width: '100%', marginTop: 10, background: 'transparent', color: cancelBtnColor, border: `1px solid ${cancelBtnBorder}`, borderRadius: 8, padding: '10px', fontSize: 12, cursor: 'pointer' }}>
+                  解約する
+                </button>
+              )}
+            </div>
+          )
+        })}
 
         <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.8, textAlign: 'center', padding: '0 8px' }}>
           いつでもキャンセル可能です。<br/>

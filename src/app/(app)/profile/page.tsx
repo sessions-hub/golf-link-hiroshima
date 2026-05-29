@@ -6,7 +6,7 @@ import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, isPremium, type Plan } from '@/lib/plan'
+import { getUserPlan, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
@@ -120,8 +120,6 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
-  const [whoLiked, setWhoLiked] = useState<any[]>([])
-  const [whoVisited, setWhoVisited] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
   const [myUserId, setMyUserId] = useState('')
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
@@ -228,25 +226,6 @@ export default function ProfilePage() {
           liked_by_me: false,
         }))
         setPosts(postsWithLikes as any)
-      }
-
-      // エグゼクティブ限定
-      if (plan === 'executive') {
-        const { data: visits } = await supabase
-          .from('footprints')
-          .select('visitor_id, created_at, profiles!footprints_visitor_id_fkey(user_id, nickname, avatar_url)')
-          .eq('visited_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        if (visits) setWhoVisited(visits)
-
-        const { data: likes } = await supabase
-          .from('favorites')
-          .select('user_id, created_at, profiles!favorites_user_id_fkey(user_id, nickname, avatar_url)')
-          .eq('target_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        if (likes) setWhoLiked(likes)
       }
 
       setLoading(false)
@@ -654,56 +633,6 @@ export default function ProfilePage() {
               </div>
             )
           })()}
-
-          {/* プレミアム限定 */}
-          {isPremium(userPlan) ? (
-            <div style={{ background: 'white', marginBottom: 8 }}>
-              <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>👑 EXECUTIVE限定</div>
-              <div style={{ display: 'flex', gap: 12, padding: '8px 16px 4px', overflowX: 'auto' }}>
-                {whoVisited.map((v: any) => {
-                  const p = v.profiles
-                  return (
-                    <div key={v.visitor_id} onClick={() => router.push(`/user/${v.visitor_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                      <FriendAvatar
-                        avatarUrl={p?.avatar_url ?? null}
-                        nickname={p?.nickname ?? ''}
-                        isFriend={!!p?.user_id && friendIds.has(p.user_id)}
-                        size={44}
-                        border="1px solid var(--line)"
-                      />
-                      <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
-                    </div>
-                  )
-                })}
-                {whoLiked.map((l: any) => {
-                  const p = l.profiles
-                  return (
-                    <div key={l.user_id} onClick={() => router.push(`/user/${l.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                      <FriendAvatar
-                        avatarUrl={p?.avatar_url ?? null}
-                        nickname={p?.nickname ?? ''}
-                        isFriend={!!p?.user_id && friendIds.has(p.user_id)}
-                        size={44}
-                        bg="rgba(200,60,100,.08)"
-                        border="1px solid rgba(200,60,100,.2)"
-                      />
-                      <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p?.nickname ?? '不明'}</div>
-                    </div>
-                  )
-                })}
-                {whoVisited.length === 0 && whoLiked.length === 0 && (
-                  <div style={{ padding: '8px 0 12px', fontSize: 12, color: 'var(--mute)' }}>まだデータがありません</div>
-                )}
-              </div>
-              <div style={{ padding: '0 16px 12px', fontSize: 10, color: 'var(--mute)' }}>👣 足跡{whoVisited.length}人 · ❤️ お気に入り{whoLiked.length}人</div>
-            </div>
-          ) : (
-            <div style={{ margin: '10px 16px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 4 }}>👑 エグゼクティブプランで解放</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginBottom: 12, lineHeight: 1.6 }}>足跡を見た人・お気に入りしてくれた人<br/>マッチング上位表示など</div>
-              <button onClick={() => router.push('/subscription')} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 7, padding: '8px 20px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>エグゼクティブにアップグレード</button>
-            </div>
-          )}
 
           {/* 解約予定日 */}
           {cancelAtPeriodEnd && currentPeriodEnd && (

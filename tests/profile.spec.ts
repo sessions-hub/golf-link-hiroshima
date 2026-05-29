@@ -54,13 +54,13 @@ test.describe('/profile プロフィールページ', () => {
     await expect(page.locator('text=ログアウト')).toBeVisible({ timeout: 5_000 })
   })
 
-  test('フリープランではプレミアムアップグレード案内が設定タブに表示される', async ({ page }) => {
+  test('設定タブにサブスクリプション管理メニューが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/profile')
 
     await page.locator('button', { hasText: '設定・メニュー' }).click()
     await expect(
-      page.locator('text=エグゼクティブプランで解放')
+      page.locator('text=サブスクリプション管理')
     ).toBeVisible({ timeout: 5_000 })
   })
 })
