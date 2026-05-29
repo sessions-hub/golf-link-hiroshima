@@ -279,6 +279,19 @@ export default function ScorePage() {
     setSaving(false)
   }
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('このスコアを削除しますか？')) return
+    const { error } = await supabase.from('scorecards').delete().eq('id', id)
+    if (!error) {
+      const newHistory = history.filter((h: any) => h.id !== id)
+      setHistory(newHistory)
+      calcStats(newHistory)
+      if (expandedId === id) setExpandedId(null)
+    } else {
+      alert('削除に失敗しました')
+    }
+  }
+
   const StatsBanner = () => (
     <div style={{ background: 'linear-gradient(135deg,#0d3d2b,#1a4a2a)', borderRadius: 14, padding: 16, marginBottom: 12, position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.15) 0%,transparent 70%)' }}/>
@@ -657,6 +670,16 @@ export default function ScorePage() {
                         </div>
                       )
                     })}
+                    {/* 削除ボタン */}
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--surf)' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(h.id) }}
+                        style={{ width: '100%', background: 'none', border: '1px solid #ef4444', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
+                        このスコアを削除
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
