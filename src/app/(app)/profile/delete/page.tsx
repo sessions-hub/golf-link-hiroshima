@@ -28,7 +28,7 @@ export default function DeleteAccountPage() {
         supabase.from('profiles').select('plan').eq('user_id', user.id).single(),
         supabase.from('subscriptions').select('cancel_at_period_end').eq('user_id', user.id).single(),
       ])
-      if (prof) setPlan(prof.plan ?? 'free')
+      if (prof) setPlan(prof.plan === 'standard' ? 'premium' : (prof.plan ?? 'free'))
       if (sub) setCancelAtPeriodEnd(sub.cancel_at_period_end ?? false)
       setLoading(false)
     }

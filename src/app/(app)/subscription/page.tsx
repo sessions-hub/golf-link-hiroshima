@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { normalizePlan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
@@ -74,7 +75,7 @@ export default function SubscriptionPage() {
           .select('plan')
           .eq('user_id', user.id)
           .single()
-        if (profileData) setCurrentPlan(profileData.plan)
+        if (profileData) setCurrentPlan(normalizePlan(profileData.plan))
 
         const { data: subData } = await supabase
           .from('subscriptions')

@@ -2,6 +2,14 @@ import { createClient } from '@/lib/supabase/client'
 
 export type Plan = 'free' | 'premium' | 'executive'
 
+// DB に旧プラン名が残っている場合の後方互換マッピング
+// standard(旧) → premium(新)
+export function normalizePlan(raw: string | null | undefined): Plan {
+  if (raw === 'standard') return 'premium'
+  if (raw === 'premium' || raw === 'executive') return raw as Plan
+  return 'free'
+}
+
 export async function getUserPlan(): Promise<Plan> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,7 +22,7 @@ export async function getUserPlan(): Promise<Plan> {
     .single()
 
   if (!data) return 'free'
-  return (data.plan as Plan) ?? 'free'
+  return normalizePlan(data.plan)
 }
 
 
