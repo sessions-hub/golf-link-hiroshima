@@ -159,14 +159,14 @@ export default function CoursePage() {
   const fetchCompetitions = async (userId: string) => {
     // コンペ一覧と自分の参加状況を並列取得（N+1を解消）
     const [{ data }, { data: myEntries }] = await Promise.all([
-      supabase.from('competitions').select('*, comp_entries(count)').order('comp_date', { ascending: true }),
+      supabase.from('competitions').select('*, comp_entries(attendees_count)').order('comp_date', { ascending: true }),
       supabase.from('comp_entries').select('comp_id').eq('user_id', userId),
     ])
     if (data) {
       const enteredSet = new Set(myEntries?.map((e: any) => e.comp_id) ?? [])
       setCompetitions(data.map((c: any) => ({
         ...c,
-        entries_count: Number(c.comp_entries?.[0]?.count ?? 0),
+        entries_count: (c.comp_entries ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0),
         is_entered: enteredSet.has(c.id),
       })))
     }

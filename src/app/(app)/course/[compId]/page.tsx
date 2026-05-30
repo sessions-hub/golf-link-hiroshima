@@ -66,6 +66,7 @@ export default function CompDetailPage() {
   const [changingStatus, setChangingStatus] = useState(false)
   const [showAttendeesModal, setShowAttendeesModal] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [rawEntriesData, setRawEntriesData] = useState<{user_id: string, attendees_count: number | null}[]>([])
 
   useEffect(() => {
     const init = async () => {
@@ -85,14 +86,17 @@ export default function CompDetailPage() {
       const [{ data: orgData }, { data: entriesData }, { data: myEntry }] = await Promise.all([
         supabase.from('profiles').select('user_id, nickname, avatar_url, handicap')
           .eq('user_id', compData.organizer_id).single(),
-        supabase.from('comp_entries').select('user_id, profiles(user_id, nickname, avatar_url)')
+        supabase.from('comp_entries').select('user_id, attendees_count, profiles(user_id, nickname, avatar_url)')
           .eq('comp_id', compId),
         supabase.from('comp_entries').select('comp_id')
           .eq('comp_id', compId).eq('user_id', user.id).maybeSingle(),
       ])
 
       if (orgData) setOrganizer(orgData)
-      if (entriesData) setEntries(entriesData.map((e: any) => e.profiles).filter(Boolean))
+      if (entriesData) {
+        setRawEntriesData(entriesData.map((e: any) => ({ user_id: e.user_id, attendees_count: e.attendees_count })))
+        setEntries(entriesData.map((e: any) => e.profiles).filter(Boolean))
+      }
       setIsEntered(!!myEntry)
 
       // グループチャット未読件数を計算
@@ -164,6 +168,7 @@ export default function CompDetailPage() {
     setEntering(true)
     await supabase.from('comp_entries').delete().eq('comp_id', comp.id).eq('user_id', myId)
     setIsEntered(false)
+    setRawEntriesData(prev => prev.filter(e => e.user_id !== myId))
     setEntries(prev => prev.filter(e => e.user_id !== myId))
     fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-cancel`, {
       method: 'POST',
@@ -189,7 +194,8 @@ export default function CompDetailPage() {
   if (!comp) return null
 
   const isOrganizer = comp.organizer_id === myId
-  const remaining = comp.max_players - entries.length
+  const totalAttendees = rawEntriesData.reduce((sum, e) => sum + (e.attendees_count ?? 1), 0)
+  const remaining = comp.max_players - totalAttendees
   const [cy, cm, cd] = comp.comp_date.split('-').map(Number)
   const dateStr = new Date(cy, cm - 1, cd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
   const effectiveStatus = computeEffectiveStatus(comp)
@@ -235,7 +241,7 @@ export default function CompDetailPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
             {[
               { label: '形式', value: comp.format },
-              { label: '参加者', value: `${entries.length}/${comp.max_players}` },
+              { label: '参加者', value: `${totalAttendees}/${comp.max_players}` },
               { label: '残り枠', value: remaining > 0 ? `${remaining}枠` : '満員' },
               { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
             ].map((s) => (
@@ -349,7 +355,7 @@ export default function CompDetailPage() {
 
         {/* 参加者一覧 */}
         <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者 {entries.length}名</div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者 {totalAttendees}名</div>
           {entries.length === 0 ? (
             <div style={{ fontSize: 12, color: 'var(--mute)', textAlign: 'center', padding: '8px 0' }}>まだ参加者がいません</div>
           ) : (
