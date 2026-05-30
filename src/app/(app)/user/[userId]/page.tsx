@@ -179,11 +179,11 @@ export default function UserProfilePage() {
       setIsBlocked(!!blockData)
       setIsBlockedByThem(!!blockedByData)
 
-      if (user.id !== userId) {
+      if (myId !== userId) {
         await supabase.from('footprints').insert({
-          user_id: user.id,
+          user_id: myId,
           target_id: userId,
-        }).then(() => {})
+        })
       }
 
       setLoading(false)
