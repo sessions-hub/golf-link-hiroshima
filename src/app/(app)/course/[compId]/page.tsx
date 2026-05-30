@@ -15,6 +15,7 @@ interface Competition {
   description: string | null
   course_name: string
   comp_date: string
+  entry_deadline: string | null
   format: string
   max_players: number
   fee: number
@@ -22,6 +23,18 @@ interface Competition {
   image_url: string | null
   pdf_url: string | null
   created_at: string
+}
+
+function computeEffectiveStatus(comp: Pick<Competition, 'comp_date' | 'entry_deadline'>): 'recruiting' | 'closed' | 'finished' {
+  const now = new Date()
+  const [y, m, d] = comp.comp_date.split('-').map(Number)
+  const compEndOfDay = new Date(y, m - 1, d + 1)
+  if (now >= compEndOfDay) return 'finished'
+  const deadline = comp.entry_deadline
+    ? new Date(comp.entry_deadline)
+    : new Date(y, m - 1, d - 1, 23, 59, 0)
+  if (now >= deadline) return 'closed'
+  return 'recruiting'
 }
 
 interface Profile {
@@ -142,8 +155,14 @@ export default function CompDetailPage() {
 
   const isOrganizer = comp.organizer_id === myId
   const remaining = comp.max_players - entries.length
-  const dateStr = new Date(comp.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
-  const statusLabel = comp.status === 'recruiting' ? '募集中' : comp.status === 'closed' ? '締切' : '終了'
+  const [cy, cm, cd] = comp.comp_date.split('-').map(Number)
+  const dateStr = new Date(cy, cm - 1, cd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+  const effectiveStatus = computeEffectiveStatus(comp)
+  const statusLabel = effectiveStatus === 'recruiting' ? '募集中' : effectiveStatus === 'closed' ? '締切' : '終了'
+  const deadlineDate = comp.entry_deadline
+    ? new Date(comp.entry_deadline)
+    : new Date(cy, cm - 1, cd - 1, 23, 59, 0)
+  const deadlineStr = deadlineDate.toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -161,7 +180,7 @@ export default function CompDetailPage() {
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ background: comp.status === 'recruiting' ? 'var(--lime)' : 'rgba(255,255,255,.2)', color: comp.status === 'recruiting' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+            <span style={{ background: effectiveStatus === 'recruiting' ? 'var(--lime)' : 'rgba(255,255,255,.2)', color: effectiveStatus === 'recruiting' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
               {statusLabel}
             </span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter' }}>{dateStr}</span>
@@ -188,6 +207,7 @@ export default function CompDetailPage() {
           {[
             { label: 'コース名', value: comp.course_name },
             { label: '開催日', value: dateStr },
+            { label: '締切日時', value: deadlineStr },
             { label: '形式', value: comp.format },
             { label: '定員', value: `${comp.max_players}名` },
             { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
@@ -271,7 +291,7 @@ export default function CompDetailPage() {
         </div>
 
         {/* グループチャットバナー（締切・終了時） */}
-        {(comp.status === 'closed' || comp.status === 'finished') && (isEntered || isOrganizer) && (
+        {(effectiveStatus === 'closed' || effectiveStatus === 'finished') && (isEntered || isOrganizer) && (
           <div
             onClick={() => router.push(`/comp/${comp.id}/chat`)}
             style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
@@ -317,7 +337,7 @@ export default function CompDetailPage() {
             <div style={{ background: 'rgba(168,224,99,.1)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>
               あなたが主催するコンペです
             </div>
-          ) : comp.status === 'recruiting' ? (
+          ) : effectiveStatus === 'recruiting' ? (
             <button
               onClick={handleEntry}
               disabled={entering}

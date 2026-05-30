@@ -32,6 +32,7 @@ interface Competition {
   description: string | null
   course_name: string
   comp_date: string
+  entry_deadline: string | null
   format: string
   max_players: number
   fee: number
@@ -39,6 +40,18 @@ interface Competition {
   created_at: string
   entries_count?: number
   is_entered?: boolean
+}
+
+function computeEffectiveStatus(comp: Pick<Competition, 'comp_date' | 'entry_deadline'>): 'recruiting' | 'closed' | 'finished' {
+  const now = new Date()
+  const [y, m, d] = comp.comp_date.split('-').map(Number)
+  const compEndOfDay = new Date(y, m - 1, d + 1)
+  if (now >= compEndOfDay) return 'finished'
+  const deadline = comp.entry_deadline
+    ? new Date(comp.entry_deadline)
+    : new Date(y, m - 1, d - 1, 23, 59, 0)
+  if (now >= deadline) return 'closed'
+  return 'recruiting'
 }
 
 const COURSE_FILTERS = ['広島県', '山口県', '岡山県', '島根県']
@@ -82,6 +95,8 @@ export default function CoursePage() {
   const [maxPlayers, setMaxPlayers] = useState(24)
   const [fee, setFee] = useState(5000)
   const [description, setDescription] = useState('')
+  const [entryDeadlineDate, setEntryDeadlineDate] = useState('')
+  const [entryDeadlineTime, setEntryDeadlineTime] = useState('')
   const [compImage, setCompImage] = useState<File | null>(null)
   const [compPdf, setCompPdf] = useState<File | null>(null)
   const [compImagePreview, setCompImagePreview] = useState<string | null>(null)
@@ -192,11 +207,25 @@ export default function CoursePage() {
       pdfUrl = data.publicUrl
     }
 
+    let entryDeadline: string | null = null
+    if (entryDeadlineDate) {
+      const time = entryDeadlineTime || '23:59'
+      entryDeadline = `${entryDeadlineDate}T${time}:00`
+    } else if (compDate) {
+      const [y, m, d] = compDate.split('-').map(Number)
+      const prev = new Date(y, m - 1, d - 1)
+      const py = prev.getFullYear()
+      const pm = String(prev.getMonth() + 1).padStart(2, '0')
+      const pd = String(prev.getDate()).padStart(2, '0')
+      entryDeadline = `${py}-${pm}-${pd}T23:59:00`
+    }
+
     const { error } = await supabase.from('competitions').insert({
       organizer_id: myId,
       title,
       course_name: courseName,
       comp_date: compDate,
+      entry_deadline: entryDeadline,
       format,
       max_players: maxPlayers,
       fee,
@@ -213,6 +242,8 @@ export default function CoursePage() {
       setTitle('')
       setCourseName('')
       setCompDate('')
+      setEntryDeadlineDate('')
+      setEntryDeadlineTime('')
       setDescription('')
       setCompImage(null)
       setCompPdf(null)
@@ -385,9 +416,14 @@ export default function CoursePage() {
                   {new Date(c.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
                   {c.organizer_id === myId && <span style={{ marginLeft: 6, background: 'var(--lime)', color: 'var(--g1)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>主催</span>}
                 </div>
-                <span style={{ background: c.status === 'recruiting' ? 'var(--lime)' : 'var(--surf)', color: c.status === 'recruiting' ? 'var(--g1)' : 'var(--mute)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: c.status !== 'recruiting' ? '1px solid var(--line)' : 'none' }}>
-                  {c.status === 'recruiting' ? '募集中' : c.status === 'closed' ? '締切' : '終了'}
-                </span>
+                {(() => {
+                  const eff = computeEffectiveStatus(c)
+                  return (
+                    <span style={{ background: eff === 'recruiting' ? 'var(--lime)' : 'var(--surf)', color: eff === 'recruiting' ? 'var(--g1)' : 'var(--mute)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: eff !== 'recruiting' ? '1px solid var(--line)' : 'none' }}>
+                      {eff === 'recruiting' ? '募集中' : eff === 'closed' ? '締切' : '終了'}
+                    </span>
+                  )
+                })()}
               </div>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.title}</div>
               <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 10 }}>{c.course_name} · {c.format}</div>
@@ -416,7 +452,7 @@ export default function CoursePage() {
                 </a>
               )}
 
-              {c.status === 'recruiting' && c.organizer_id !== myId && (
+              {computeEffectiveStatus(c) === 'recruiting' && c.organizer_id !== myId && (
                 <button
                   onClick={(e) => { e.stopPropagation(); handleEntry(c.id, c.is_entered ?? false) }}
                   style={{ width: '100%', background: c.is_entered ? 'var(--surf)' : 'var(--g1)', color: c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
@@ -460,6 +496,17 @@ export default function CoursePage() {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>開催日</div>
               <input type="date" value={compDate} onChange={e => setCompDate(e.target.value)} style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '11px 14px', fontSize: 13, color: 'var(--txt)', outline: 'none' }} />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>募集締切日時（任意・未設定時は開催前日23:59）</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="date" value={entryDeadlineDate} onChange={e => setEntryDeadlineDate(e.target.value)} style={{ flex: 3, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '11px 14px', fontSize: 13, color: entryDeadlineDate ? 'var(--txt)' : 'var(--mute)', outline: 'none' }} />
+                <input type="time" value={entryDeadlineTime} onChange={e => setEntryDeadlineTime(e.target.value)} disabled={!entryDeadlineDate} style={{ flex: 2, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '11px 10px', fontSize: 13, color: entryDeadlineTime ? 'var(--txt)' : 'var(--mute)', outline: 'none', opacity: entryDeadlineDate ? 1 : 0.4 }} />
+              </div>
+              {entryDeadlineDate && (
+                <button onClick={() => { setEntryDeadlineDate(''); setEntryDeadlineTime('') }} style={{ marginTop: 5, background: 'none', border: 'none', color: 'var(--mute)', fontSize: 11, cursor: 'pointer' }}>× クリア</button>
+              )}
             </div>
 
             <div style={{ marginBottom: 14 }}>
