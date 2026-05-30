@@ -22,19 +22,17 @@ interface Profile {
   avatar_url: string | null
 }
 
-interface ChatRoom {
+
+interface HomeChatItem {
+  type: 'dm' | 'comp' | 'friend'
   id: string
-  user1_id: string
-  user2_id: string
-  last_message: string | null
-  last_message_at: string
-  unread_count_user1: number
-  unread_count_user2: number
-  other_user: {
-    user_id: string
-    nickname: string
-    avatar_url: string | null
-  }
+  name: string
+  lastMessage: string | null
+  lastMessageAt: string | null
+  unread: number
+  otherUser?: { user_id: string; nickname: string; avatar_url: string | null }
+  isFriend?: boolean
+  memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null }>
 }
 
 interface Comment {
@@ -88,8 +86,7 @@ export default function HomePage() {
   const [postMenu, setPostMenu] = useState<string | null>(null)
   const [editPostId, setEditPostId] = useState<string | null>(null)
   const [editCaption, setEditCaption] = useState('')
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([])
-  const [myUserId, setMyUserId] = useState('')
+  const [allChats, setAllChats] = useState<HomeChatItem[]>([])
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const fileRef = useRef<HTMLInputElement>(null)
   const [showInstallBubble, setShowInstallBubble] = useState(false)
@@ -166,8 +163,6 @@ export default function HomePage() {
         setLastScore(scoreData[0].total_score)
         setRoundCount(scoreData.length)
       }
-      setMyUserId(user.id)
-
       // 相互お気に入り（フレンド）
       const [{ data: myFavs }, { data: favMe }] = await Promise.all([
         supabase.from('favorites').select('target_id').eq('user_id', user.id),
@@ -195,36 +190,82 @@ export default function HomePage() {
         setTodayPts(ptsData.today_points)
       }
 
-      // チャット一覧取得（未読あり・最新3件）
-      const { data: chatData } = await supabase
-        .from('chat_rooms')
-        .select('*')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false })
-        .limit(3)
+      // チャット一覧取得（個人・コンペグループ・フレンドグループ混在・最新3件）
+      const [{ data: chatData }, { data: orgComps }, { data: entries }, { data: memberships }] = await Promise.all([
+        supabase.from('chat_rooms').select('*').or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`).order('last_message_at', { ascending: false }).limit(5),
+        supabase.from('competitions').select('id, title').eq('organizer_id', user.id),
+        supabase.from('comp_entries').select('comp_id').eq('user_id', user.id),
+        supabase.from('friend_group_members').select('group_id').eq('user_id', user.id),
+      ])
 
+      const unified: HomeChatItem[] = []
+
+      // 個人チャット
       if (chatData) {
-        const roomsWithProfiles = await Promise.all(chatData.map(async (room) => {
+        const dmItems = await Promise.all(chatData.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('user_id, nickname, avatar_url')
-            .eq('user_id', otherUserId)
-            .single()
-          return {
-            ...room,
-            other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
-          }
+          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single()
+          const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
+          const unread = room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2
+          return { type: 'dm' as const, id: room.id, name: otherUser.nickname, lastMessage: room.last_message, lastMessageAt: room.last_message_at, unread, otherUser, isFriend: myFavs && favMe ? (() => { const favMeSet = new Set(favMe.map((f: any) => f.user_id)); return myFavs.filter((f: any) => favMeSet.has(f.target_id)).some((f: any) => f.target_id === otherUserId) })() : false }
         }))
-        // 最新メッセージ順にソート（nullは最後）
-        roomsWithProfiles.sort((a: any, b: any) => {
-          if (!a.last_message_at && !b.last_message_at) return 0
-          if (!a.last_message_at) return 1
-          if (!b.last_message_at) return -1
-          return new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
-        })
-        setChatRooms(roomsWithProfiles)
+        unified.push(...dmItems)
       }
+
+      // コンペグループ
+      const compMap = new Map<string, string>()
+      orgComps?.forEach(c => compMap.set(c.id, c.title))
+      if (entries && entries.length > 0) {
+        const newIds = entries.map(e => e.comp_id).filter(id => !compMap.has(id))
+        if (newIds.length > 0) {
+          const { data: ec } = await supabase.from('competitions').select('id, title').in('id', newIds)
+          ec?.forEach(c => compMap.set(c.id, c.title))
+        }
+      }
+      const compItems = await Promise.all(Array.from(compMap.entries()).map(async ([compId, name]) => {
+        const { data: lastMsg } = await supabase.from('comp_group_messages').select('content, image_url, created_at').eq('comp_id', compId).order('created_at', { ascending: false }).limit(1).maybeSingle()
+        const lastSeen = typeof window !== 'undefined' ? (localStorage.getItem(`comp_chat_last_seen_${compId}`) ?? '2000-01-01T00:00:00Z') : '2000-01-01T00:00:00Z'
+        let unread = 0
+        if (lastMsg && new Date(lastMsg.created_at) > new Date(lastSeen)) {
+          const { count } = await supabase.from('comp_group_messages').select('*', { count: 'exact', head: true }).eq('comp_id', compId).gt('created_at', lastSeen).neq('user_id', user.id)
+          unread = count ?? 0
+        }
+        return { type: 'comp' as const, id: compId, name, lastMessage: lastMsg ? (lastMsg.image_url ? '📷 画像' : lastMsg.content) : null, lastMessageAt: lastMsg?.created_at ?? null, unread }
+      }))
+      unified.push(...compItems)
+
+      // フレンドグループ
+      const groupIds = memberships?.map(m => m.group_id) ?? []
+      if (groupIds.length > 0) {
+        const { data: friendGroups } = await supabase.from('friend_groups').select('id, name').in('id', groupIds)
+        const friendItems = await Promise.all((friendGroups ?? []).map(async (g) => {
+          const [{ data: lastMsg }, { data: memberRows }] = await Promise.all([
+            supabase.from('friend_group_messages').select('content, image_url, created_at').eq('group_id', g.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+            supabase.from('friend_group_members').select('user_id').eq('group_id', g.id).neq('user_id', user.id).limit(3),
+          ])
+          const lastSeen = typeof window !== 'undefined' ? (localStorage.getItem(`friend_group_last_seen_${g.id}`) ?? '2000-01-01T00:00:00Z') : '2000-01-01T00:00:00Z'
+          let unread = 0
+          if (lastMsg && new Date(lastMsg.created_at) > new Date(lastSeen)) {
+            const { count } = await supabase.from('friend_group_messages').select('*', { count: 'exact', head: true }).eq('group_id', g.id).gt('created_at', lastSeen).neq('user_id', user.id)
+            unread = count ?? 0
+          }
+          let memberProfiles: Array<{ user_id: string; nickname: string; avatar_url: string | null }> = []
+          if (memberRows && memberRows.length > 0) {
+            const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url').in('user_id', memberRows.map(m => m.user_id))
+            memberProfiles = pData ?? []
+          }
+          return { type: 'friend' as const, id: g.id, name: g.name, lastMessage: lastMsg ? (lastMsg.image_url ? '📷 画像' : lastMsg.content) : null, lastMessageAt: lastMsg?.created_at ?? null, unread, memberProfiles }
+        }))
+        unified.push(...friendItems)
+      }
+
+      unified.sort((a, b) => {
+        if (!a.lastMessageAt && !b.lastMessageAt) return 0
+        if (!a.lastMessageAt) return 1
+        if (!b.lastMessageAt) return -1
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+      })
+      setAllChats(unified.slice(0, 3))
 
       const { data: postData2 } = await supabase
         .from('posts')
@@ -564,25 +605,36 @@ export default function HomePage() {
           <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
 
           {/* 新着チャット */}
-          {chatRooms.length > 0 && (
+          {allChats.length > 0 && (
             <>
               <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'Inter' }}>新着チャット</span>
                 <span onClick={() => router.push('/chat')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
               </div>
-              {chatRooms.map((room) => {
-                const unread = room.user1_id === myUserId ? room.unread_count_user1 : room.unread_count_user2
-                const time = new Date(room.last_message_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' })
+              {allChats.map((item) => {
+                const { unread } = item
+                const time = item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }) : ''
+                const href = item.type === 'dm' ? `/chat/${item.id}` : item.type === 'comp' ? `/comp/${item.id}/chat` : `/chat/group/${item.id}`
                 return (
-                  <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                  <div key={`${item.type}-${item.id}`} onClick={() => router.push(href)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                    {/* アイコン */}
                     <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <FriendAvatar
-                        avatarUrl={room.other_user.avatar_url}
-                        nickname={room.other_user.nickname}
-                        isFriend={friendIds.has(room.other_user.user_id)}
-                        size={42}
-                        border="1px solid var(--line)"
-                      />
+                      {item.type === 'dm' && item.otherUser ? (
+                        <FriendAvatar avatarUrl={item.otherUser.avatar_url} nickname={item.otherUser.nickname} isFriend={item.isFriend ?? false} size={42} border="1px solid var(--line)" />
+                      ) : item.type === 'comp' ? (
+                        <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg, var(--g1), var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" width={20} height={20}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                        </div>
+                      ) : (
+                        <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--surf)', border: '1px solid var(--line)', position: 'relative' }}>
+                          {(item.memberProfiles ?? []).slice(0, 2).map((p, i) => (
+                            <div key={p.user_id} style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', background: 'var(--surf)', border: '1.5px solid white', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--g1)', left: i === 0 ? 2 : undefined, right: i === 1 ? 2 : undefined, top: i === 0 ? 2 : undefined, bottom: i === 1 ? 2 : undefined }}>
+                              {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : p.nickname?.[0]}
+                            </div>
+                          ))}
+                          {(item.memberProfiles ?? []).length === 0 && <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👥</div>}
+                        </div>
+                      )}
                       {unread > 0 && (
                         <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
                           {unread > 9 ? '9+' : unread}
@@ -591,11 +643,11 @@ export default function HomePage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <div style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)' }}>{room.other_user.nickname}</div>
-                        <div style={{ fontSize: 10, color: 'var(--mute)' }}>{time}</div>
+                        <div style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{item.name}</div>
+                        <div style={{ fontSize: 10, color: 'var(--mute)', flexShrink: 0 }}>{time}</div>
                       </div>
                       <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {room.last_message ?? 'チャットを始めましょう'}
+                        {item.lastMessage ?? 'チャットを始めましょう'}
                       </div>
                     </div>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>

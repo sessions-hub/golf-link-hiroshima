@@ -93,17 +93,39 @@ export default function BottomNav() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      // DM unread
       const { data } = await supabase
         .from('chat_rooms')
         .select('user1_id, unread_count_user1, unread_count_user2')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-
+      let dmUnread = 0
       if (data) {
-        const total = data.reduce((sum, room) => {
-          return sum + (room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2)
-        }, 0)
-        setUnreadCount(total)
+        dmUnread = data.reduce((sum, room) => sum + (room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2), 0)
       }
+
+      // グループ unread
+      const [{ data: orgComps }, { data: entries }, { data: memberships }] = await Promise.all([
+        supabase.from('competitions').select('id').eq('organizer_id', user.id),
+        supabase.from('comp_entries').select('comp_id').eq('user_id', user.id),
+        supabase.from('friend_group_members').select('group_id').eq('user_id', user.id),
+      ])
+      const compIds = [...new Set([...(orgComps?.map(c => c.id) ?? []), ...(entries?.map(e => e.comp_id) ?? [])])]
+      const groupIds = memberships?.map(m => m.group_id) ?? []
+
+      const [compCounts, friendCounts] = await Promise.all([
+        Promise.all(compIds.map(async (compId) => {
+          const lastSeen = localStorage.getItem(`comp_chat_last_seen_${compId}`) ?? '2000-01-01T00:00:00Z'
+          const { count } = await supabase.from('comp_group_messages').select('*', { count: 'exact', head: true }).eq('comp_id', compId).gt('created_at', lastSeen).neq('user_id', user.id)
+          return count ?? 0
+        })),
+        Promise.all(groupIds.map(async (groupId) => {
+          const lastSeen = localStorage.getItem(`friend_group_last_seen_${groupId}`) ?? '2000-01-01T00:00:00Z'
+          const { count } = await supabase.from('friend_group_messages').select('*', { count: 'exact', head: true }).eq('group_id', groupId).gt('created_at', lastSeen).neq('user_id', user.id)
+          return count ?? 0
+        })),
+      ])
+      const groupUnread = [...compCounts, ...friendCounts].reduce((a, b) => a + b, 0)
+      setUnreadCount(dmUnread + groupUnread)
     }
     fetchUnread()
 
