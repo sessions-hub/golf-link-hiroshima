@@ -16,7 +16,7 @@ export default function ResetPasswordPage() {
     setError('')
     const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://golflink-hiroshima.com/update-password`,
+      redirectTo: `https://www.golflink-hiroshima.com/auth/callback?next=/update-password`,
     })
     if (error) {
       setError('送信に失敗しました。メールアドレスを確認してください')

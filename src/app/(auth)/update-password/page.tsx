@@ -14,27 +14,12 @@ export default function UpdatePasswordPage() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    // URLのハッシュからトークンを取得してセッションを確立
     const supabase = createClient()
-    const hash = window.location.hash
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1))
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token')
-      if (accessToken && refreshToken) {
-        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(() => setReady(true))
-          .catch(() => setError('リンクが無効です。再度パスワードリセットをお試しください'))
-      } else {
-        setError('リンクが無効です。再度パスワードリセットをお試しください')
-      }
-    } else {
-      // セッションが既にある場合
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) setReady(true)
-        else setError('リンクが無効です。再度パスワードリセットをお試しください')
-      })
-    }
+    // /auth/callback でサーバー側がコード交換済み → セッションが cookie に存在するはず
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setReady(true)
+      else setError('リンクが無効です。再度パスワードリセットをお試しください')
+    })
   }, [])
 
   const handleUpdate = async () => {
@@ -46,8 +31,10 @@ export default function UpdatePasswordPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password })
     if (error) {
+      console.error('[update-password] updateUser error:', error)
       setError('パスワードの更新に失敗しました: ' + error.message)
     } else {
+      await supabase.auth.signOut()
       setDone(true)
     }
     setLoading(false)

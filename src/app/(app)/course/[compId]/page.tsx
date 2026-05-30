@@ -87,16 +87,26 @@ export default function CompDetailPage() {
       setIsEntered(true)
       addPoints(supabase, myId, 100)
       if (comp.organizer_id) {
-        await fetch('/api/push/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: comp.organizer_id,
-            title: 'GLH. コンペに参加者が来ました！',
-            body: `${comp.title}に新しい参加者が申し込みました`,
-            url: `/course/${comp.id}`,
+        await Promise.all([
+          fetch('/api/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: comp.organizer_id,
+              title: 'GLH. コンペに参加者が来ました！',
+              body: `${comp.title}に新しい参加者が申し込みました`,
+              url: `/course/${comp.id}`,
+            }),
           }),
-        })
+          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-entry`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ compId: comp.id, applicantId: myId }),
+          }),
+        ])
       }
     }
     setEntering(false)
