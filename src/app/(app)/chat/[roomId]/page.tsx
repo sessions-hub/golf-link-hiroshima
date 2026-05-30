@@ -6,6 +6,7 @@ import { FriendAvatar } from '@/components/FriendAvatar'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { addPoints } from '@/lib/points'
 
 interface Message {
   id: string
@@ -259,6 +260,16 @@ export default function ChatRoomPage() {
       created_at: new Date().toISOString(),
     }
     setMessages(prev => [...prev, tempMsg])
+
+    // 初回メッセージかチェックしてポイント加算
+    const { count: sentCount } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', roomId)
+      .eq('sender_id', myId)
+    if (sentCount === 0) {
+      addPoints(supabase, myId, 10)
+    }
 
     // DBに保存
     const { data: savedMsg } = await supabase.from('messages').insert({

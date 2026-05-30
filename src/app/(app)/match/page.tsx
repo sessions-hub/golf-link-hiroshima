@@ -280,7 +280,6 @@ export default function MatchPage() {
       .single()
 
     if (newRoom) {
-      addPoints(supabase, myId, 10)
       router.push(`/chat/${newRoom.id}`)
     }
     setChatLoading(null)

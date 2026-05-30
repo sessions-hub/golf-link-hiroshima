@@ -151,7 +151,6 @@ export default function GpsPage() {
     setSelected(venue)
     setHole(1)
     setGreenSide('left')
-    if (myId) { addPoints(supabase, myId, 50) }
   }
 
   const handlePickSubCourse = (c: CourseEntry) => {
@@ -301,7 +300,12 @@ export default function GpsPage() {
       round_date: today,
     })
     if (!error) {
-      addPoints(supabase, user.id, 50)
+      const gpsToday = new Date().toISOString().split('T')[0]
+      const lastGpsDate = localStorage.getItem('gps_points_date')
+      if (lastGpsDate !== gpsToday) {
+        addPoints(supabase, user.id, 50)
+        localStorage.setItem('gps_points_date', gpsToday)
+      }
       alert('スコアを保存しました！')
       router.push('/score')
     } else {
