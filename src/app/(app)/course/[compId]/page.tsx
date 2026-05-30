@@ -6,6 +6,8 @@ import { addPoints } from '@/lib/points'
 import { PageLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 
+
+
 interface Competition {
   id: string
   organizer_id: string
@@ -42,6 +44,11 @@ export default function CompDetailPage() {
   const [isEntered, setIsEntered] = useState(false)
   const [loading, setLoading] = useState(true)
   const [entering, setEntering] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [broadcastMsg, setBroadcastMsg] = useState('')
+  const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false)
+  const [broadcasting, setBroadcasting] = useState(false)
+  const [broadcastDone, setBroadcastDone] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -70,6 +77,24 @@ export default function CompDetailPage() {
       if (orgData) setOrganizer(orgData)
       if (entriesData) setEntries(entriesData.map((e: any) => e.profiles).filter(Boolean))
       setIsEntered(!!myEntry)
+
+      // グループチャット未読件数を計算
+      const lastSeen = localStorage.getItem(`comp_chat_last_seen_${compId}`)
+      if (lastSeen) {
+        const { count } = await supabase
+          .from('comp_group_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('comp_id', compId)
+          .gt('created_at', lastSeen)
+        setUnreadCount(count ?? 0)
+      } else {
+        const { count } = await supabase
+          .from('comp_group_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('comp_id', compId)
+        setUnreadCount(count ?? 0)
+      }
+
       setLoading(false)
     }
     init()
@@ -245,6 +270,47 @@ export default function CompDetailPage() {
           )}
         </div>
 
+        {/* グループチャットバナー（締切・終了時） */}
+        {(comp.status === 'closed' || comp.status === 'finished') && (isEntered || isOrganizer) && (
+          <div
+            onClick={() => router.push(`/comp/${comp.id}/chat`)}
+            style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 22 }}>💬</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>参加者グループチャット</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>参加者・主催者と連絡を取り合えます</div>
+            </div>
+            {unreadCount > 0 && (
+              <div style={{ background: '#ff4444', color: 'white', borderRadius: '50%', minWidth: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, padding: '0 4px' }}>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </div>
+            )}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
+          </div>
+        )}
+
+        {/* 主催者向け一斉メール */}
+        {isOrganizer && (
+          <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者への一斉メール</div>
+            <textarea
+              value={broadcastMsg}
+              onChange={(e) => setBroadcastMsg(e.target.value)}
+              placeholder="参加者へのメッセージを入力..."
+              rows={4}
+              style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+            <button
+              onClick={() => { if (broadcastMsg.trim()) setShowBroadcastConfirm(true) }}
+              disabled={!broadcastMsg.trim() || broadcastDone}
+              style={{ marginTop: 10, width: '100%', background: broadcastDone ? 'var(--surf)' : !broadcastMsg.trim() ? 'var(--mute)' : 'var(--g2)', color: broadcastDone ? 'var(--mute)' : 'white', border: 'none', borderRadius: 8, padding: '12px', fontSize: 13, fontWeight: 700, cursor: broadcastMsg.trim() && !broadcastDone ? 'pointer' : 'not-allowed' }}
+            >
+              {broadcastDone ? '送信完了 ✓' : '参加者全員にメール送信'}
+            </button>
+          </div>
+        )}
+
         {/* 参加ボタン */}
         <div style={{ padding: '0 16px 10px' }}>
           {isOrganizer ? (
@@ -263,6 +329,48 @@ export default function CompDetailPage() {
         </div>
 
       </div>
+
+      {/* 一斉メール確認モーダル */}
+      {showBroadcastConfirm && (
+        <>
+          <div onClick={() => setShowBroadcastConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加者全員にメール送信</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 16 }}>以下のメッセージを{entries.length}名の参加者全員に送信します。よろしいですか？</div>
+            <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '12px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-wrap', maxHeight: 120, overflowY: 'auto' }}>{broadcastMsg}</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowBroadcastConfirm(false)}
+                style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
+              >キャンセル</button>
+              <button
+                onClick={async () => {
+                  setBroadcasting(true)
+                  try {
+                    await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/comp-broadcast-email`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                      },
+                      body: JSON.stringify({ compId: comp.id, organizerId: myId, message: broadcastMsg }),
+                    })
+                    setBroadcastDone(true)
+                    setBroadcastMsg('')
+                  } finally {
+                    setBroadcasting(false)
+                    setShowBroadcastConfirm(false)
+                  }
+                }}
+                disabled={broadcasting}
+                style={{ flex: 2, background: 'var(--g1)', border: 'none', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 700, cursor: broadcasting ? 'not-allowed' : 'pointer', color: 'white' }}
+              >
+                {broadcasting ? '送信中...' : '送信する'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <BottomNav />
     </div>
