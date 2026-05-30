@@ -346,7 +346,7 @@ export default function CompDetailPage() {
         </div>
 
         {/* グループチャットバナー（締切・終了時） */}
-        {(effectiveStatus === 'closed' || effectiveStatus === 'finished') && (isEntered || isOrganizer) && (
+        {(effectiveStatus === 'closed' || effectiveStatus === 'finished' || comp.status === 'full' || comp.status === 'cancelled') && (isEntered || isOrganizer) && (
           <div
             onClick={() => router.push(`/comp/${comp.id}/chat`)}
             style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
