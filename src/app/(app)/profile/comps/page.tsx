@@ -27,6 +27,8 @@ export default function CompsPage() {
   const [entries, setEntries] = useState<CompEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [myId, setMyId] = useState('')
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null)
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -54,11 +56,26 @@ export default function CompsPage() {
     init()
   }, [])
 
-  const handleCancel = async (compId: string, e: React.MouseEvent) => {
+  const handleCancelClick = (compId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!confirm('このコンペへの参加をキャンセルしますか？')) return
-    await supabase.from('comp_entries').delete().eq('comp_id', compId).eq('user_id', myId)
-    setEntries(prev => prev.filter(en => en.comp_id !== compId))
+    setCancelTargetId(compId)
+  }
+
+  const handleCancelConfirm = async () => {
+    if (!cancelTargetId) return
+    setCancelling(true)
+    await supabase.from('comp_entries').delete().eq('comp_id', cancelTargetId).eq('user_id', myId)
+    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ compId: cancelTargetId, applicantId: myId }),
+    })
+    setEntries(prev => prev.filter(en => en.comp_id !== cancelTargetId))
+    setCancelTargetId(null)
+    setCancelling(false)
   }
 
   if (loading) return <PageLoading />
@@ -128,7 +145,7 @@ export default function CompsPage() {
                     )}
                   </div>
                   <button
-                    onClick={(ev) => handleCancel(e.comp_id, ev)}
+                    onClick={(ev) => handleCancelClick(e.comp_id, ev)}
                     style={{ width: '100%', background: 'var(--surf)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, color: '#c05050', cursor: 'pointer' }}
                   >
                     参加をキャンセル
@@ -164,6 +181,29 @@ export default function CompsPage() {
         )}
 
       </div>
+
+      {cancelTargetId && (
+        <>
+          <div onClick={() => setCancelTargetId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加をキャンセル</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>このコンペへの参加をキャンセルします。よろしいですか？</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setCancelTargetId(null)}
+                style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
+              >戻る</button>
+              <button
+                onClick={handleCancelConfirm}
+                disabled={cancelling}
+                style={{ flex: 2, background: '#c05050', border: 'none', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 700, cursor: cancelling ? 'not-allowed' : 'pointer', color: 'white' }}
+              >
+                {cancelling ? 'キャンセル中...' : 'キャンセルする'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       <BottomNav />
     </div>

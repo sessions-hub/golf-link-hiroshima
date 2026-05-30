@@ -64,6 +64,8 @@ export default function CompDetailPage() {
   const [broadcastDone, setBroadcastDone] = useState(false)
   const [statusChangeTarget, setStatusChangeTarget] = useState<string | null>(null)
   const [changingStatus, setChangingStatus] = useState(false)
+  const [showAttendeesModal, setShowAttendeesModal] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -115,40 +117,62 @@ export default function CompDetailPage() {
     init()
   }, [compId])
 
-  const handleEntry = async () => {
+  const handleEntryClick = () => {
     if (!myId || !comp) return
-    setEntering(true)
     if (isEntered) {
-      await supabase.from('comp_entries').delete().eq('comp_id', comp.id).eq('user_id', myId)
-      setIsEntered(false)
-      setEntries(prev => prev.filter(e => e.user_id !== myId))
+      setShowCancelConfirm(true)
     } else {
-      await supabase.from('comp_entries').insert({ comp_id: comp.id, user_id: myId, status: 'confirmed' })
-      setIsEntered(true)
-      addPoints(supabase, myId, 100)
-      if (comp.organizer_id) {
-        await Promise.all([
-          fetch('/api/push/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: comp.organizer_id,
-              title: 'GLH. コンペに参加者が来ました！',
-              body: `${comp.title}に新しい参加者が申し込みました`,
-              url: `/course/${comp.id}`,
-            }),
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-entry`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({ compId: comp.id, applicantId: myId }),
-          }),
-        ])
-      }
+      setShowAttendeesModal(true)
     }
+  }
+
+  const handleEnterWithAttendees = async (attendeesCount: number) => {
+    if (!myId || !comp) return
+    setShowAttendeesModal(false)
+    setEntering(true)
+    await supabase.from('comp_entries').insert({ comp_id: comp.id, user_id: myId, status: 'confirmed', attendees_count: attendeesCount })
+    setIsEntered(true)
+    addPoints(supabase, myId, 100)
+    if (comp.organizer_id) {
+      await Promise.all([
+        fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: comp.organizer_id,
+            title: 'GLH. コンペに参加者が来ました！',
+            body: `${comp.title}に新しい参加者が申し込みました`,
+            url: `/course/${comp.id}`,
+          }),
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-entry`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ compId: comp.id, applicantId: myId }),
+        }),
+      ])
+    }
+    setEntering(false)
+  }
+
+  const handleCancelConfirm = async () => {
+    if (!myId || !comp) return
+    setShowCancelConfirm(false)
+    setEntering(true)
+    await supabase.from('comp_entries').delete().eq('comp_id', comp.id).eq('user_id', myId)
+    setIsEntered(false)
+    setEntries(prev => prev.filter(e => e.user_id !== myId))
+    fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-cancel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ compId: comp.id, applicantId: myId }),
+    })
     setEntering(false)
   }
 
@@ -388,13 +412,9 @@ export default function CompDetailPage() {
 
         {/* 参加ボタン */}
         <div style={{ padding: '0 16px 10px' }}>
-          {isOrganizer ? (
-            <div style={{ background: 'rgba(168,224,99,.1)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>
-              あなたが主催するコンペです
-            </div>
-          ) : (comp.status === 'recruiting' && effectiveStatus === 'recruiting') ? (
+          {(comp.status === 'recruiting' && effectiveStatus === 'recruiting') ? (
             <button
-              onClick={handleEntry}
+              onClick={handleEntryClick}
               disabled={entering}
               style={{ width: '100%', background: isEntered ? 'var(--surf)' : 'var(--g1)', color: isEntered ? 'var(--mute)' : 'white', border: isEntered ? '1px solid var(--line)' : 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: entering ? 'not-allowed' : 'pointer' }}
             >
@@ -404,6 +424,55 @@ export default function CompDetailPage() {
         </div>
 
       </div>
+
+      {/* 参加人数選択モーダル */}
+      {showAttendeesModal && (
+        <>
+          <div onClick={() => setShowAttendeesModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 20, textAlign: 'center' }}>参加人数を選択</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handleEnterWithAttendees(n)}
+                  style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '18px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {n}人
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowAttendeesModal(false)}
+              style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
+            >キャンセル</button>
+          </div>
+        </>
+      )}
+
+      {/* 参加キャンセル確認モーダル */}
+      {showCancelConfirm && (
+        <>
+          <div onClick={() => setShowCancelConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加をキャンセル</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>このコンペへの参加をキャンセルします。よろしいですか？</div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
+              >戻る</button>
+              <button
+                onClick={handleCancelConfirm}
+                disabled={entering}
+                style={{ flex: 2, background: '#c05050', border: 'none', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 700, cursor: entering ? 'not-allowed' : 'pointer', color: 'white' }}
+              >
+                {entering ? 'キャンセル中...' : 'キャンセルする'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ステータス変更確認モーダル */}
       {statusChangeTarget && (
