@@ -181,8 +181,8 @@ export default function UserProfilePage() {
 
       if (user.id !== userId) {
         await supabase.from('footprints').insert({
-          visitor_id: user.id,
-          visited_id: userId,
+          user_id: user.id,
+          target_id: userId,
         }).then(() => {})
       }
 

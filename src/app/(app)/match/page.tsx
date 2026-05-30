@@ -151,18 +151,18 @@ export default function MatchPage() {
         // 足跡（自分のページを見た人）— 2ステップで確実に取得
         const { data: fpRaw } = await supabase
           .from('footprints')
-          .select('visitor_id, created_at')
-          .eq('visited_id', user.id)
+          .select('user_id, created_at')
+          .eq('target_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30)
         if (fpRaw && fpRaw.length > 0) {
-          const visitorIds = [...new Set(fpRaw.map((f: any) => f.visitor_id))]
+          const visitorIds = [...new Set(fpRaw.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
             .from('profiles')
             .select('user_id, nickname, avatar_url, handicap, areas')
             .in('user_id', visitorIds)
           const pm = new Map(fpProfiles?.map((p: any) => [p.user_id, p]) ?? [])
-          setFootprints(fpRaw.map((f: any) => ({ ...f, profiles: pm.get(f.visitor_id) ?? null })))
+          setFootprints(fpRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null })))
         }
 
         // お気に入りされた — 2ステップ
@@ -223,8 +223,8 @@ export default function MatchPage() {
   const recordFootprint = async (targetId: string) => {
     if (!myId || myId === targetId) return
     await supabase.from('footprints').insert({
-      visitor_id: myId,
-      visited_id: targetId,
+      user_id: myId,
+      target_id: targetId,
     })
   }
 
@@ -542,7 +542,7 @@ export default function MatchPage() {
                     const p = fp.profiles
                     if (!p) return null
                     return (
-                      <div key={`${fp.visitor_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                      <div key={`${fp.user_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
