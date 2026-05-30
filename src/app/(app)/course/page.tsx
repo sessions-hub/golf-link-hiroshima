@@ -72,6 +72,7 @@ export default function CoursePage() {
   const [myPlan, setMyPlan] = useState('free')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
 
   // コンペ作成フォーム
   const [title, setTitle] = useState('')
@@ -158,6 +159,7 @@ export default function CoursePage() {
   const handleCreateComp = async () => {
     if (!title || !courseName || !compDate) return
     setCreating(true)
+    setCreateError(null)
 
     let imageUrl: string | null = null
     let pdfUrl: string | null = null
@@ -167,10 +169,13 @@ export default function CoursePage() {
       const { error: uploadError } = await supabase.storage
         .from('comp-files')
         .upload(fileName, compImage, { contentType: compImage.type, upsert: true })
-      if (!uploadError) {
-        const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
-        imageUrl = data.publicUrl
+      if (uploadError) {
+        setCreateError(`画像のアップロードに失敗しました: ${uploadError.message}`)
+        setCreating(false)
+        return
       }
+      const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
+      imageUrl = data.publicUrl
     }
 
     if (compPdf) {
@@ -178,10 +183,13 @@ export default function CoursePage() {
       const { error: uploadError } = await supabase.storage
         .from('comp-files')
         .upload(fileName, compPdf, { contentType: 'application/pdf', upsert: true })
-      if (!uploadError) {
-        const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
-        pdfUrl = data.publicUrl
+      if (uploadError) {
+        setCreateError(`PDFのアップロードに失敗しました: ${uploadError.message}`)
+        setCreating(false)
+        return
       }
+      const { data } = supabase.storage.from('comp-files').getPublicUrl(fileName)
+      pdfUrl = data.publicUrl
     }
 
     const { error } = await supabase.from('competitions').insert({
@@ -209,6 +217,9 @@ export default function CoursePage() {
       setCompImage(null)
       setCompPdf(null)
       setCompImagePreview(null)
+    } else {
+      console.error('competitions insert error:', JSON.stringify(error))
+      setCreateError(`[${error.code}] ${error.message}${error.details ? ' / ' + error.details : ''}${error.hint ? ' / hint: ' + error.hint : ''}`)
     }
     setCreating(false)
   }
@@ -237,6 +248,15 @@ export default function CoursePage() {
             body: `${comp.title}に新しい参加者が申し込みました`,
             url: '/course',
           }),
+        })
+        // 主催者にメール通知
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-entry`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ compId, applicantId: myId }),
         })
       }
     }
@@ -416,10 +436,16 @@ export default function CoursePage() {
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: createError ? 12 : 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>コンペを主催する</div>
-              <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+              <button onClick={() => { setShowCreateModal(false); setCreateError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
             </div>
+
+            {createError && (
+              <div style={{ background: 'rgba(200,60,60,.08)', border: '1px solid rgba(200,60,60,.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#c05050', lineHeight: 1.6 }}>
+                ⚠ {createError}
+              </div>
+            )}
 
             {[
               { label: 'コンペ名', value: title, setter: setTitle, placeholder: 'GLH. 春季オープンコンペ' },
