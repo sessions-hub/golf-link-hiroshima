@@ -259,6 +259,12 @@ export default function RegisterPage() {
             ))}
           </div>
 
+          <p style={{ fontSize: 11, color: 'var(--mute)', textAlign: 'center', marginBottom: 10, lineHeight: 1.7 }}>
+            登録することで
+            <a href="/legal/terms" style={{ color: 'var(--mute)', textDecoration: 'underline' }}>利用規約</a>・
+            <a href="/legal/privacy" style={{ color: 'var(--mute)', textDecoration: 'underline' }}>プライバシーポリシー</a>
+            に同意したものとみなします
+          </p>
           <button onClick={handleRegister} disabled={loading} style={{ width: '100%', background: loading ? 'var(--mute)' : 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '登録中...' : '登録を完了する 🎉'}
           </button>
