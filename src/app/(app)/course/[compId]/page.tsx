@@ -62,6 +62,8 @@ export default function CompDetailPage() {
   const [showBroadcastConfirm, setShowBroadcastConfirm] = useState(false)
   const [broadcasting, setBroadcasting] = useState(false)
   const [broadcastDone, setBroadcastDone] = useState(false)
+  const [statusChangeTarget, setStatusChangeTarget] = useState<string | null>(null)
+  const [changingStatus, setChangingStatus] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -150,6 +152,15 @@ export default function CompDetailPage() {
     setEntering(false)
   }
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!comp) return
+    setChangingStatus(true)
+    await supabase.from('competitions').update({ status: newStatus }).eq('id', comp.id)
+    setComp(prev => prev ? { ...prev, status: newStatus } : prev)
+    setChangingStatus(false)
+    setStatusChangeTarget(null)
+  }
+
   if (loading) return <PageLoading />
   if (!comp) return null
 
@@ -158,7 +169,18 @@ export default function CompDetailPage() {
   const [cy, cm, cd] = comp.comp_date.split('-').map(Number)
   const dateStr = new Date(cy, cm - 1, cd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
   const effectiveStatus = computeEffectiveStatus(comp)
-  const statusLabel = effectiveStatus === 'recruiting' ? '募集中' : effectiveStatus === 'closed' ? '締切' : '終了'
+  const statusLabel = comp.status === 'full' ? '満員'
+    : comp.status === 'cancelled' ? '中止'
+    : effectiveStatus === 'recruiting' ? '募集中'
+    : effectiveStatus === 'closed' ? '締切'
+    : '終了'
+  const heroBadgeBg = comp.status === 'full' ? '#f97316'
+    : comp.status === 'cancelled' ? '#ef4444'
+    : effectiveStatus === 'recruiting' ? 'var(--lime)'
+    : 'rgba(255,255,255,.2)'
+  const heroBadgeColor = comp.status === 'full' || comp.status === 'cancelled' ? 'white'
+    : effectiveStatus === 'recruiting' ? 'var(--g1)'
+    : 'rgba(255,255,255,.8)'
   const deadlineDate = comp.entry_deadline
     ? new Date(comp.entry_deadline)
     : new Date(cy, cm - 1, cd - 1, 23, 59, 0)
@@ -180,7 +202,7 @@ export default function CompDetailPage() {
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ background: effectiveStatus === 'recruiting' ? 'var(--lime)' : 'rgba(255,255,255,.2)', color: effectiveStatus === 'recruiting' ? 'var(--g1)' : 'rgba(255,255,255,.8)', padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+            <span style={{ background: heroBadgeBg, color: heroBadgeColor, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
               {statusLabel}
             </span>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter' }}>{dateStr}</span>
@@ -268,6 +290,39 @@ export default function CompDetailPage() {
           </div>
         )}
 
+        {/* 主催者メニュー */}
+        {isOrganizer && (
+          <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>主催者メニュー</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(comp.status === 'recruiting' || comp.status === 'full') && (
+                <button
+                  onClick={() => setStatusChangeTarget('recruiting' === comp.status ? 'full' : 'recruiting')}
+                  style={{ width: '100%', background: comp.status === 'recruiting' ? 'rgba(249,115,22,.1)' : 'rgba(46,125,85,.1)', color: comp.status === 'recruiting' ? '#f97316' : 'var(--g2)', border: `1px solid ${comp.status === 'recruiting' ? 'rgba(249,115,22,.3)' : 'rgba(46,125,85,.3)'}`, borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {comp.status === 'recruiting' ? '満員にする' : '募集再開'}
+                </button>
+              )}
+              {comp.status === 'cancelled' && (
+                <button
+                  onClick={() => setStatusChangeTarget('recruiting')}
+                  style={{ width: '100%', background: 'rgba(46,125,85,.1)', color: 'var(--g2)', border: '1px solid rgba(46,125,85,.3)', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  募集再開
+                </button>
+              )}
+              {comp.status !== 'cancelled' && (
+                <button
+                  onClick={() => setStatusChangeTarget('cancelled')}
+                  style={{ width: '100%', background: 'rgba(239,68,68,.08)', color: '#ef4444', border: '1px solid rgba(239,68,68,.25)', borderRadius: 8, padding: '11px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  中止にする
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 参加者一覧 */}
         <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者 {entries.length}名</div>
@@ -337,7 +392,7 @@ export default function CompDetailPage() {
             <div style={{ background: 'rgba(168,224,99,.1)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 10, padding: '14px', textAlign: 'center', fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>
               あなたが主催するコンペです
             </div>
-          ) : effectiveStatus === 'recruiting' ? (
+          ) : (comp.status === 'recruiting' && effectiveStatus === 'recruiting') ? (
             <button
               onClick={handleEntry}
               disabled={entering}
@@ -349,6 +404,36 @@ export default function CompDetailPage() {
         </div>
 
       </div>
+
+      {/* ステータス変更確認モーダル */}
+      {statusChangeTarget && (
+        <>
+          <div onClick={() => setStatusChangeTarget(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>
+              {statusChangeTarget === 'full' ? '満員にする' : statusChangeTarget === 'cancelled' ? '中止にする' : '募集再開'}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>
+              {statusChangeTarget === 'full' && 'このコンペを満員に設定します。新規参加申し込みができなくなります。'}
+              {statusChangeTarget === 'cancelled' && 'このコンペを中止にします。参加者への連絡は別途行ってください。'}
+              {statusChangeTarget === 'recruiting' && 'このコンペの募集を再開します。'}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setStatusChangeTarget(null)}
+                style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
+              >キャンセル</button>
+              <button
+                onClick={() => handleStatusChange(statusChangeTarget)}
+                disabled={changingStatus}
+                style={{ flex: 2, background: statusChangeTarget === 'cancelled' ? '#ef4444' : statusChangeTarget === 'full' ? '#f97316' : 'var(--g1)', border: 'none', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 700, cursor: changingStatus ? 'not-allowed' : 'pointer', color: 'white' }}
+              >
+                {changingStatus ? '変更中...' : '変更する'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 一斉メール確認モーダル */}
       {showBroadcastConfirm && (
