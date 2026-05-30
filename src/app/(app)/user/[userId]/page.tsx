@@ -108,7 +108,8 @@ export default function UserProfilePage() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      setMyId(user.id)
+      const currentId = user.id
+      setMyId(currentId)
 
       const { data: prof } = await supabase
         .from('profiles')
@@ -143,7 +144,7 @@ export default function UserProfilePage() {
         const { data: myLikes } = await supabase
           .from('post_likes')
           .select('post_id')
-          .eq('user_id', user.id)
+          .eq('user_id', currentId)
         const likedPostIds = new Set(myLikes?.map((l: any) => l.post_id) ?? [])
         const postsWithLikes = (postData as any[]).map((p) => ({
           ...p,
@@ -161,9 +162,9 @@ export default function UserProfilePage() {
       }
 
       const [{ data: favData }, { data: myFavsAll }, { data: favMeAll }] = await Promise.all([
-        supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', userId).single(),
-        supabase.from('favorites').select('target_id').eq('user_id', user.id),
-        supabase.from('favorites').select('user_id').eq('target_id', user.id),
+        supabase.from('favorites').select('id').eq('user_id', currentId).eq('target_id', userId).single(),
+        supabase.from('favorites').select('target_id').eq('user_id', currentId),
+        supabase.from('favorites').select('user_id').eq('target_id', currentId),
       ])
       setIsFav(!!favData)
       if (myFavsAll && favMeAll) {
@@ -173,15 +174,15 @@ export default function UserProfilePage() {
 
       // ブロック状態
       const [{ data: blockData }, { data: blockedByData }] = await Promise.all([
-        supabase.from('blocks').select('id').eq('blocker_id', user.id).eq('blocked_id', userId).maybeSingle(),
-        supabase.from('blocks').select('id').eq('blocker_id', userId).eq('blocked_id', user.id).maybeSingle(),
+        supabase.from('blocks').select('id').eq('blocker_id', currentId).eq('blocked_id', userId).maybeSingle(),
+        supabase.from('blocks').select('id').eq('blocker_id', userId).eq('blocked_id', currentId).maybeSingle(),
       ])
       setIsBlocked(!!blockData)
       setIsBlockedByThem(!!blockedByData)
 
-      if (myId !== userId) {
+      if (currentId !== userId) {
         await supabase.from('footprints').insert({
-          user_id: myId,
+          user_id: currentId,
           target_id: userId,
         })
       }
