@@ -230,8 +230,8 @@ export default function ChatRoomPage() {
 
     // ファイルアップロード
     if (selectedFile) {
-      const ext = selectedFile.name.split('.').pop() ?? 'pdf'
-      const safeName = `${myId}/${Date.now()}_${selectedFile.name}`
+      const ext = (selectedFile.name.split('.').pop() ?? 'pdf').toLowerCase()
+      const safeName = `${myId}/${Date.now()}.${ext}`
       const { error } = await supabase.storage
         .from('user-files')
         .upload(safeName, selectedFile, { contentType: selectedFile.type, upsert: true })
