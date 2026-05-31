@@ -4,6 +4,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PageLoading } from '@/components/LoadingDots'
 import AttachmentPicker from '@/components/AttachmentPicker'
+import GenderBadge from '@/components/GenderBadge'
 
 interface FriendGroupMessage {
   id: string
@@ -20,6 +21,7 @@ interface Profile {
   user_id: string
   nickname: string
   avatar_url: string | null
+  gender?: string | null
 }
 
 export default function FriendGroupChatPage() {
@@ -84,7 +86,7 @@ export default function FriendGroupChatPage() {
         const userIds = [...new Set(msgs.map((m: FriendGroupMessage) => m.user_id))]
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('user_id, nickname, avatar_url')
+          .select('user_id, nickname, avatar_url, gender')
           .in('user_id', userIds)
         if (profileData) {
           const map: Record<string, Profile> = {}
@@ -114,7 +116,7 @@ export default function FriendGroupChatPage() {
           if (!profilesRef.current[newMsg.user_id]) {
             const { data: p } = await supabase
               .from('profiles')
-              .select('user_id, nickname, avatar_url')
+              .select('user_id, nickname, avatar_url, gender')
               .eq('user_id', newMsg.user_id)
               .single()
             if (p) setProfiles(prev => ({ ...prev, [p.user_id]: p }))
@@ -212,7 +214,7 @@ export default function FriendGroupChatPage() {
                       ? <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                       : profile?.nickname?.[0] ?? '?'}
                   </div>
-                  <span style={{ fontSize: 10, color: 'var(--mute)' }}>{profile?.nickname ?? 'メンバー'}</span>
+                  <span style={{ fontSize: 10, color: 'var(--mute)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>{profile?.nickname ?? 'メンバー'}<GenderBadge gender={profile?.gender} size={10} /></span>
                 </div>
               )}
               <div style={{ padding: m.image_url || m.file_url ? '6px' : '10px 13px', borderRadius: isMe ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: isMe ? 'var(--g1)' : 'white', color: isMe ? 'white' : 'var(--txt)', fontSize: 13, lineHeight: 1.5, border: !isMe ? '1px solid var(--line)' : 'none' }}>

@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
+import GenderBadge from '@/components/GenderBadge'
 
 interface Message {
   id: string
@@ -24,6 +25,7 @@ interface Profile {
   user_id: string
   nickname: string
   avatar_url: string | null
+  gender: string | null
 }
 
 export default function ChatRoomPage() {
@@ -66,7 +68,7 @@ export default function ChatRoomPage() {
       const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
 
       const [{ data: profile }, { data: myFav }, { data: theirFav }, { data: blockedByData }, { data: iBlockData }] = await Promise.all([
-        supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single(),
+        supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single(),
         supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', otherUserId).maybeSingle(),
         supabase.from('favorites').select('id').eq('user_id', otherUserId).eq('target_id', user.id).maybeSingle(),
         supabase.from('blocks').select('id').eq('blocker_id', otherUserId).eq('blocked_id', user.id).maybeSingle(),
@@ -347,7 +349,7 @@ export default function ChatRoomPage() {
           onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)}
         />
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{otherProfile?.nickname ?? 'チャット'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', display: 'flex', alignItems: 'center', gap: 4 }}>{otherProfile?.nickname ?? 'チャット'}<GenderBadge gender={otherProfile?.gender} size={13} /></div>
 
         </div>
       </div>

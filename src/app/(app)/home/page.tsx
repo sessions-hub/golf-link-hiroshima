@@ -12,6 +12,7 @@ import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
+import GenderBadge from '@/components/GenderBadge'
 
 const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed'
 
@@ -21,6 +22,7 @@ interface Profile {
   best_score: number | null
   user_id: string
   avatar_url: string | null
+  gender: string | null
 }
 
 
@@ -41,7 +43,7 @@ interface Comment {
   user_id: string
   content: string
   created_at: string
-  profiles?: { nickname: string | null; avatar_url: string | null }
+  profiles?: { nickname: string | null; avatar_url: string | null; gender: string | null }
 }
 
 interface Post {
@@ -144,7 +146,7 @@ export default function HomePage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('nickname, handicap, best_score, user_id, avatar_url')
+        .select('nickname, handicap, best_score, user_id, avatar_url, gender')
         .eq('user_id', user.id)
         .single()
       if (prof) setProfile(prof)
@@ -269,7 +271,7 @@ export default function HomePage() {
 
       const { data: postData2 } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
+        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
 
@@ -296,7 +298,7 @@ export default function HomePage() {
   const fetchComments = async (postId: string) => {
     const { data } = await supabase
       .from('post_comments')
-      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url)`)
+      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url, gender)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
     if (data) {
@@ -419,7 +421,7 @@ export default function HomePage() {
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
-    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`).single()
+    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`).single()
     if (postError) {
       console.error('Post error:', postError)
       setPosting(false)
@@ -433,7 +435,7 @@ export default function HomePage() {
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
-      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id), post_likes(count)`)
+      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`)
       .order('created_at', { ascending: false })
       .limit(30)
     if (refreshedPosts) setPosts(refreshedPosts as any)
@@ -738,7 +740,7 @@ export default function HomePage() {
                     onClick={() => router.push(`/user/${post.user_id}`)}
                   />
                   <div style={{ flex: 1 }}>
-                    <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer' }}>{post.profiles?.nickname ?? 'ゴルファー'}</div>
+                    <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{post.profiles?.nickname ?? 'ゴルファー'}<GenderBadge gender={post.profiles?.gender} size={12} /></div>
                     <div style={{ fontSize: 10, color: 'var(--mute)' }}>{new Date(post.created_at).toLocaleDateString('ja-JP')}</div>
                   </div>
                   {post.user_id === myId && (
@@ -794,7 +796,7 @@ export default function HomePage() {
                           />
                           <div style={{ flex: 1 }}>
                             <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '6px 10px' }}>
-                              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2 }}>{c.profiles?.nickname ?? 'ゴルファー'}</div>
+                              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--g1)', marginBottom: 2, display: 'flex', alignItems: 'center', gap: 3 }}>{c.profiles?.nickname ?? 'ゴルファー'}<GenderBadge gender={c.profiles?.gender} size={11} /></div>
                               <div style={{ fontSize: 12, color: 'var(--txt)', lineHeight: 1.5 }}>{c.content}</div>
                             </div>
                             <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { PageLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
+import GenderBadge from '@/components/GenderBadge'
 
 
 
@@ -42,6 +43,7 @@ interface Profile {
   nickname: string
   avatar_url: string | null
   handicap: number
+  gender: string | null
 }
 
 export default function CompDetailPage() {
@@ -84,9 +86,9 @@ export default function CompDetailPage() {
       setComp(compData)
 
       const [{ data: orgData }, { data: entriesData }, { data: myEntry }] = await Promise.all([
-        supabase.from('profiles').select('user_id, nickname, avatar_url, handicap')
+        supabase.from('profiles').select('user_id, nickname, avatar_url, handicap, gender')
           .eq('user_id', compData.organizer_id).single(),
-        supabase.from('comp_entries').select('user_id, attendees_count, profiles(user_id, nickname, avatar_url)')
+        supabase.from('comp_entries').select('user_id, attendees_count, profiles(user_id, nickname, avatar_url, gender)')
           .eq('comp_id', compId),
         supabase.from('comp_entries').select('comp_id')
           .eq('comp_id', compId).eq('user_id', user.id).maybeSingle(),
@@ -312,7 +314,7 @@ export default function CompDetailPage() {
                 }
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{organizer.nickname}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', display: 'flex', alignItems: 'center', gap: 4 }}>{organizer.nickname}<GenderBadge gender={organizer.gender} size={13} /></div>
                 <div style={{ fontSize: 12, color: 'var(--mute)' }}>HCP {organizer.handicap}</div>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
@@ -368,7 +370,10 @@ export default function CompDetailPage() {
                       : p.nickname?.[0] ?? '?'
                     }
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nickname}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+                    <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 36, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nickname}</div>
+                    <GenderBadge gender={p.gender} size={10} />
+                  </div>
                 </div>
               ))}
             </div>

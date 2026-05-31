@@ -8,6 +8,7 @@ import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import GenderBadge from '@/components/GenderBadge'
 
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'executive') return { label: 'EXECUTIVE', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
@@ -23,10 +24,10 @@ interface ChatRoom {
   last_message_at: string
   unread_count_user1: number
   unread_count_user2: number
-  other_user: { user_id: string; nickname: string; avatar_url: string | null }
+  other_user: { user_id: string; nickname: string; avatar_url: string | null; gender: string | null }
 }
 
-interface Profile { user_id: string; nickname: string; avatar_url: string | null }
+interface Profile { user_id: string; nickname: string; avatar_url: string | null; gender?: string | null }
 
 type GroupItem =
   | { type: 'comp'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number }
@@ -118,8 +119,8 @@ export default function ChatListPage() {
       if (data) {
         const roomsWithProfiles = await Promise.all(data.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: profile } = await supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single()
-          return { ...room, other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null } }
+          const { data: profile } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single()
+          return { ...room, other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, gender: null } }
         }))
         roomsWithProfiles.sort((a: any, b: any) => {
           if (!a.last_message_at && !b.last_message_at) return 0
@@ -248,7 +249,7 @@ export default function ChatListPage() {
     const favMeSet = new Set(favMe.map(f => f.user_id))
     const mutualIds = myFavs.filter(f => favMeSet.has(f.target_id)).map(f => f.target_id)
     if (mutualIds.length === 0) return
-    const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url').in('user_id', mutualIds)
+    const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').in('user_id', mutualIds)
     setModalFriends(pData ?? [])
   }
 
@@ -352,7 +353,7 @@ export default function ChatListPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <div style={{ fontSize: 14, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)' }}>{room.other_user.nickname}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)' }}>{room.other_user.nickname}<GenderBadge gender={room.other_user.gender} size={13} /></div>
                       <div style={{ fontSize: 11, color: 'var(--mute)', flexShrink: 0 }}>{formatTime(room.last_message_at)}</div>
                     </div>
                     <div style={{ fontSize: 13, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -482,7 +483,7 @@ export default function ChatListPage() {
                       <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--g1)', flexShrink: 0 }}>
                         {f.avatar_url ? <img src={f.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : f.nickname[0]}
                       </div>
-                      <div style={{ flex: 1, fontSize: 14, color: 'var(--txt)', fontWeight: 500 }}>{f.nickname}</div>
+                      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: 'var(--txt)', fontWeight: 500 }}>{f.nickname}<GenderBadge gender={f.gender} size={13} /></div>
                       <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${isSelected ? 'var(--g1)' : 'var(--line)'}`, background: isSelected ? 'var(--g1)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round"><polyline points="20,6 9,17 4,12"/></svg>}
                       </div>
