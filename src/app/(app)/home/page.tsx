@@ -718,7 +718,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }} onScroll={() => setCommentReactionPaletteId(null)}>
             {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (
