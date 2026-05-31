@@ -2,7 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canSeeInterest, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
@@ -91,11 +91,8 @@ const getPlanBadge = (plan: Plan) => {
 
 export default function MatchPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'golfer' | 'interest'>(() =>
-    searchParams.get('tab') === 'interest' ? 'interest' : 'golfer'
-  )
+  const [activeTab, setActiveTab] = useState<'golfer' | 'interest'>('golfer')
   const [matches, setMatches] = useState<MatchProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
@@ -104,16 +101,20 @@ export default function MatchPage() {
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>(() => {
-    const sub = searchParams.get('sub')
-    return (sub === 'favorited' || sub === 'favoriting') ? sub : 'footprint'
-  })
+  const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>('footprint')
   const [footprints, setFootprints] = useState<any[]>([])
   const [favoritedBy, setFavoritedBy] = useState<any[]>([])
   const [favoritingList, setFavoritingList] = useState<any[]>([])
   const [favoritedByIds, setFavoritedByIds] = useState<Set<string>>(new Set())
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('tab') === 'interest') setActiveTab('interest')
+    const sub = p.get('sub')
+    if (sub === 'favorited' || sub === 'favoriting') setInterestSubTab(sub)
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
