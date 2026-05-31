@@ -214,7 +214,7 @@ export default function LevelPage() {
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--line)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/profile')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--txt)', display: 'flex', alignItems: 'center' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>

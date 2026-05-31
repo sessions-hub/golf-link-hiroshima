@@ -336,7 +336,7 @@ export default function ChatRoomPage() {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--off)' }}>
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '52px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-        <div onClick={() => router.back()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }}>
+        <div onClick={() => router.push('/chat')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </div>
         <FriendAvatar
