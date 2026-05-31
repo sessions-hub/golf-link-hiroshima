@@ -84,6 +84,15 @@ export default function UserProfilePage() {
   const searchParams = useSearchParams()
   const userId = params.userId as string
   const postId = searchParams.get('postId')
+  const from = searchParams.get('from')
+  const backHref = from === 'footprint' ? '/match?tab=interest&sub=footprint'
+    : from === 'favorited' ? '/match?tab=interest&sub=favorited'
+    : from === 'favoriting' ? '/match?tab=interest&sub=favoriting'
+    : null
+  const backLabel = from === 'footprint' ? '足跡'
+    : from === 'favorited' ? 'お気に入りされた'
+    : from === 'favoriting' ? 'お気に入りした'
+    : 'プロフィール'
   const supabase = createClient()
 
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -369,9 +378,9 @@ export default function UserProfilePage() {
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <div onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>
+        <div onClick={() => backHref ? router.push(backHref) : router.back()} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
-          プロフィール
+          {backLabel}
         </div>
         {isMe && (
           <button onClick={() => router.push('/profile/edit')} style={{ marginLeft: 'auto', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 7, padding: '6px 12px', fontSize: 11, color: 'var(--mid)', cursor: 'pointer', fontWeight: 600 }}>編集</button>

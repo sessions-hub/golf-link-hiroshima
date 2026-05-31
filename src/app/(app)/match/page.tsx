@@ -2,7 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canSeeInterest, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
@@ -91,8 +91,11 @@ const getPlanBadge = (plan: Plan) => {
 
 export default function MatchPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'golfer' | 'interest'>('golfer')
+  const [activeTab, setActiveTab] = useState<'golfer' | 'interest'>(() =>
+    searchParams.get('tab') === 'interest' ? 'interest' : 'golfer'
+  )
   const [matches, setMatches] = useState<MatchProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
@@ -101,7 +104,10 @@ export default function MatchPage() {
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
-  const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>('footprint')
+  const [interestSubTab, setInterestSubTab] = useState<'footprint' | 'favorited' | 'favoriting'>(() => {
+    const sub = searchParams.get('sub')
+    return (sub === 'favorited' || sub === 'favoriting') ? sub : 'footprint'
+  })
   const [footprints, setFootprints] = useState<any[]>([])
   const [favoritedBy, setFavoritedBy] = useState<any[]>([])
   const [favoritingList, setFavoritingList] = useState<any[]>([])
@@ -542,14 +548,13 @@ export default function MatchPage() {
                     const p = fp.profiles
                     if (!p) return null
                     return (
-                      <div key={`${fp.user_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                      <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
-                          onClick={() => router.push(`/user/${p.user_id}`)}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -563,7 +568,7 @@ export default function MatchPage() {
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
                         </div>
-                        <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                        <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
                           {chatLoading === p.user_id ? '...' : '💬'}
                         </button>
                       </div>
@@ -587,14 +592,13 @@ export default function MatchPage() {
                     if (!p) return null
                     const isMutual = favorites.has(p.user_id)
                     return (
-                      <div key={`${fb.user_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                      <div key={`${fb.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=favorited`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
-                          onClick={() => router.push(`/user/${p.user_id}`)}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -609,10 +613,10 @@ export default function MatchPage() {
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fb.created_at)}</div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                          <button onClick={(e) => toggleFavorite(p.user_id, e)} style={{ background: 'none', border: `1px solid ${isMutual ? 'rgba(224,80,112,.4)' : 'var(--line)'}`, borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <button onClick={(e) => { e.stopPropagation(); toggleFavorite(p.user_id, e) }} style={{ background: 'none', border: `1px solid ${isMutual ? 'rgba(224,80,112,.4)' : 'var(--line)'}`, borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {isMutual ? Icons.heart(15, '#e05070', true) : Icons.heart(15, 'var(--mute)')}
                           </button>
-                          <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                          <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
                             {chatLoading === p.user_id ? '...' : '💬'}
                           </button>
                         </div>
@@ -637,14 +641,13 @@ export default function MatchPage() {
                     if (!p) return null
                     const isMutual = favoritedByIds.has(p.user_id)
                     return (
-                      <div key={`${fl.target_id}-${i}`} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)' }}>
+                      <div key={`${fl.target_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=favoriting`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: `1px solid ${isMutual ? 'rgba(22,101,52,.25)' : 'var(--line)'}`, padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
-                          onClick={() => router.push(`/user/${p.user_id}`)}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
@@ -659,10 +662,10 @@ export default function MatchPage() {
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fl.created_at)}</div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-                          <button onClick={(e) => toggleFavorite(p.user_id, e)} style={{ background: 'none', border: '1px solid rgba(224,80,112,.4)', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <button onClick={(e) => { e.stopPropagation(); toggleFavorite(p.user_id, e) }} style={{ background: 'none', border: '1px solid rgba(224,80,112,.4)', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {Icons.heart(15, '#e05070', true)}
                           </button>
-                          <button onClick={() => handleChat(p.user_id)} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                          <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10, fontWeight: 700, cursor: 'pointer', opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
                             {chatLoading === p.user_id ? '...' : '💬'}
                           </button>
                         </div>

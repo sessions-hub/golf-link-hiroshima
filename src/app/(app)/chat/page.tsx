@@ -2,7 +2,7 @@
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
@@ -78,8 +78,11 @@ const FriendGroupIcon = ({ profiles }: { profiles: Profile[] }) => {
 
 export default function ChatListPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
-  const [activeTab, setActiveTab] = useState<'dm' | 'group'>('dm')
+  const [activeTab, setActiveTab] = useState<'dm' | 'group'>(() =>
+    searchParams.get('tab') === 'group' ? 'group' : 'dm'
+  )
   const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [myId, setMyId] = useState('')
   const [loading, setLoading] = useState(true)
