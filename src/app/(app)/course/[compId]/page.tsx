@@ -362,20 +362,28 @@ export default function CompDetailPage() {
             <div style={{ fontSize: 12, color: 'var(--mute)', textAlign: 'center', padding: '8px 0' }}>まだ参加者がいません</div>
           ) : (
             <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {entries.map((p) => (
+              {entries.map((p) => {
+                const count = rawEntriesData.find(r => r.user_id === p.user_id)?.attendees_count ?? 1
+                return (
                 <div key={p.user_id} onClick={() => router.push(`/user/${p.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                    {p.avatar_url
-                      ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : p.nickname?.[0] ?? '?'
-                    }
+                  <div style={{ position: 'relative', width: 44, height: 44 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
+                      {p.avatar_url
+                        ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : p.nickname?.[0] ?? '?'
+                      }
+                    </div>
+                    {count > 1 && (
+                      <div style={{ position: 'absolute', bottom: 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>+{count}</div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
                     <div style={{ fontSize: 9, color: 'var(--txt)', maxWidth: 36, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.nickname}</div>
                     <GenderBadge gender={p.gender} size={10} />
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
