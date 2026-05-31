@@ -94,6 +94,9 @@ export default function HomePage() {
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
+  const [isSafariMac, setIsSafariMac] = useState(false)
+  const [hasDeferredPrompt, setHasDeferredPrompt] = useState(false)
+  const [showHowToAdd, setShowHowToAdd] = useState(false)
   const deferredPromptRef = useRef<any>(null)
   const [totalPts, setTotalPts] = useState(0)
   const [todayPts, setTodayPts] = useState(0)
@@ -106,10 +109,14 @@ export default function HomePage() {
 
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
     setIsIOS(ios)
+    const safariMac = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+      && !('ontouchend' in document)
+    setIsSafariMac(safariMac)
 
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault()
       deferredPromptRef.current = e
+      setHasDeferredPrompt(true)
     }
     window.addEventListener('beforeinstallprompt', handleBeforeInstall)
 
@@ -133,6 +140,7 @@ export default function HomePage() {
       deferredPromptRef.current.prompt()
       const { outcome } = await deferredPromptRef.current.userChoice
       deferredPromptRef.current = null
+      setHasDeferredPrompt(false)
       if (outcome === 'accepted') {
         setShowInstallBubble(false)
         localStorage.setItem(INSTALL_DISMISSED_KEY, '1')
@@ -889,19 +897,54 @@ export default function HomePage() {
               <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>いつでもすぐ開けます</div>
             </div>
           </div>
-          {isIOS ? (
-            <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7, background: 'var(--surf)', borderRadius: 8, padding: '8px 12px' }}>
-              Safari の <span style={{ fontWeight: 700 }}>共有ボタン</span>（□↑）をタップ →<br />
-              「<span style={{ fontWeight: 700 }}>ホーム画面に追加</span>」を選択
-            </div>
-          ) : (
+          {hasDeferredPrompt ? (
             <button
               onClick={handleInstallClick}
               style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
             >
               インストールする
             </button>
+          ) : (
+            <button
+              onClick={() => setShowHowToAdd(true)}
+              style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >
+              追加方法を見る
+            </button>
           )}
+        </div>
+      )}
+
+      {/* 追加方法モーダル */}
+      {showHowToAdd && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>ホーム画面への追加方法</div>
+              <button onClick={() => setShowHowToAdd(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
+            </div>
+            {isSafariMac ? (
+              <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.9, background: 'var(--surf)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ marginBottom: 8, fontWeight: 700, color: 'var(--g1)' }}>Mac Safari の場合</div>
+                <div>① Safariのメニューバー「ファイル」→「<span style={{ fontWeight: 700 }}>Dockに追加</span>」</div>
+                <div>② または共有ボタン（□↑）→「<span style={{ fontWeight: 700 }}>Dockに追加</span>」</div>
+                <div>③「<span style={{ fontWeight: 700 }}>追加</span>」をクリックして完了</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.9, background: 'var(--surf)', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ marginBottom: 8, fontWeight: 700, color: 'var(--g1)' }}>iPhone / iPad の場合</div>
+                <div>① Safari の <span style={{ fontWeight: 700 }}>共有ボタン</span>（□↑）をタップ</div>
+                <div>②「<span style={{ fontWeight: 700 }}>ホーム画面に追加</span>」を選択</div>
+                <div>③「<span style={{ fontWeight: 700 }}>追加</span>」をタップして完了</div>
+              </div>
+            )}
+            <button
+              onClick={() => setShowHowToAdd(false)}
+              style={{ marginTop: 20, width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       )}
 
