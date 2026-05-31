@@ -54,6 +54,7 @@ interface Post {
   post_type: string
   created_at: string
   likes_count: number
+  comment_count: number
   liked_by_me: boolean
   profiles: Profile
 }
@@ -271,7 +272,7 @@ export default function HomePage() {
 
       const { data: postData2 } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`)
+        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
 
@@ -285,6 +286,7 @@ export default function HomePage() {
         const postsWithLikes = (postData2 as any[]).map(p => ({
           ...p,
           likes_count: Number(p.post_likes?.[0]?.count ?? 0),
+          comment_count: Number(p.post_comments?.[0]?.count ?? 0),
           liked_by_me: likedPostIds.has(p.id),
         }))
         setPosts(postsWithLikes as any)
@@ -421,7 +423,7 @@ export default function HomePage() {
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
-    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`).single()
+    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`).single()
     if (postError) {
       console.error('Post error:', postError)
       setPosting(false)
@@ -435,10 +437,10 @@ export default function HomePage() {
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
-      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count)`)
+      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`)
       .order('created_at', { ascending: false })
       .limit(30)
-    if (refreshedPosts) setPosts(refreshedPosts as any)
+    if (refreshedPosts) setPosts(refreshedPosts.map((p: any) => ({ ...p, likes_count: Number(p.post_likes?.[0]?.count ?? 0), comment_count: Number(p.post_comments?.[0]?.count ?? 0), liked_by_me: false })) as any)
 
     setCaption('')
     setPhoto(null)
@@ -779,7 +781,7 @@ export default function HomePage() {
                     {post.liked_by_me ? Icons.heart(14, '#e05070', true) : Icons.heart(14, 'var(--mute)')} {post.likes_count}
                   </button>
                   <button onClick={() => handleToggleComments(post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: showComments[post.id] ? 'var(--g2)' : 'var(--mute)' }}>
-                    {Icons.chat(14, showComments[post.id] ? 'var(--g2)' : 'var(--mute)')} {comments[post.id]?.length ?? 0}
+                    {Icons.chat(14, showComments[post.id] ? 'var(--g2)' : 'var(--mute)')} {comments[post.id]?.length ?? post.comment_count}
                   </button>
                 </div>
                 {/* コメント欄 */}
