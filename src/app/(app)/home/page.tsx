@@ -3,10 +3,11 @@ import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import AttachmentPicker from '@/components/AttachmentPicker'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getUserPlan, canUseGPS, type Plan } from '@/lib/plan'
+import { getUserPlan, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
@@ -88,7 +89,6 @@ export default function HomePage() {
   const [editCaption, setEditCaption] = useState('')
   const [allChats, setAllChats] = useState<HomeChatItem[]>([])
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
-  const fileRef = useRef<HTMLInputElement>(null)
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const deferredPromptRef = useRef<any>(null)
@@ -292,13 +292,6 @@ export default function HomePage() {
     }
     fetchData()
   }, [])
-
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setPhoto(file)
-    setPhotoPreview(URL.createObjectURL(file))
-  }
 
   const fetchComments = async (postId: string) => {
     const { data } = await supabase
@@ -854,13 +847,15 @@ export default function HomePage() {
               rows={3}
               style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', marginBottom: 12, fontFamily: 'var(--sans)' }}
             />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => fileRef.current?.click()} style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: 12, fontSize: 13, color: 'var(--mid)', cursor: 'pointer' }}>写真を追加</button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <AttachmentPicker
+                onImageSelect={(file) => { setPhoto(file); setPhotoPreview(URL.createObjectURL(file)) }}
+                onFileSelect={() => {}}
+              />
               <button onClick={handlePost} disabled={posting || (!caption.trim() && !photo)} style={{ flex: 1, background: posting || (!caption.trim() && !photo) ? 'var(--mute)' : 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: 12, fontSize: 13, fontWeight: 700, cursor: posting ? 'not-allowed' : 'pointer' }}>
                 {posting ? '投稿中...' : '投稿する'}
               </button>
             </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: 'none' }} />
           </div>
         </div>
       )}

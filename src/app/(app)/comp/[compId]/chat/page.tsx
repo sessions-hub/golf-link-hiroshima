@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PageLoading } from '@/components/LoadingDots'
+import AttachmentPicker from '@/components/AttachmentPicker'
 
 interface GroupMessage {
   id: string
@@ -38,10 +39,7 @@ export default function CompGroupChatPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [showAttachMenu, setShowAttachMenu] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const imageRef = useRef<HTMLInputElement>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
   const profilesRef = useRef<Record<string, Profile>>({})
 
   useEffect(() => {
@@ -289,10 +287,10 @@ export default function CompGroupChatPage() {
 
       {/* 入力エリア */}
       <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom) + 10px)', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        <button
-          onClick={() => setShowAttachMenu(!showAttachMenu)}
-          style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}
-        >📎</button>
+        <AttachmentPicker
+          onImageSelect={(file) => { setSelectedImage(file); setImagePreview(URL.createObjectURL(file)) }}
+          onFileSelect={(file) => setSelectedFile(file)}
+        />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -310,35 +308,7 @@ export default function CompGroupChatPage() {
             <polygon points="22,2 15,22 11,13 2,9"/>
           </svg>
         </button>
-        <input ref={imageRef} type="file" accept="image/*" onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          setSelectedImage(file)
-          setImagePreview(URL.createObjectURL(file))
-          e.target.value = ''
-        }} style={{ display: 'none' }} />
-        <input ref={fileRef} type="file" accept=".pdf" onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          setSelectedFile(file)
-          e.target.value = ''
-        }} style={{ display: 'none' }} />
       </div>
-
-      {/* 添付メニュー */}
-      {showAttachMenu && (
-        <>
-          <div onClick={() => setShowAttachMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 200 }} />
-          <div style={{ position: 'fixed', bottom: 80, left: 16, background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '8px', zIndex: 201, boxShadow: '0 4px 20px rgba(0,0,0,.12)' }}>
-            <button onClick={() => { imageRef.current?.click(); setShowAttachMenu(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--txt)', borderRadius: 8, width: '100%' }}>
-              📷 画像を添付
-            </button>
-            <button onClick={() => { fileRef.current?.click(); setShowAttachMenu(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--txt)', borderRadius: 8, width: '100%' }}>
-              📄 PDFを添付
-            </button>
-          </div>
-        </>
-      )}
     </div>
   )
 }

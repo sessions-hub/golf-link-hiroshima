@@ -3,6 +3,7 @@ import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import AttachmentPicker from '@/components/AttachmentPicker'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -46,8 +47,6 @@ export default function ChatRoomPage() {
   const [isBlockedByThem, setIsBlockedByThem] = useState(false)
   const [partnerId, setPartnerId] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
-  const imageRef = useRef<HTMLInputElement>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -231,16 +230,15 @@ export default function ChatRoomPage() {
 
     // ファイルアップロード
     if (selectedFile) {
-      // ファイル名をASCIIのみに変換
-      const ext = selectedFile.name.split('.').pop() ?? 'file'
-      const safeName = `${myId}/${Date.now()}.${ext}`
+      const ext = selectedFile.name.split('.').pop() ?? 'pdf'
+      const safeName = `${myId}/${Date.now()}_${selectedFile.name}`
       const { error } = await supabase.storage
-        .from('user-photos')
+        .from('user-files')
         .upload(safeName, selectedFile, { contentType: selectedFile.type, upsert: true })
       if (!error) {
-        const { data } = supabase.storage.from('user-photos').getPublicUrl(safeName)
+        const { data } = supabase.storage.from('user-files').getPublicUrl(safeName)
         fileUrl = data.publicUrl
-        fileName = selectedFile.name  // 元のファイル名は表示用に保持
+        fileName = selectedFile.name
       } else {
         console.error('File upload error:', error)
       }
@@ -440,13 +438,10 @@ export default function ChatRoomPage() {
 
       {/* 入力エリア */}
       <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, opacity: isBlockedByThem ? .5 : 1 }}>
-        {/* 画像ボタン */}
-        <button onClick={() => imageRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, fontSize: 16 }}>{Icons.camera(16, 'var(--mid)')}</button>
-        {/* ファイルボタン */}
-        <button onClick={() => fileRef.current?.click()} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-        </button>
-
+        <AttachmentPicker
+          onImageSelect={(file) => { setSelectedImage(file); setImagePreview(URL.createObjectURL(file)) }}
+          onFileSelect={(file) => setSelectedFile(file)}
+        />
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -460,18 +455,6 @@ export default function ChatRoomPage() {
             <polygon points="22,2 15,22 11,13 2,9"/>
           </svg>
         </button>
-
-        <input ref={imageRef} type="file" accept="image/*" onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          setSelectedImage(file)
-          setImagePreview(URL.createObjectURL(file))
-        }} style={{ display: 'none' }} />
-        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt" onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          setSelectedFile(file)
-        }} style={{ display: 'none' }} />
       </div>
     </div>
   )
