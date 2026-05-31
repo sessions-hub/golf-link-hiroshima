@@ -374,7 +374,7 @@ export default function CompDetailPage() {
                       }
                     </div>
                     {count > 1 && (
-                      <div style={{ position: 'absolute', bottom: 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>+{count}</div>
+                      <div style={{ position: 'absolute', bottom: 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>+{count - 1}</div>
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
