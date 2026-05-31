@@ -33,7 +33,7 @@ interface HomeChatItem {
   lastMessage: string | null
   lastMessageAt: string | null
   unread: number
-  otherUser?: { user_id: string; nickname: string; avatar_url: string | null }
+  otherUser?: { user_id: string; nickname: string; avatar_url: string | null; gender: string | null }
   isFriend?: boolean
   memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null }>
 }
@@ -206,8 +206,8 @@ export default function HomePage() {
       if (chatData) {
         const dmItems = await Promise.all(chatData.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url').eq('user_id', otherUserId).single()
-          const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null }
+          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single()
+          const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, gender: null }
           const unread = room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2
           return { type: 'dm' as const, id: room.id, name: otherUser.nickname, lastMessage: room.last_message, lastMessageAt: room.last_message_at, unread, otherUser, isFriend: myFavs && favMe ? (() => { const favMeSet = new Set(favMe.map((f: any) => f.user_id)); return myFavs.filter((f: any) => favMeSet.has(f.target_id)).some((f: any) => f.target_id === otherUserId) })() : false }
         }))
@@ -638,7 +638,10 @@ export default function HomePage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <div style={{ fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 160 }}>{item.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', maxWidth: 160 }}>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                          {item.type === 'dm' && <GenderBadge gender={item.otherUser?.gender} size={12} />}
+                        </div>
                         <div style={{ fontSize: 10, color: 'var(--mute)', flexShrink: 0 }}>{time}</div>
                       </div>
                       <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

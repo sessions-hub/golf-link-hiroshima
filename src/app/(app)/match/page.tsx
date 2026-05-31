@@ -10,6 +10,7 @@ import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import GenderBadge from '@/components/GenderBadge'
 
 interface MatchProfile {
   user_id: string
@@ -176,7 +177,7 @@ export default function MatchPage() {
           const fbIds = fbRaw.map((f: any) => f.user_id)
           const { data: fbProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, handicap, areas')
+            .select('user_id, nickname, avatar_url, handicap, areas, gender')
             .in('user_id', fbIds)
           const pm = new Map(fbProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           const enriched = fbRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null }))
@@ -195,7 +196,7 @@ export default function MatchPage() {
           const ids = myFavIds.map((f: any) => f.target_id)
           const { data: favProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, handicap, areas')
+            .select('user_id, nickname, avatar_url, handicap, areas, gender')
             .in('user_id', ids)
           const pm = new Map(favProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           setFavoritingList(myFavIds.map((f: any) => ({ ...f, profiles: pm.get(f.target_id) ?? null })))
@@ -594,6 +595,7 @@ export default function MatchPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                            <GenderBadge gender={p.gender} size={14} />
                             {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
                           </div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -643,6 +645,7 @@ export default function MatchPage() {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                            <GenderBadge gender={p.gender} size={14} />
                             {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
                           </div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
