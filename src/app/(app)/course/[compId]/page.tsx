@@ -423,7 +423,7 @@ export default function CompDetailPage() {
 
         {/* 参加ボタン */}
         <div style={{ padding: '0 16px 10px' }}>
-          {(comp.status === 'recruiting' && effectiveStatus === 'recruiting') ? (
+          {(comp.status !== 'cancelled' && (isOrganizer || (comp.status === 'recruiting' && effectiveStatus === 'recruiting'))) ? (
             <button
               onClick={handleEntryClick}
               disabled={entering}
