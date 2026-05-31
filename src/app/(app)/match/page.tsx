@@ -160,7 +160,7 @@ export default function MatchPage() {
           const visitorIds = [...new Set(fpRaw.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, handicap, areas')
+            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas')
             .in('user_id', visitorIds)
           const pm = new Map(fpProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           setFootprints(fpRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null })))
@@ -177,7 +177,7 @@ export default function MatchPage() {
           const fbIds = fbRaw.map((f: any) => f.user_id)
           const { data: fbProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, handicap, areas, gender')
+            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas')
             .in('user_id', fbIds)
           const pm = new Map(fbProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           const enriched = fbRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null }))
@@ -196,7 +196,7 @@ export default function MatchPage() {
           const ids = myFavIds.map((f: any) => f.target_id)
           const { data: favProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, handicap, areas, gender')
+            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas')
             .in('user_id', ids)
           const pm = new Map(favProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           setFavoritingList(myFavIds.map((f: any) => ({ ...f, profiles: pm.get(f.target_id) ?? null })))
@@ -552,9 +552,13 @@ export default function MatchPage() {
                           onClick={() => router.push(`/user/${p.user_id}`)}
                         />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 3 }}>{p.nickname}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                            <GenderBadge gender={p.gender} size={14} />
+                          </div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
+                            {p.birth_date && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
                             {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
@@ -596,10 +600,10 @@ export default function MatchPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
                             <GenderBadge gender={p.gender} size={14} />
-                            {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
                           </div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
+                            {p.birth_date && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
                             {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fb.created_at)}</div>
@@ -646,10 +650,10 @@ export default function MatchPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
                             <GenderBadge gender={p.gender} size={14} />
-                            {isMutual && <span style={{ fontSize: 9, fontWeight: 700, color: 'white', background: 'var(--g2)', borderRadius: 4, padding: '2px 6px' }}>相互</span>}
                           </div>
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            {p.handicap != null && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{getHdcpLabel(p.handicap)}</span>}
+                            {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
+                            {p.birth_date && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
                             {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fl.created_at)}</div>
