@@ -266,18 +266,29 @@ export default function ChatListPage() {
   }
 
   const createGroup = async () => {
-    if (!modalGroupName.trim() || selectedFriendIds.size === 0 || creating) return
+    if (!modalGroupName.trim() || selectedFriendIds.size === 0 || creating || !myId) return
     setCreating(true)
-    const { data: newGroup } = await supabase
+    const { data: newGroup, error: groupError } = await supabase
       .from('friend_groups')
       .insert({ name: modalGroupName.trim(), created_by: myId })
       .select().single()
-    if (!newGroup) { setCreating(false); return }
+    if (groupError || !newGroup) {
+      console.error('friend_groups insert error:', groupError)
+      alert('グループの作成に失敗しました。しばらくしてから再試行してください。')
+      setCreating(false)
+      return
+    }
 
-    await supabase.from('friend_group_members').insert([
+    const { error: memberError } = await supabase.from('friend_group_members').insert([
       { group_id: newGroup.id, user_id: myId },
       ...Array.from(selectedFriendIds).map(uid => ({ group_id: newGroup.id, user_id: uid })),
     ])
+    if (memberError) {
+      console.error('friend_group_members insert error:', memberError)
+      alert('メンバーの追加に失敗しました。しばらくしてから再試行してください。')
+      setCreating(false)
+      return
+    }
     setCreating(false)
     setShowCreateModal(false)
     setGroupsLoaded(false)
