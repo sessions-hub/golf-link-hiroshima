@@ -29,8 +29,11 @@ export async function POST(request: NextRequest) {
         const sub = event.data.object as any
         const customerId = sub.customer as string
         const priceId = sub.items?.data[0]?.price?.id
-        const plan = priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
-          ? 'executive' : 'premium'
+        const plan = priceId === process.env.STRIPE_EXECUTIVE_PRICE_ID
+          ? 'executive'
+          : priceId === process.env.STRIPE_PREMIUM_PRICE_ID
+          ? 'premium'
+          : 'free'
 
         const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
         const email = customer.email
