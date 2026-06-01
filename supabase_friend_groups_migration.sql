@@ -40,11 +40,27 @@ ALTER TABLE public.friend_group_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.friend_group_messages ENABLE ROW LEVEL SECURITY;
 
 -- ===================================================
+-- 既存ポリシーを削除（再実行時のエラー防止）
+-- ===================================================
+DROP POLICY IF EXISTS "friend_groups_select" ON public.friend_groups;
+DROP POLICY IF EXISTS "friend_groups_insert" ON public.friend_groups;
+DROP POLICY IF EXISTS "friend_group_members_select" ON public.friend_group_members;
+DROP POLICY IF EXISTS "friend_group_members_insert" ON public.friend_group_members;
+DROP POLICY IF EXISTS "friend_group_members_delete" ON public.friend_group_members;
+DROP POLICY IF EXISTS "friend_group_messages_select" ON public.friend_group_messages;
+DROP POLICY IF EXISTS "friend_group_messages_insert" ON public.friend_group_messages;
+
+-- ===================================================
 -- friend_groups ポリシー
 -- ===================================================
+
+-- 作成者 OR メンバーが参照可能
+-- ※ created_by = auth.uid() を含めることで、グループ作成直後（メンバー未登録時）
+--   に friend_group_members_insert ポリシーの EXISTS サブクエリが通る
 CREATE POLICY "friend_groups_select" ON public.friend_groups
   FOR SELECT USING (
-    EXISTS (
+    created_by = auth.uid()
+    OR EXISTS (
       SELECT 1 FROM public.friend_group_members
       WHERE friend_group_members.group_id = friend_groups.id
         AND friend_group_members.user_id = auth.uid()
@@ -57,16 +73,26 @@ CREATE POLICY "friend_groups_insert" ON public.friend_groups
 -- ===================================================
 -- friend_group_members ポリシー
 -- ===================================================
+
+-- 自分のメンバーシップ OR 同じグループのメンバー全員を参照可能
 CREATE POLICY "friend_group_members_select" ON public.friend_group_members
   FOR SELECT USING (
     user_id = auth.uid()
     OR EXISTS (
-      SELECT 1 FROM public.friend_group_members AS m2
-      WHERE m2.group_id = friend_group_members.group_id
-        AND m2.user_id = auth.uid()
+      SELECT 1 FROM public.friend_groups
+      WHERE friend_groups.id = friend_group_members.group_id
+        AND (
+          friend_groups.created_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM public.friend_group_members AS m2
+            WHERE m2.group_id = friend_group_members.group_id
+              AND m2.user_id = auth.uid()
+          )
+        )
     )
   );
 
+-- グループ作成者がメンバーを追加可能（自分自身の追加も含む）
 CREATE POLICY "friend_group_members_insert" ON public.friend_group_members
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -83,6 +109,7 @@ CREATE POLICY "friend_group_members_delete" ON public.friend_group_members
 -- ===================================================
 -- friend_group_messages ポリシー
 -- ===================================================
+
 CREATE POLICY "friend_group_messages_select" ON public.friend_group_messages
   FOR SELECT USING (
     EXISTS (

@@ -279,15 +279,26 @@ export default function ChatListPage() {
       return
     }
 
-    const { error: memberError } = await supabase.from('friend_group_members').insert([
-      { group_id: newGroup.id, user_id: myId },
-      ...Array.from(selectedFriendIds).map(uid => ({ group_id: newGroup.id, user_id: uid })),
-    ])
-    if (memberError) {
-      console.error('friend_group_members insert error:', memberError)
+    // 自分を先に登録してから友達を追加（RLSポリシーの評価順序対策）
+    const { error: selfError } = await supabase.from('friend_group_members').insert(
+      { group_id: newGroup.id, user_id: myId }
+    )
+    if (selfError) {
+      console.error('friend_group_members self insert error:', selfError)
       alert('メンバーの追加に失敗しました。しばらくしてから再試行してください。')
       setCreating(false)
       return
+    }
+    if (selectedFriendIds.size > 0) {
+      const { error: friendError } = await supabase.from('friend_group_members').insert(
+        Array.from(selectedFriendIds).map(uid => ({ group_id: newGroup.id, user_id: uid }))
+      )
+      if (friendError) {
+        console.error('friend_group_members friends insert error:', friendError)
+        alert('フレンドの追加に失敗しました。しばらくしてから再試行してください。')
+        setCreating(false)
+        return
+      }
     }
     setCreating(false)
     setShowCreateModal(false)
