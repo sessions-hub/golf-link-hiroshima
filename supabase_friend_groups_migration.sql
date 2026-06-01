@@ -1,8 +1,3 @@
--- ===================================================
--- Migration: フレンドグループチャット機能追加
--- 実行場所: Supabase Dashboard > SQL Editor
--- ===================================================
-
 CREATE TABLE IF NOT EXISTS public.friend_groups (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
@@ -17,10 +12,8 @@ CREATE TABLE IF NOT EXISTS public.friend_group_members (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.friend_group_members
-  DROP CONSTRAINT IF EXISTS friend_group_members_unique;
-ALTER TABLE public.friend_group_members
-  ADD CONSTRAINT friend_group_members_unique UNIQUE (group_id, user_id);
+ALTER TABLE public.friend_group_members DROP CONSTRAINT IF EXISTS friend_group_members_unique;
+ALTER TABLE public.friend_group_members ADD CONSTRAINT friend_group_members_unique UNIQUE (group_id, user_id);
 
 CREATE TABLE IF NOT EXISTS public.friend_group_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,8 +44,7 @@ CREATE POLICY "friend_groups_select" ON public.friend_groups
     created_by = auth.uid()
     OR EXISTS (
       SELECT 1 FROM public.friend_group_members m
-      WHERE m.group_id = friend_groups.id
-        AND m.user_id = auth.uid()
+      WHERE m.group_id = friend_groups.id AND m.user_id = auth.uid()
     )
   );
 
@@ -67,8 +59,7 @@ CREATE POLICY "friend_group_members_insert" ON public.friend_group_members
     user_id = auth.uid()
     OR EXISTS (
       SELECT 1 FROM public.friend_groups g
-      WHERE g.id = friend_group_members.group_id
-        AND g.created_by = auth.uid()
+      WHERE g.id = friend_group_members.group_id AND g.created_by = auth.uid()
     )
   );
 
@@ -79,8 +70,7 @@ CREATE POLICY "friend_group_messages_select" ON public.friend_group_messages
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.friend_group_members m
-      WHERE m.group_id = friend_group_messages.group_id
-        AND m.user_id = auth.uid()
+      WHERE m.group_id = friend_group_messages.group_id AND m.user_id = auth.uid()
     )
   );
 
@@ -89,8 +79,7 @@ CREATE POLICY "friend_group_messages_insert" ON public.friend_group_messages
     user_id = auth.uid()
     AND EXISTS (
       SELECT 1 FROM public.friend_group_members m
-      WHERE m.group_id = friend_group_messages.group_id
-        AND m.user_id = auth.uid()
+      WHERE m.group_id = friend_group_messages.group_id AND m.user_id = auth.uid()
     )
   );
 
