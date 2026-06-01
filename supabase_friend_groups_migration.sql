@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS public.friend_group_members (
 );
 
 ALTER TABLE public.friend_group_members
-  ADD CONSTRAINT IF NOT EXISTS friend_group_members_unique UNIQUE (group_id, user_id);
+  DROP CONSTRAINT IF EXISTS friend_group_members_unique;
+ALTER TABLE public.friend_group_members
+  ADD CONSTRAINT friend_group_members_unique UNIQUE (group_id, user_id);
 
 CREATE TABLE IF NOT EXISTS public.friend_group_messages (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
