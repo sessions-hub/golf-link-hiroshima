@@ -120,7 +120,13 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('tab') === 'settings') return 'settings'
+    }
+    return 'profile'
+  })
   const [myUserId, setMyUserId] = useState('')
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
@@ -452,7 +458,7 @@ export default function ProfilePage() {
       {/* タブ */}
       <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
         {(['profile', 'settings'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} style={{ flex: 1, padding: '11px 0', fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: activeTab === t ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
+          <button key={t} onClick={() => { setActiveTab(t); router.replace(t === 'settings' ? '/profile?tab=settings' : '/profile') }} style={{ flex: 1, padding: '11px 0', fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: activeTab === t ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
             {t === 'profile' ? '👤 プロフィール' : '⚙️ 設定・メニュー'}
           </button>
         ))}
