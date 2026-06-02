@@ -266,44 +266,47 @@ export default function ChatListPage() {
   }
 
   const createGroup = async () => {
-    if (!modalGroupName.trim() || selectedFriendIds.size === 0 || creating || !myId) return
+    if (!modalGroupName.trim() || selectedFriendIds.size === 0 || creating) return
     setCreating(true)
-    const { data: newGroup, error: groupError } = await supabase
+
+    const { data: { user }, error: authErr } = await supabase.auth.getUser()
+    if (authErr || !user) {
+      console.error('auth error:', authErr)
+      alert('ログインが必要です')
+      setCreating(false)
+      return
+    }
+    console.log('creating group as:', user.id)
+
+    const { data: group, error: groupErr } = await supabase
       .from('friend_groups')
-      .insert({ name: modalGroupName.trim(), created_by: myId })
-      .select().single()
-    if (groupError || !newGroup) {
-      console.error('friend_groups insert error:', groupError)
-      alert('グループの作成に失敗しました。しばらくしてから再試行してください。')
+      .insert({ name: modalGroupName.trim(), created_by: user.id })
+      .select()
+      .single()
+
+    if (groupErr) {
+      console.error('friend_groups insert error:', groupErr)
+      alert('グループの作成に失敗しました')
       setCreating(false)
       return
     }
 
-    // 自分を先に登録してから友達を追加（RLSポリシーの評価順序対策）
-    const { error: selfError } = await supabase.from('friend_group_members').insert(
-      { group_id: newGroup.id, user_id: myId }
-    )
-    if (selfError) {
-      console.error('friend_group_members self insert error:', selfError)
-      alert('メンバーの追加に失敗しました。しばらくしてから再試行してください。')
-      setCreating(false)
-      return
+    // 作成者自身をメンバーに追加
+    const memberRows = [user.id, ...Array.from(selectedFriendIds)].map(uid => ({
+      group_id: group.id,
+      user_id: uid,
+    }))
+    const { error: memberErr } = await supabase
+      .from('friend_group_members')
+      .insert(memberRows)
+    if (memberErr) {
+      console.error('friend_group_members insert error:', memberErr)
     }
-    if (selectedFriendIds.size > 0) {
-      const { error: friendError } = await supabase.from('friend_group_members').insert(
-        Array.from(selectedFriendIds).map(uid => ({ group_id: newGroup.id, user_id: uid }))
-      )
-      if (friendError) {
-        console.error('friend_group_members friends insert error:', friendError)
-        alert('フレンドの追加に失敗しました。しばらくしてから再試行してください。')
-        setCreating(false)
-        return
-      }
-    }
+
     setCreating(false)
     setShowCreateModal(false)
     setGroupsLoaded(false)
-    router.push(`/chat/group/${newGroup.id}`)
+    router.push(`/chat/group/${group.id}`)
   }
 
   const getUnreadCount = (room: ChatRoom) => {
