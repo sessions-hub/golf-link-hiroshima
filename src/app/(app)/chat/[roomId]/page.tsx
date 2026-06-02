@@ -50,8 +50,10 @@ export default function ChatRoomPage() {
   const [partnerId, setPartnerId] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
+    let channelCleanup: (() => void) | undefined
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
@@ -144,14 +146,22 @@ export default function ChatRoomPage() {
         })
         .subscribe()
 
-      return () => { supabase.removeChannel(channel) }
+      channelCleanup = () => { supabase.removeChannel(channel) }
     }
     init()
+    return () => { channelCleanup?.() }
   }, [roomId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [input])
 
   const startPress = (msgId: string) => {
     pressTimer.current = setTimeout(() => {
@@ -439,17 +449,18 @@ export default function ChatRoomPage() {
       )}
 
       {/* 入力エリア */}
-      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0, opacity: isBlockedByThem ? .5 : 1 }}>
+      <div style={{ padding: '10px 16px 34px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0, opacity: isBlockedByThem ? .5 : 1 }}>
         <AttachmentPicker
           onImageSelect={(file) => { setSelectedImage(file); setImagePreview(URL.createObjectURL(file)) }}
           onFileSelect={(file) => setSelectedFile(file)}
         />
-        <input
+        <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()}
           placeholder={isBlockedByThem ? 'メッセージが送れません' : 'メッセージを入力...'}
-          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
+          rows={1}
+          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', overflow: 'hidden', lineHeight: 1.5, fontFamily: 'inherit', minHeight: 40, maxHeight: 120 }}
         />
         <button onClick={sendMsg} disabled={sending || isBlockedByThem} style={{ width: 38, height: 38, borderRadius: '50%', background: sending || isBlockedByThem ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || isBlockedByThem ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round">

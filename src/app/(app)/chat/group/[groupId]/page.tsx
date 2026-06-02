@@ -43,6 +43,7 @@ export default function FriendGroupChatPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const profilesRef = useRef<Record<string, Profile>>({})
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => { profilesRef.current = profiles }, [profiles])
 
@@ -134,6 +135,13 @@ export default function FriendGroupChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [input])
 
   const sendMsg = async () => {
     if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
@@ -255,12 +263,19 @@ export default function FriendGroupChatPage() {
       )}
 
       {/* 入力エリア */}
-      <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom) + 10px)', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom) + 10px)', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
         <AttachmentPicker
           onImageSelect={(file) => { setSelectedImage(file); setImagePreview(URL.createObjectURL(file)) }}
           onFileSelect={(file) => setSelectedFile(file)}
         />
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()} placeholder="メッセージを入力..." style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }} />
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="メッセージを入力..."
+          rows={1}
+          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', overflow: 'hidden', lineHeight: 1.5, fontFamily: 'inherit', minHeight: 40, maxHeight: 120 }}
+        />
         <button onClick={sendMsg} disabled={sending} style={{ width: 38, height: 38, borderRadius: '50%', background: sending ? 'var(--mute)' : 'var(--g1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
         </button>

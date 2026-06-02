@@ -41,6 +41,7 @@ export default function CompGroupChatPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const profilesRef = useRef<Record<string, Profile>>({})
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     profilesRef.current = profiles
@@ -138,6 +139,13 @@ export default function CompGroupChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [input])
 
   const sendMsg = async () => {
     if ((!input.trim() && !selectedImage && !selectedFile) || !myId || sending) return
@@ -286,17 +294,18 @@ export default function CompGroupChatPage() {
       )}
 
       {/* 入力エリア */}
-      <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom) + 10px)', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ padding: '10px 16px calc(env(safe-area-inset-bottom) + 10px)', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}>
         <AttachmentPicker
           onImageSelect={(file) => { setSelectedImage(file); setImagePreview(URL.createObjectURL(file)) }}
           onFileSelect={(file) => setSelectedFile(file)}
         />
-        <input
+        <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMsg()}
           placeholder="メッセージを入力..."
-          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none' }}
+          rows={1}
+          style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 22, padding: '10px 16px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', overflow: 'hidden', lineHeight: 1.5, fontFamily: 'inherit', minHeight: 40, maxHeight: 120 }}
         />
         <button
           onClick={sendMsg}
