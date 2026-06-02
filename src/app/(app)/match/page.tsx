@@ -347,12 +347,13 @@ export default function MatchPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         {(() => { const b = getPlanBadge(userPlan); return <span style={{ background: b.bg, color: b.color, borderRadius: 5, padding: '3px 9px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em' }}>{b.label}</span> })()}
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white' }}>
         {(['golfer', 'interest'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -361,6 +362,7 @@ export default function MatchPage() {
             </span>
           </button>
         ))}
+      </div>
       </div>
 
       {activeTab === 'golfer' && (
@@ -400,7 +402,7 @@ export default function MatchPage() {
             </div>
           )}
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+          <div style={{ paddingBottom: 90 }}>
             <div style={{ height: 8 }} />
             {loading && <SectionLoading text="マッチングを検索中" />}
             {!loading && filteredMatches.length === 0 && (
@@ -487,7 +489,7 @@ export default function MatchPage() {
       )}
 
       {activeTab === 'interest' && (
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+        <div style={{ paddingBottom: 90 }}>
           {!canSeeInterest(userPlan) ? (
             /* フリープラン：エグゼクティブ誘導 */
             <div style={{ position: 'relative' }}>

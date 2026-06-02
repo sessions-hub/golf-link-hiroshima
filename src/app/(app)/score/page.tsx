@@ -432,7 +432,7 @@ export default function ScorePage() {
       </div>
 
       {view === 'input' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+        <div style={{ padding: '12px 16px 100px' }}>
           <StatsBanner />
 
           <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 12 }}>
@@ -490,7 +490,7 @@ export default function ScorePage() {
       )}
 
       {view === 'history' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+        <div style={{ padding: '12px 16px 100px' }}>
           <StatsBanner />
 
           {history.length > 0 && (

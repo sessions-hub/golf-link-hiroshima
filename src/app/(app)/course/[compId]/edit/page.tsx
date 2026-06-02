@@ -206,7 +206,7 @@ export default function EditCompPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', flex: 1 }}>{label}を編集</div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 100px' }}>
+      <div style={{ padding: '16px 16px 100px' }}>
 
         {formError && (
           <div style={{ background: 'rgba(200,60,60,.08)', border: '1px solid rgba(200,60,60,.3)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#c05050', lineHeight: 1.6 }}>

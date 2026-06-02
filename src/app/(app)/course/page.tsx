@@ -381,14 +381,15 @@ export default function CoursePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* ヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         {(() => { const b = getPlanBadge(userPlan); return <span style={{ background: b.bg, color: b.color, borderRadius: 5, padding: '3px 9px', fontSize: 10, fontWeight: 700, letterSpacing: '.08em' }}>{b.label}</span> })()}
       </div>
 
       {/* タブ：コンペ・ラウンド募集（左）/ 予約（右） */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white' }}>
         {(['comp', 'course'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -398,10 +399,11 @@ export default function CoursePage() {
           </button>
         ))}
       </div>
+      </div>
 
       {/* コンペ・ラウンド募集タブ */}
       {activeTab === 'comp' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
+        <div style={{ padding: '8px 0 90px' }}>
           {/* 主催ボタン */}
           <div style={{ padding: '8px 16px 4px', display: 'flex', gap: 8 }}>
             {canHostComp(userPlan) ? (
@@ -548,7 +550,7 @@ export default function CoursePage() {
               ))}
             </div>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
+          <div style={{ padding: '8px 0 90px' }}>
             {courseLoading && <SectionLoading text="コースを検索中" />}
             {!courseLoading && goraCourses.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -597,7 +599,7 @@ export default function CoursePage() {
       {/* コンペ作成モーダル */}
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: createError ? 12 : 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>コンペを主催する</div>
               <button onClick={() => { setShowCreateModal(false); setCreateError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
@@ -708,7 +710,7 @@ export default function CoursePage() {
       {/* ラウンド募集作成モーダル */}
       {showCreateRoundModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: createError ? 12 : 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>ラウンド募集を作成</div>
               <button onClick={() => { setShowCreateRoundModal(false); setCreateError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>

@@ -500,8 +500,9 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* グリーンヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
 
@@ -515,7 +516,7 @@ export default function HomePage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white', flexShrink: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--line)', background: 'white' }}>
         {(['home', 'timeline'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '11px 0', textAlign: 'center', fontSize: 13, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', fontWeight: activeTab === tab ? 700 : 500, background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -525,10 +526,11 @@ export default function HomePage() {
           </button>
         ))}
       </div>
+      </div>
 
       {/* ホームタブ */}
       {activeTab === 'home' && (
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+        <div style={{ paddingBottom: 90 }}>
 
           {/* レベルカード */}
           {(() => {
@@ -709,7 +711,7 @@ export default function HomePage() {
 
       {/* タイムラインタブ */}
       {activeTab === 'timeline' && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
           {/* フローティング投稿ボタン */}
           <div onClick={() => setShowPostModal(true)} style={{ position: 'fixed', bottom: 90, right: 20, width: 50, height: 50, borderRadius: '50%', background: 'var(--g1)', boxShadow: '0 4px 16px rgba(22,101,52,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 50 }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -728,7 +730,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }} onScroll={() => setCommentReactionPaletteId(null)}>
+          <div style={{ paddingBottom: 90 }} onScroll={() => setCommentReactionPaletteId(null)}>
             {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (

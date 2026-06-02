@@ -80,7 +80,7 @@ export default function TokushoPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>特定商取引法に基づく表記</div>
       </div>
 
-      <div style={{ flex: 1, padding: '16px 16px 60px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '16px 16px 60px' }}>
         <p style={{ fontSize: 11, color: 'var(--mute)', padding: '0 2px 12px', lineHeight: 1.7 }}>
           特定商取引に関する法律第11条に基づき、以下の通り表記します。
         </p>

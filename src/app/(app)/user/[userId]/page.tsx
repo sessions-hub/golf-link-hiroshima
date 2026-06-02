@@ -472,7 +472,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 90 }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (

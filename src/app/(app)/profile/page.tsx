@@ -447,8 +447,9 @@ export default function ProfilePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* ヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         <span style={{ background: planBadge.bg, color: planBadge.color, padding: '4px 12px', borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.06em', border: userPlan === 'free' ? '1px solid var(--line)' : 'none' }}>
           {planBadge.label}
@@ -456,17 +457,18 @@ export default function ProfilePage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)' }}>
         {(['profile', 'settings'] as const).map(t => (
           <button key={t} onClick={() => { setActiveTab(t); router.replace(t === 'settings' ? '/profile?tab=settings' : '/profile') }} style={{ flex: 1, padding: '11px 0', fontSize: 12, fontWeight: activeTab === t ? 700 : 500, color: activeTab === t ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', borderBottom: activeTab === t ? '2px solid var(--g2)' : '2px solid transparent', cursor: 'pointer' }}>
             {t === 'profile' ? '👤 プロフィール' : '⚙️ 設定・メニュー'}
           </button>
         ))}
       </div>
+      </div>
 
       {/* プロフィールタブ */}
       {activeTab === 'profile' && (
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
+        <div style={{ paddingBottom: 100 }}>
           {/* プロフィールバナー */}
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
@@ -606,7 +608,7 @@ export default function ProfilePage() {
 
       {/* 設定タブ */}
       {activeTab === 'settings' && (
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+        <div style={{ paddingBottom: 90 }}>
 
           {/* レベルバナー */}
           {(() => {

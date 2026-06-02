@@ -155,7 +155,7 @@ export default function ProfileEditPage() {
       )}
 
       {/* フォーム */}
-      <div style={{ flex: 1, padding: '16px 22px 100px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '16px 22px 100px' }}>
 
         {/* アバター */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>

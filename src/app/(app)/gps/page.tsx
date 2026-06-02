@@ -381,7 +381,7 @@ export default function GpsPage() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0 90px' }}>
+        <div style={{ padding: '8px 0 90px' }}>
           {gpsError && (
             <div style={{ margin: '8px 16px', background: 'rgba(200,60,60,.08)', border: '1px solid rgba(200,60,60,.2)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050' }}>
               ⚠️ {gpsError}
@@ -431,7 +431,7 @@ export default function GpsPage() {
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{selected.venueName}</div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 90px' }}>
+        <div style={{ padding: '16px 16px 90px' }}>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 12 }}>コースを選択してください</div>
           {subCourseOptions.map(c => (
             <div key={c.id} onClick={() => handlePickSubCourse(c)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 10, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
@@ -468,7 +468,7 @@ export default function GpsPage() {
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{pendingSubCourse.name}</div>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 2 }}>{pendingSubCourse.holes}ホール / Par {pendingSubCourse.par}</div>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 90px' }}>
+        <div style={{ padding: '16px 16px 90px' }}>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 12 }}>ラウンド形式を選択してください</div>
           <div onClick={handlePickSingle} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 10, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
             <div>

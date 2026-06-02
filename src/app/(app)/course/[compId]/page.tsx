@@ -261,7 +261,7 @@ export default function CompDetailPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 90 }}>
 
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
@@ -566,7 +566,7 @@ export default function CompDetailPage() {
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加者全員にメール送信</div>
             <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 16 }}>以下のメッセージを{entries.length}名の参加者全員に送信します。よろしいですか？</div>
-            <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '12px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-wrap', maxHeight: 120, overflowY: 'auto' }}>{broadcastMsg}</div>
+            <div style={{ background: 'var(--surf)', borderRadius: 8, padding: '12px', fontSize: 13, color: 'var(--txt)', lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-wrap', maxHeight: 120 }}>{broadcastMsg}</div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setShowBroadcastConfirm(false)}

@@ -329,8 +329,9 @@ export default function ChatListPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* ヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {totalUnread > 0 && (
@@ -341,7 +342,7 @@ export default function ChatListPage() {
       </div>
 
       {/* タブ */}
-      <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+      <div style={{ display: 'flex', background: 'white', borderBottom: '1px solid var(--line)' }}>
         {(['dm', 'group'] as const).map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ flex: 1, padding: '12px 0', fontSize: 13, fontWeight: activeTab === tab ? 700 : 500, color: activeTab === tab ? 'var(--g2)' : 'var(--mute)', background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid var(--g2)' : '2px solid transparent' }}>
             {tab === 'dm' ? '個人' : (
@@ -353,8 +354,9 @@ export default function ChatListPage() {
           </button>
         ))}
       </div>
+      </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 90 }}>
 
         {/* 個人タブ */}
         {activeTab === 'dm' && (

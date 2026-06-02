@@ -77,7 +77,7 @@ export default function DeleteAccountPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: '#c05050' }}>退会する</div>
       </div>
 
-      <div style={{ flex: 1, padding: '20px 16px 60px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '20px 16px 60px' }}>
 
         {/* 注意事項 */}
         <div style={{ background: 'rgba(200,60,60,.06)', border: '1px solid rgba(200,60,60,.2)', borderRadius: 12, padding: '16px', marginBottom: 20 }}>

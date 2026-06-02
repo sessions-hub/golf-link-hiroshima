@@ -123,7 +123,7 @@ export default function CompsPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0 90px' }}>
+      <div style={{ padding: '10px 0 90px' }}>
 
         {entries.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>

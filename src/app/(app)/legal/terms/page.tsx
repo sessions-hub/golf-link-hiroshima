@@ -121,7 +121,7 @@ export default function TermsPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>利用規約</div>
       </div>
 
-      <div style={{ flex: 1, padding: '24px 20px 60px', overflowY: 'auto', lineHeight: 1.9, fontSize: 13, color: 'var(--txt)' }}>
+      <div style={{ flex: 1, padding: '24px 20px 60px', lineHeight: 1.9, fontSize: 13, color: 'var(--txt)' }}>
         <p style={{ color: 'var(--mute)', fontSize: 11, marginBottom: 24 }}>最終更新日：2026年5月24日</p>
 
         {SECTIONS.map((section) => (
