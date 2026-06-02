@@ -75,11 +75,22 @@ export default function FriendGroupChatPage() {
         .maybeSingle()
       if (!membership) { router.push('/chat'); return }
 
-      const { data: membersData } = await supabase
+      const { data: memberRows } = await supabase
         .from('friend_group_members')
-        .select('user_id, profiles(user_id, nickname, avatar_url)')
+        .select('user_id')
         .eq('group_id', groupId)
-      setMembers((membersData as unknown as Member[]) ?? [])
+      if (memberRows && memberRows.length > 0) {
+        const memberIds = memberRows.map(r => r.user_id)
+        const { data: memberProfiles } = await supabase
+          .from('profiles')
+          .select('user_id, nickname, avatar_url')
+          .in('user_id', memberIds)
+        const profileMap = new Map((memberProfiles ?? []).map(p => [p.user_id, p]))
+        setMembers(memberIds.map(uid => ({
+          user_id: uid,
+          profiles: profileMap.get(uid) ?? null,
+        })))
+      }
 
       const { data: msgs } = await supabase
         .from('friend_group_messages')
