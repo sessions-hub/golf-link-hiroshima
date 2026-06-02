@@ -28,7 +28,7 @@ const SVG_ICONS: Record<string, React.ReactNode> = {
 }
 
 const MENU_ITEMS = [
-  { icon: 'trophy', label: '参加コンペ一覧', path: '/profile/comps' },
+  { icon: 'trophy', label: '参加コンペ・ラウンド一覧', path: '/profile/comps' },
   { icon: 'block', label: 'ブロックリスト', path: '/profile/blocks' },
   { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
   { icon: 'bell', label: 'プッシュ通知を設定', path: '/settings' },

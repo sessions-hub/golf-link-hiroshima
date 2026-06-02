@@ -21,6 +21,7 @@ interface Competition {
   max_players: number
   fee: number
   status: string
+  type: string
   image_url: string | null
   pdf_url: string | null
   created_at: string
@@ -101,7 +102,6 @@ export default function CompDetailPage() {
       }
       setIsEntered(!!myEntry)
 
-      // グループチャット未読件数を計算
       const lastSeen = localStorage.getItem(`comp_chat_last_seen_${compId}`)
       if (lastSeen) {
         const { count } = await supabase
@@ -140,13 +140,14 @@ export default function CompDetailPage() {
     setIsEntered(true)
     addPoints(supabase, myId, 100)
     if (comp.organizer_id) {
+      const isRound = comp.type === 'round'
       await Promise.all([
         fetch('/api/push/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: comp.organizer_id,
-            title: 'GLH. コンペに参加者が来ました！',
+            title: isRound ? 'GLH. ラウンド募集に参加者が来ました！' : 'GLH. コンペに参加者が来ました！',
             body: `${comp.title}に新しい参加者が申し込みました`,
             url: `/course/${comp.id}`,
           }),
@@ -195,6 +196,7 @@ export default function CompDetailPage() {
   if (loading) return <PageLoading />
   if (!comp) return null
 
+  const isRound = comp.type === 'round'
   const isOrganizer = comp.organizer_id === myId
   const totalAttendees = rawEntriesData.reduce((sum, e) => sum + (e.attendees_count ?? 1), 0)
   const remaining = comp.max_players - totalAttendees
@@ -218,15 +220,45 @@ export default function CompDetailPage() {
     : new Date(cy, cm - 1, cd - 1, 23, 59, 0)
   const deadlineStr = deadlineDate.toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
+  const heroStats = isRound
+    ? [
+        { label: '参加者', value: `${totalAttendees}/${comp.max_players}` },
+        { label: '残り枠', value: remaining > 0 ? `${remaining}枠` : '満員' },
+      ]
+    : [
+        { label: '形式', value: comp.format },
+        { label: '参加者', value: `${totalAttendees}/${comp.max_players}` },
+        { label: '残り枠', value: remaining > 0 ? `${remaining}枠` : '満員' },
+        { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
+      ]
+
+  const eventInfoRows = isRound
+    ? [
+        { label: 'コース名', value: comp.course_name },
+        { label: '開催日', value: dateStr },
+        { label: '締切日時', value: deadlineStr },
+        { label: '定員', value: `${comp.max_players}名` },
+      ]
+    : [
+        { label: 'コース名', value: comp.course_name },
+        { label: '開催日', value: dateStr },
+        { label: '締切日時', value: deadlineStr },
+        { label: '形式', value: comp.format },
+        { label: '定員', value: `${comp.max_players}名` },
+        { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
+      ]
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button onClick={() => router.push('/course?tab=comp')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <button onClick={() => router.push('/course')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </button>
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>コンペ詳細</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {isRound ? 'ラウンド募集詳細' : 'コンペ詳細'}
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 90 }}>
@@ -234,19 +266,21 @@ export default function CompDetailPage() {
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ background: heroBadgeBg, color: heroBadgeColor, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
-              {statusLabel}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ background: heroBadgeBg, color: heroBadgeColor, padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                {statusLabel}
+              </span>
+              {isRound && (
+                <span style={{ background: 'rgba(22,163,74,.25)', color: 'white', border: '1px solid rgba(255,255,255,.4)', padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700 }}>
+                  ⛳ ラウンド募集
+                </span>
+              )}
+            </div>
             <span style={{ fontSize: 12, color: 'rgba(255,255,255,.7)', fontFamily: 'Inter' }}>{dateStr}</span>
           </div>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 16, lineHeight: 1.3 }}>{comp.title}</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-            {[
-              { label: '形式', value: comp.format },
-              { label: '参加者', value: `${totalAttendees}/${comp.max_players}` },
-              { label: '残り枠', value: remaining > 0 ? `${remaining}枠` : '満員' },
-              { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
-            ].map((s) => (
+            {heroStats.map((s) => (
               <div key={s.label} style={{ background: 'rgba(255,255,255,.12)', borderRadius: 8, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,.7)' }}>{s.label}</span>
                 <span style={{ fontFamily: 'Inter', fontSize: 13, fontWeight: 700, color: 'white' }}>{s.value}</span>
@@ -258,14 +292,7 @@ export default function CompDetailPage() {
         {/* 開催情報 */}
         <div style={{ background: 'white', margin: '10px 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>開催情報</div>
-          {[
-            { label: 'コース名', value: comp.course_name },
-            { label: '開催日', value: dateStr },
-            { label: '締切日時', value: deadlineStr },
-            { label: '形式', value: comp.format },
-            { label: '定員', value: `${comp.max_players}名` },
-            { label: '参加費', value: `¥${comp.fee.toLocaleString()}` },
-          ].map((info) => (
+          {eventInfoRows.map((info) => (
             <div key={info.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--surf)' }}>
               <span style={{ fontSize: 12, color: 'var(--mute)' }}>{info.label}</span>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{info.value}</span>
@@ -273,23 +300,25 @@ export default function CompDetailPage() {
           ))}
         </div>
 
-        {/* コンペ詳細 */}
+        {/* 詳細テキスト */}
         {comp.description && (
           <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
-            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>コンペ詳細</div>
+            <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>
+              {isRound ? 'ラウンド詳細' : 'コンペ詳細'}
+            </div>
             <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.8 }}>{comp.description}</div>
           </div>
         )}
 
-        {/* コンペ画像 */}
-        {comp.image_url && (
+        {/* コンペ画像（compのみ） */}
+        {!isRound && comp.image_url && (
           <div style={{ margin: '0 16px 10px' }}>
             <img src={comp.image_url} alt="コンペ画像" style={{ width: '100%', borderRadius: 12, maxHeight: 220, objectFit: 'cover' }} />
           </div>
         )}
 
-        {/* 要項PDF */}
-        {comp.pdf_url && (
+        {/* 要項PDF（compのみ） */}
+        {!isRound && comp.pdf_url && (
           <div style={{ margin: '0 16px 10px' }}>
             <a href={comp.pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'white', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', textDecoration: 'none' }}>
               <span style={{ fontSize: 20 }}>📄</span>
@@ -408,8 +437,8 @@ export default function CompDetailPage() {
           </div>
         )}
 
-        {/* 主催者向け一斉メール */}
-        {isOrganizer && (
+        {/* 主催者向け一斉メール（compのみ） */}
+        {isOrganizer && !isRound && (
           <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>参加者への一斉メール</div>
             <textarea
@@ -475,7 +504,7 @@ export default function CompDetailPage() {
           <div onClick={() => setShowCancelConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加をキャンセル</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>このコンペへの参加をキャンセルします。よろしいですか？</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>この参加をキャンセルします。よろしいですか？</div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setShowCancelConfirm(false)}
@@ -502,9 +531,9 @@ export default function CompDetailPage() {
               {statusChangeTarget === 'full' ? '満員にする' : statusChangeTarget === 'cancelled' ? '中止にする' : '募集再開'}
             </div>
             <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>
-              {statusChangeTarget === 'full' && 'このコンペを満員に設定します。新規参加申し込みができなくなります。'}
-              {statusChangeTarget === 'cancelled' && 'このコンペを中止にします。参加者への連絡は別途行ってください。'}
-              {statusChangeTarget === 'recruiting' && 'このコンペの募集を再開します。'}
+              {statusChangeTarget === 'full' && (isRound ? 'この募集を満員に設定します。新規参加申し込みができなくなります。' : 'このコンペを満員に設定します。新規参加申し込みができなくなります。')}
+              {statusChangeTarget === 'cancelled' && (isRound ? 'この募集を中止にします。参加者への連絡は別途行ってください。' : 'このコンペを中止にします。参加者への連絡は別途行ってください。')}
+              {statusChangeTarget === 'recruiting' && (isRound ? 'この募集を再開します。' : 'このコンペの募集を再開します。')}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button

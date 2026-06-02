@@ -40,7 +40,7 @@ const NAV_ITEMS = [
   },
   {
     key: 'course',
-    label: '予約・コンペ',
+    label: '募集・予約',
     path: '/course',
     icon: (active: boolean) => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2.5 : 2} strokeLinecap="round" width={22} height={22}>

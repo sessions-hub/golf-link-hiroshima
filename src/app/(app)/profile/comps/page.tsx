@@ -17,8 +17,18 @@ interface CompEntry {
     fee: number
     status: string
     format: string
+    type: string
     entries_count?: number
   }
+}
+
+const TypeTag = ({ type }: { type: string }) => {
+  if (type === 'round') return (
+    <span style={{ background: 'rgba(22,163,74,.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,.3)', borderRadius: 4, padding: '2px 7px', fontSize: 9, fontWeight: 700 }}>⛳ ラウンド募集</span>
+  )
+  return (
+    <span style={{ background: 'rgba(245,158,11,.1)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.3)', borderRadius: 4, padding: '2px 7px', fontSize: 9, fontWeight: 700 }}>🏆 コンペ</span>
+  )
 }
 
 export default function CompsPage() {
@@ -94,7 +104,7 @@ export default function CompsPage() {
         <button onClick={() => router.push('/profile?tab=settings')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </button>
-        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>参加コンペ一覧</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>参加コンペ・ラウンド一覧</div>
       </div>
 
       {/* 統計バナー */}
@@ -120,9 +130,9 @@ export default function CompsPage() {
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><path d="M7 4h10l-1 7a5 5 0 01-10 0z"/><path d="M5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4"/></svg>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 6 }}>まだコンペへの参加履歴がありません</div>
-            <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>コースページからコンペに参加してみましょう</div>
-            <button onClick={() => router.push('/course?tab=comp')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>コンペページへ</button>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)', marginBottom: 6 }}>まだ参加履歴がありません</div>
+            <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>コンペやラウンド募集に参加してみましょう</div>
+            <button onClick={() => router.push('/course')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>コンペ・ラウンドページへ</button>
           </div>
         )}
 
@@ -135,11 +145,14 @@ export default function CompsPage() {
               const dateStr = new Date(c.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
               return (
                 <div key={e.comp_id} onClick={() => router.push(`/course/${e.comp_id}`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px', cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <TypeTag type={c.type} />
+                  </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.title}</div>
                   <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 8 }}>{c.course_name} · {dateStr}</div>
-                  <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                    <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.format}</span>
-                    <span style={{ fontFamily: 'Inter', fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--g2)', fontWeight: 600 }}>¥{c.fee.toLocaleString()}</span>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                    {c.type === 'comp' && <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.format}</span>}
+                    {c.type === 'comp' && <span style={{ fontFamily: 'Inter', fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--g2)', fontWeight: 600 }}>¥{c.fee.toLocaleString()}</span>}
                     {c.entries_count !== undefined && (
                       <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.entries_count}/{c.max_players}名</span>
                     )}
@@ -165,11 +178,14 @@ export default function CompsPage() {
               const dateStr = new Date(c.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
               return (
                 <div key={e.comp_id} onClick={() => router.push(`/course/${e.comp_id}`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px', cursor: 'pointer', opacity: 0.75 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <TypeTag type={c.type} />
+                  </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.title}</div>
                   <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 8 }}>{c.course_name} · {dateStr}</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.format}</span>
-                    <span style={{ fontFamily: 'Inter', fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)', fontWeight: 600 }}>¥{c.fee.toLocaleString()}</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {c.type === 'comp' && <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.format}</span>}
+                    {c.type === 'comp' && <span style={{ fontFamily: 'Inter', fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)', fontWeight: 600 }}>¥{c.fee.toLocaleString()}</span>}
                     {c.entries_count !== undefined && (
                       <span style={{ fontSize: 11, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 6, padding: '3px 8px', color: 'var(--mid)' }}>{c.entries_count}/{c.max_players}名</span>
                     )}
@@ -187,7 +203,7 @@ export default function CompsPage() {
           <div onClick={() => setCancelTargetId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 300 }} />
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 301 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>参加をキャンセル</div>
-            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>このコンペへの参加をキャンセルします。よろしいですか？</div>
+            <div style={{ fontSize: 13, color: 'var(--mute)', marginBottom: 24, lineHeight: 1.7 }}>この参加をキャンセルします。よろしいですか？</div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 onClick={() => setCancelTargetId(null)}
