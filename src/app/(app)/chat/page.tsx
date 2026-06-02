@@ -278,6 +278,15 @@ export default function ChatListPage() {
     }
     console.log('creating group as:', user.id)
 
+    const { data: sessionData } = await supabase.auth.getSession()
+    console.log('session exists:', !!sessionData.session)
+    console.log('session user id:', sessionData.session?.user?.id)
+
+    const { data: userData } = await supabase.auth.getUser()
+    console.log('getUser id:', userData.user?.id)
+    console.log('insert payload created_by:', user.id)
+    console.log('full payload:', { name: modalGroupName.trim(), created_by: user.id })
+
     const { data: group, error: groupErr } = await supabase
       .from('friend_groups')
       .insert({ name: modalGroupName.trim(), created_by: user.id })
