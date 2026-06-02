@@ -94,6 +94,7 @@ export default function CoursePage() {
   const [myId, setMyId] = useState('')
   const [myPlan, setMyPlan] = useState('free')
   const [compTypeFilter, setCompTypeFilter] = useState<'all' | 'comp' | 'round'>('all')
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   // コンペ作成モーダル
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -412,7 +413,7 @@ export default function CoursePage() {
                 <button onClick={() => setShowCreateRoundModal(true)} style={{ flex: 1, background: 'white', color: 'var(--g2)', border: '1.5px solid var(--g2)', borderRadius: 7, padding: '9px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>＋ ラウンド募集</button>
               </>
             ) : (
-              <button onClick={() => router.push('/subscription')} style={{ width: '100%', background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>プレミアム以上で主催する</button>
+              <button onClick={() => setShowUpgradeModal(true)} style={{ width: '100%', background: 'rgba(168,224,99,.15)', color: 'rgba(168,224,99,.8)', border: '1px solid rgba(168,224,99,.3)', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>プレミアム以上で主催する</button>
             )}
           </div>
 
@@ -794,6 +795,18 @@ export default function CoursePage() {
             >キャンセル</button>
           </div>
         </>
+      )}
+
+      {showUpgradeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowUpgradeModal(false)}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 12, textAlign: 'center' }}>コンペ・ラウンドを主催しませんか？</div>
+            <div style={{ fontSize: 13, color: 'var(--mid)', lineHeight: 1.8, marginBottom: 8, textAlign: 'center' }}>プレミアム以上の会員になるとコンペやラウンドを主催できます</div>
+            <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.8, marginBottom: 24, textAlign: 'center' }}>個人の方はもちろん、ゴルフ場関係者の方のラウンド募集、飲食店の方のコンペ企画などお気軽にご利用ください。</div>
+            <button onClick={() => { setShowUpgradeModal(false); router.push('/subscription') }} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
+            <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'var(--surf)', color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>閉じる</button>
+          </div>
+        </div>
       )}
 
       <BottomNav />
