@@ -24,6 +24,11 @@ interface Profile {
   gender?: string | null
 }
 
+interface Member {
+  user_id: string
+  profiles: { user_id: string; nickname: string; avatar_url: string | null } | null
+}
+
 export default function FriendGroupChatPage() {
   const router = useRouter()
   const params = useParams()
@@ -35,7 +40,7 @@ export default function FriendGroupChatPage() {
   const [input, setInput] = useState('')
   const [myId, setMyId] = useState('')
   const [groupName, setGroupName] = useState('')
-  const [memberCount, setMemberCount] = useState(0)
+  const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -70,11 +75,11 @@ export default function FriendGroupChatPage() {
         .maybeSingle()
       if (!membership) { router.push('/chat'); return }
 
-      const { count } = await supabase
+      const { data: membersData } = await supabase
         .from('friend_group_members')
-        .select('*', { count: 'exact', head: true })
+        .select('user_id, profiles(user_id, nickname, avatar_url)')
         .eq('group_id', groupId)
-      setMemberCount(count ?? 0)
+      setMembers((membersData as unknown as Member[]) ?? [])
 
       const { data: msgs } = await supabase
         .from('friend_group_messages')
@@ -195,9 +200,28 @@ export default function FriendGroupChatPage() {
         <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>👥</div>
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{groupName}</div>
-          <div style={{ fontSize: 11, color: 'var(--mute)' }}>{memberCount}名のメンバー</div>
+          <div style={{ fontSize: 11, color: 'var(--mute)' }}>{members.length}名のメンバー</div>
         </div>
       </div>
+
+      {/* メンバーアバターバー */}
+      {members.length > 0 && (
+        <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, overflowX: 'auto', flexShrink: 0 }}>
+          {members.map(m => (
+            <div key={m.user_id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>
+                {m.profiles?.avatar_url
+                  ? <img src={m.profiles.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                  : m.profiles?.nickname?.[0] ?? '?'
+                }
+              </div>
+              <div style={{ fontSize: 8, color: 'var(--mute)', maxWidth: 40, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                {m.profiles?.nickname ?? ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* メッセージ一覧 */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
