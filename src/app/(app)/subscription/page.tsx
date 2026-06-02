@@ -15,7 +15,7 @@ const PLANS = [
     priceId: process.env.NEXT_PUBLIC_STRIPE_STANDARD_PRICE_ID ?? '',
     features: [
       'FREEの全機能',
-      'コンペ主催',
+      'コンペ主催・ラウンド募集',
       '気になるタブ（足跡・お気に入り確認）',
     ],
     recommended: true,
