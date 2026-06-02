@@ -477,39 +477,12 @@ export default function CoursePage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                {c.type === 'comp' ? (
-                  <>
-                    {[
-                      { v: `${c.entries_count}/${c.max_players}`, k: '参加者' },
-                      { v: `¥${c.fee.toLocaleString()}`, k: '参加費' },
-                    ].map((s) => (
-                      <div key={s.k} style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid var(--line)' }}>
-                        <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: 'var(--g2)' }}>{s.v}</div>
-                        <div style={{ fontSize: 9, color: 'var(--mute)' }}>{s.k}</div>
-                      </div>
-                    ))}
-                  </>
-                ) : (
-                  <div style={{ flex: 1, background: 'var(--surf)', borderRadius: 8, padding: '8px 10px', textAlign: 'center', border: '1px solid var(--line)' }}>
-                    <div style={{ fontFamily: 'Inter', fontSize: 14, fontWeight: 700, color: '#16a34a' }}>{c.entries_count}/{c.max_players}</div>
-                    <div style={{ fontSize: 9, color: 'var(--mute)' }}>参加者</div>
-                  </div>
-                )}
-              </div>
-
               {c.description && (
                 <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.6, marginBottom: 10 }}>{c.description}</div>
               )}
               {(c as any).image_url && c.type === 'comp' && (
                 <img src={(c as any).image_url} alt="コンペ画像" style={{ width: '100%', borderRadius: 8, marginBottom: 10, maxHeight: 200, objectFit: 'cover' }} />
               )}
-              {(c as any).pdf_url && c.type === 'comp' && (
-                <a href={(c as any).pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', marginBottom: 10, textDecoration: 'none', color: 'var(--g2)', fontSize: 12, fontWeight: 600 }}>
-                  <span>📄</span> 要項PDFを見る
-                </a>
-              )}
-
               {computeEffectiveStatus(c) === 'recruiting' && c.organizer_id !== myId && (
                 <button
                   onClick={(e) => handleEntryClick(e, c.id, c.is_entered ?? false)}
