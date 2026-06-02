@@ -438,26 +438,39 @@ export default function CoursePage() {
 
           {filteredCompetitions.map((c) => (
             <div key={c.id} onClick={() => router.push(`/course/${c.id}`)} style={{ margin: '0 16px 10px', borderRadius: 12, padding: 15, cursor: 'pointer', border: c.organizer_id === myId ? '1px solid rgba(168,224,99,.35)' : '1px solid var(--line)', background: c.organizer_id === myId ? 'rgba(168,224,99,.04)' : 'white', boxShadow: '0 2px 8px rgba(13,61,43,.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <TypeTag type={c.type} />
-                  <span style={{ fontSize: 10, color: 'var(--mute)', fontFamily: 'Inter' }}>
-                    {new Date(c.comp_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </span>
-                  {c.organizer_id === myId && <span style={{ background: 'var(--lime)', color: 'var(--g1)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>主催</span>}
-                </div>
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
                 {(() => {
-                  const eff = computeEffectiveStatus(c)
+                  const dt = new Date(c.comp_date + 'T00:00:00')
+                  const isRound = c.type === 'round'
+                  const color = isRound ? '#16a34a' : '#f59e0b'
+                  const bg = isRound ? 'rgba(22,163,74,.1)' : 'rgba(245,158,11,.1)'
+                  const dow = ['日','月','火','水','木','金','土'][dt.getDay()]
                   return (
-                    <span style={{ background: eff === 'recruiting' ? 'var(--lime)' : 'var(--surf)', color: eff === 'recruiting' ? 'var(--g1)' : 'var(--mute)', padding: '3px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: eff !== 'recruiting' ? '1px solid var(--line)' : 'none', flexShrink: 0 }}>
-                      {eff === 'recruiting' ? '募集中' : eff === 'closed' ? '締切' : '終了'}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: bg, borderRadius: 10, padding: '8px 12px', minWidth: 52, flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, color, fontWeight: 700, lineHeight: 1.4 }}>{dt.getMonth() + 1}月</span>
+                      <span style={{ fontSize: 24, fontWeight: 700, color, lineHeight: 1.1, fontFamily: 'Inter' }}>{dt.getDate()}</span>
+                      <span style={{ fontSize: 10, color, fontWeight: 700, lineHeight: 1.4 }}>({dow})</span>
+                    </div>
                   )
                 })()}
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.title}</div>
-              <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 10 }}>
-                {c.course_name}{c.type === 'comp' && c.format ? ` · ${c.format}` : ''}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <TypeTag type={c.type} />
+                    {c.organizer_id === myId && <span style={{ background: 'var(--lime)', color: 'var(--g1)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>主催</span>}
+                    {(() => {
+                      const eff = computeEffectiveStatus(c)
+                      return (
+                        <span style={{ background: eff === 'recruiting' ? 'var(--lime)' : 'var(--surf)', color: eff === 'recruiting' ? 'var(--g1)' : 'var(--mute)', padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: eff !== 'recruiting' ? '1px solid var(--line)' : 'none' }}>
+                          {eff === 'recruiting' ? '募集中' : eff === 'closed' ? '締切' : '終了'}
+                        </span>
+                      )
+                    })()}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 2 }}>{c.title}</div>
+                  <div style={{ fontSize: 11, color: 'var(--mute)' }}>
+                    {c.course_name}{c.type === 'comp' && c.format ? ` · ${c.format}` : ''}
+                  </div>
+                </div>
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
