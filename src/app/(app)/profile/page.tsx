@@ -445,7 +445,7 @@ export default function ProfilePage() {
   const ageDecade = profile?.birth_date ? AGE_DECADE(profile.birth_date) : null
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* ヘッダー */}

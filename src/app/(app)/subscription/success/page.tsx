@@ -46,7 +46,7 @@ function SuccessInner() {
 
 export default function SubscriptionSuccessPage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--g1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--g1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 28, textAlign: 'center' }}>
       <Logo variant="screen" height={80} />
       <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '28px auto 20px' }}>
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--g1)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>

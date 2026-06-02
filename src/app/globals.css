@@ -27,6 +27,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html, body {
+  height: 100%;
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: 'Noto Sans JP', sans-serif;
   background: var(--off);

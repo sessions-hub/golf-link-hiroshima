@@ -362,7 +362,7 @@ export default function UserProfilePage() {
   if (loading) return <PageLoading />
 
   if (!profile) return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ color: 'var(--mute)', fontSize: 14 }}>ユーザーが見つかりません</div>
     </div>
   )
@@ -375,7 +375,7 @@ export default function UserProfilePage() {
   const otherPosts = featuredPost ? posts.filter(p => p.id !== featuredPost.id) : posts
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div onClick={() => backHref ? router.push(backHref) : router.back()} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>

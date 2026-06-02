@@ -12,7 +12,7 @@ export function LoadingDots({ color = 'var(--mute)', size = 6 }: { color?: strin
 // Full-screen centered loading state
 export function PageLoading() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <LoadingDots color="var(--g2)" size={10} />
     </div>
   )

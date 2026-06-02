@@ -498,7 +498,7 @@ export default function HomePage() {
   const levelInfo = getLevelInfo(totalPts)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* グリーンヘッダー */}

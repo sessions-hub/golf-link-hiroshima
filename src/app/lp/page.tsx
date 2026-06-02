@@ -17,7 +17,7 @@ export default function LPPage() {
       </nav>
 
       {/* ヒーロー */}
-      <section style={{ background: 'linear-gradient(160deg, #0D3D2B 0%, #1A5C40 60%, #2E7D55 100%)', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 24px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ background: 'linear-gradient(160deg, #0D3D2B 0%, #1A5C40 60%, #2E7D55 100%)', minHeight: '100dvh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 24px 60px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,224,99,.12) 0%, transparent 70%)' }} />
         <div style={{ position: 'absolute', bottom: -80, left: -80, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,224,99,.08) 0%, transparent 70%)' }} />
 
