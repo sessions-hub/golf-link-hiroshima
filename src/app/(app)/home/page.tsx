@@ -38,6 +38,14 @@ interface HomeChatItem {
   memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null }>
 }
 
+interface CompEventItem {
+  id: string
+  title: string
+  comp_date: string
+  type: string
+  created_at: string
+}
+
 interface Comment {
   id: string
   user_id: string
@@ -91,6 +99,7 @@ export default function HomePage() {
   const [editPostId, setEditPostId] = useState<string | null>(null)
   const [editCaption, setEditCaption] = useState('')
   const [allChats, setAllChats] = useState<HomeChatItem[]>([])
+  const [allComps, setAllComps] = useState<CompEventItem[]>([])
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const [showInstallBubble, setShowInstallBubble] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
@@ -276,7 +285,14 @@ export default function HomePage() {
         if (!b.lastMessageAt) return -1
         return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
       })
-      setAllChats(unified.slice(0, 3))
+      setAllChats(unified)
+
+      const { data: compData } = await supabase
+        .from('competitions')
+        .select('id, title, comp_date, type, created_at')
+        .order('created_at', { ascending: false })
+        .limit(4)
+      setAllComps((compData as any) ?? [])
 
       const { data: postData2 } = await supabase
         .from('posts')
@@ -611,62 +627,102 @@ export default function HomePage() {
           {/* ライムライン */}
           <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
 
-          {/* 新着チャット */}
-          {allChats.length > 0 && (
-            <>
-              <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'Inter' }}>新着チャット</span>
-                <span onClick={() => router.push('/chat')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
-              </div>
-              {allChats.map((item) => {
-                const { unread } = item
-                const time = item.lastMessageAt ? new Date(item.lastMessageAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }) : ''
-                const href = item.type === 'dm' ? `/chat/${item.id}` : item.type === 'comp' ? `/comp/${item.id}/chat` : `/chat/group/${item.id}`
-                return (
-                  <div key={`${item.type}-${item.id}`} onClick={() => router.push(href)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
-                    {/* アイコン */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      {item.type === 'dm' && item.otherUser ? (
-                        <FriendAvatar avatarUrl={item.otherUser.avatar_url} nickname={item.otherUser.nickname} isFriend={item.isFriend ?? false} size={42} border="1px solid var(--line)" />
-                      ) : item.type === 'comp' ? (
-                        <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg, var(--g1), var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" width={20} height={20}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                        </div>
-                      ) : (
-                        <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--surf)', border: '1px solid var(--line)', position: 'relative' }}>
-                          {(item.memberProfiles ?? []).slice(0, 2).map((p, i) => (
-                            <div key={p.user_id} style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', background: 'var(--surf)', border: '1.5px solid white', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--g1)', left: i === 0 ? 2 : undefined, right: i === 1 ? 2 : undefined, top: i === 0 ? 2 : undefined, bottom: i === 1 ? 2 : undefined }}>
-                              {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : p.nickname?.[0]}
+          {/* 新着情報 */}
+          {(() => {
+            const newsItems = [
+              ...allChats.map(c => ({ kind: 'chat' as const, sortAt: c.lastMessageAt, chatData: c })),
+              ...allComps.map(c => ({ kind: 'event' as const, sortAt: c.created_at, eventData: c })),
+            ].sort((a, b) => {
+              if (!a.sortAt && !b.sortAt) return 0
+              if (!a.sortAt) return 1
+              if (!b.sortAt) return -1
+              return new Date(b.sortAt).getTime() - new Date(a.sortAt).getTime()
+            }).slice(0, 3)
+            if (newsItems.length === 0) return null
+            return (
+              <>
+                <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'Inter' }}>新着情報</span>
+                  <span onClick={() => router.push('/notifications')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
+                </div>
+                {newsItems.map((item) => {
+                  if (item.kind === 'chat') {
+                    const c = item.chatData
+                    const { unread } = c
+                    const time = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }) : ''
+                    const href = c.type === 'dm' ? `/chat/${c.id}` : c.type === 'comp' ? `/comp/${c.id}/chat` : `/chat/group/${c.id}`
+                    return (
+                      <div key={`chat-${c.type}-${c.id}`} onClick={() => router.push(href)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          {c.type === 'dm' && c.otherUser ? (
+                            <FriendAvatar avatarUrl={c.otherUser.avatar_url} nickname={c.otherUser.nickname} isFriend={c.isFriend ?? false} size={42} border="1px solid var(--line)" />
+                          ) : c.type === 'comp' ? (
+                            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg, var(--g1), var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" width={20} height={20}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
                             </div>
-                          ))}
-                          {(item.memberProfiles ?? []).length === 0 && <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👥</div>}
+                          ) : (
+                            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--surf)', border: '1px solid var(--line)', position: 'relative' }}>
+                              {(c.memberProfiles ?? []).slice(0, 2).map((p, i) => (
+                                <div key={p.user_id} style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', background: 'var(--surf)', border: '1.5px solid white', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--g1)', left: i === 0 ? 2 : undefined, right: i === 1 ? 2 : undefined, top: i === 0 ? 2 : undefined, bottom: i === 1 ? 2 : undefined }}>
+                                  {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : p.nickname?.[0]}
+                                </div>
+                              ))}
+                              {(c.memberProfiles ?? []).length === 0 && <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👥</div>}
+                            </div>
+                          )}
+                          {unread > 0 && (
+                            <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
+                              {unread > 9 ? '9+' : unread}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {unread > 0 && (
-                        <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
-                          {unread > 9 ? '9+' : unread}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', maxWidth: 160 }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
+                              {c.type === 'dm' && <GenderBadge gender={c.otherUser?.gender} size={12} />}
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--mute)', flexShrink: 0 }}>{time}</div>
+                          </div>
+                          <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {c.lastMessage ?? 'チャットを始めましょう'}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', maxWidth: 160 }}>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-                          {item.type === 'dm' && <GenderBadge gender={item.otherUser?.gender} size={12} />}
-                        </div>
-                        <div style={{ fontSize: 10, color: 'var(--mute)', flexShrink: 0 }}>{time}</div>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
                       </div>
-                      <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {item.lastMessage ?? 'チャットを始めましょう'}
+                    )
+                  }
+                  const ev = item.eventData
+                  const isRound = ev.type === 'round'
+                  const iconBg = isRound ? '#dcfce7' : '#fef3c7'
+                  const iconFill = isRound ? '#16a34a' : '#f59e0b'
+                  const dateLabel = ev.comp_date ? new Date(ev.comp_date + 'T00:00:00').toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : ''
+                  const typeLabel = isRound ? 'ラウンド募集' : 'コンペ'
+                  return (
+                    <div key={`event-${ev.id}`} onClick={() => router.push(`/course/${ev.id}`)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
+                      <div style={{ width: 42, height: 42, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {isRound ? (
+                          <svg viewBox="0 0 24 24" fill={iconFill} width={22} height={22}>
+                            <path d="M17 3.34L11 6.19V21h-1v-7.84l-6-2.86V5.66l6 2.85V3h1v.19L17 .65v2.69zM6.6 12.34l3.4 1.62V8.96L6.6 7.34v5zm7.8-5l-3.4-1.62v5l3.4 1.62v-5z"/>
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill={iconFill} width={22} height={22}>
+                            <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H9v2h6v-2h-2v-2.1a5.01 5.01 0 003.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zm-2 3c0 1.65-1.35 3-3 3s-3-1.35-3-3V5h6v3zM5 8V7h2v3c0 .35.03.69.08 1.03C5.87 10.7 5 9.45 5 8zm14 0c0 1.45-.87 2.7-2.08 3.03.05-.34.08-.68.08-1.03V7h2v1z"/>
+                          </svg>
+                        )}
                       </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{ev.title}</div>
+                        <div style={{ fontSize: 11, color: 'var(--mute)' }}>{typeLabel} · {dateLabel}</div>
+                      </div>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
                     </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
-                  </div>
-                )
-              })}
-              <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
-            </>
-          )}
+                  )
+                })}
+                <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
+              </>
+            )
+          })()}
 
           {/* おすすめタイムライン（サムネイルグリッド） */}
           <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
