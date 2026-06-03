@@ -41,16 +41,35 @@ export default function FriendGroupChatPage() {
   const [myId, setMyId] = useState('')
   const [groupName, setGroupName] = useState('')
   const [members, setMembers] = useState<Member[]>([])
+  const [isCreator, setIsCreator] = useState(false)
+  const [iconUrl, setIconUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  // 設定シート
+  const [showSettings, setShowSettings] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [savingName, setSavingName] = useState(false)
+  const [uploadingIcon, setUploadingIcon] = useState(false)
+  const [addableFriends, setAddableFriends] = useState<Profile[]>([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addSelected, setAddSelected] = useState<Set<string>>(new Set())
+  const [addingMembers, setAddingMembers] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const profilesRef = useRef<Record<string, Profile>>({})
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => { profilesRef.current = profiles }, [profiles])
+
+  const reloadMembers = async () => {
+    const res = await fetch(`/api/group-members/${groupId}`)
+    if (res.ok) setMembers(await res.json())
+  }
 
   useEffect(() => {
     let cleanup: (() => void) | undefined
@@ -61,11 +80,21 @@ export default function FriendGroupChatPage() {
 
       const { data: group } = await supabase
         .from('friend_groups')
-        .select('id, name')
+        .select('id, name, created_by')
         .eq('id', groupId)
         .single()
       if (!group) { router.push('/chat'); return }
       setGroupName(group.name)
+      setEditName(group.name)
+      setIsCreator(group.created_by === user.id)
+
+      // icon_url は列が存在する場合のみ取得
+      const { data: iconData } = await supabase
+        .from('friend_groups')
+        .select('icon_url')
+        .eq('id', groupId)
+        .single()
+      if (iconData) setIconUrl((iconData as any).icon_url ?? null)
 
       const { data: membership } = await supabase
         .from('friend_group_members')
@@ -75,11 +104,7 @@ export default function FriendGroupChatPage() {
         .maybeSingle()
       if (!membership) { router.push('/chat'); return }
 
-      const membersRes = await fetch(`/api/group-members/${groupId}`)
-      if (membersRes.ok) {
-        const membersData: Member[] = await membersRes.json()
-        setMembers(membersData)
-      }
+      await reloadMembers()
 
       const { data: msgs } = await supabase
         .from('friend_group_messages')
@@ -188,6 +213,116 @@ export default function FriendGroupChatPage() {
     setSending(false)
   }
 
+  const handleSaveName = async () => {
+    const name = editName.trim()
+    if (!name || name === groupName || savingName) return
+    setSavingName(true)
+    const res = await fetch(`/api/group-settings/${groupId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+    if (res.ok) {
+      setGroupName(name)
+    } else {
+      alert('名前の変更に失敗しました')
+    }
+    setSavingName(false)
+  }
+
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingIcon(true)
+    const path = `group-icons/${groupId}/${Date.now()}`
+    const { error } = await supabase.storage.from('user-photos').upload(path, file, { contentType: file.type, upsert: true })
+    if (!error) {
+      const { data } = supabase.storage.from('user-photos').getPublicUrl(path)
+      const res = await fetch(`/api/group-settings/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ icon_url: data.publicUrl }),
+      })
+      if (res.ok) {
+        setIconUrl(data.publicUrl)
+      } else {
+        const err = await res.json()
+        alert(`アイコン更新に失敗: ${err.error}`)
+      }
+    }
+    setUploadingIcon(false)
+  }
+
+  const handleRemoveMember = async (targetUserId: string) => {
+    if (!confirm('このメンバーを削除しますか？')) return
+    const res = await fetch(`/api/group-members/${groupId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId }),
+    })
+    if (res.ok) {
+      setMembers(prev => prev.filter(m => m.user_id !== targetUserId))
+    } else {
+      alert('削除に失敗しました')
+    }
+  }
+
+  const handleLeaveGroup = async () => {
+    if (!confirm('グループから退会しますか？')) return
+    setLeaving(true)
+    const res = await fetch(`/api/group-members/${groupId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetUserId: myId }),
+    })
+    if (res.ok) {
+      router.push('/chat?tab=group')
+    } else {
+      alert('退会に失敗しました')
+      setLeaving(false)
+    }
+  }
+
+  const openAddMembersModal = async () => {
+    const memberIds = new Set(members.map(m => m.user_id))
+    const [{ data: myFavs }, { data: favMe }] = await Promise.all([
+      supabase.from('favorites').select('target_id').eq('user_id', myId),
+      supabase.from('favorites').select('user_id').eq('target_id', myId),
+    ])
+    if (!myFavs || !favMe) return
+    const favMeSet = new Set(favMe.map((f: any) => f.user_id))
+    const mutualIds = myFavs
+      .filter((f: any) => favMeSet.has(f.target_id))
+      .map((f: any) => f.target_id)
+      .filter((id: string) => !memberIds.has(id))
+    if (mutualIds.length > 0) {
+      const { data } = await supabase.from('profiles').select('user_id, nickname, avatar_url').in('user_id', mutualIds)
+      setAddableFriends(data ?? [])
+    } else {
+      setAddableFriends([])
+    }
+    setAddSelected(new Set())
+    setShowAddModal(true)
+  }
+
+  const handleAddMembers = async () => {
+    if (addSelected.size === 0 || addingMembers) return
+    setAddingMembers(true)
+    const res = await fetch(`/api/group-members/${groupId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userIds: Array.from(addSelected) }),
+    })
+    if (res.ok) {
+      await reloadMembers()
+      setShowAddModal(false)
+      setAddSelected(new Set())
+    } else {
+      alert('メンバーの追加に失敗しました')
+    }
+    setAddingMembers(false)
+  }
+
   if (loading) return <PageLoading />
 
   return (
@@ -197,11 +332,16 @@ export default function FriendGroupChatPage() {
         <div onClick={() => router.push('/chat?tab=group')} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)', flexShrink: 0 }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2" strokeLinecap="round"><polyline points="15,18 9,12 15,6"/></svg>
         </div>
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>👥</div>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+          {iconUrl ? <img src={iconUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : '👥'}
+        </div>
         <div style={{ flex: 1, overflow: 'hidden' }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{groupName}</div>
           <div style={{ fontSize: 11, color: 'var(--mute)' }}>{members.length}名のメンバー</div>
         </div>
+        <button onClick={() => setShowSettings(true)} style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </button>
       </div>
 
       {/* メンバーアバターバー */}
@@ -212,8 +352,7 @@ export default function FriendGroupChatPage() {
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>
                 {m.profiles?.avatar_url
                   ? <img src={m.profiles.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                  : m.profiles?.nickname?.[0] ?? '?'
-                }
+                  : m.profiles?.nickname?.[0] ?? '?'}
               </div>
               <div style={{ fontSize: 8, color: 'var(--mute)', maxWidth: 40, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                 {m.profiles?.nickname ?? ''}
@@ -269,7 +408,7 @@ export default function FriendGroupChatPage() {
 
       {/* 添付プレビュー */}
       {(imagePreview || selectedFile) && (
-        <div style={{ padding: '8px 16px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ padding: '8px 16px', background: 'white', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {imagePreview && (
             <div style={{ position: 'relative' }}>
               <img src={imagePreview} alt="preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }} />
@@ -304,6 +443,128 @@ export default function FriendGroupChatPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
         </button>
       </div>
+
+      {/* 設定シート */}
+      {showSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowSettings(false)}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>グループ設定</div>
+              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--mute)', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {/* アイコン＋グループ名（作成者のみ編集可） */}
+              <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--line)' }}>
+                <div style={{ position: 'relative' }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--surf)', border: '2px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                    {uploadingIcon
+                      ? <div style={{ fontSize: 10, color: 'var(--mute)' }}>...</div>
+                      : iconUrl
+                        ? <img src={iconUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        : '👥'}
+                  </div>
+                  {isCreator && (
+                    <label style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleIconUpload} />
+                    </label>
+                  )}
+                </div>
+
+                {isCreator ? (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%', maxWidth: 300 }}>
+                    <input
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      style={{ flex: 1, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 12px', fontSize: 14, fontWeight: 600, color: 'var(--txt)', outline: 'none', textAlign: 'center' }}
+                    />
+                    <button
+                      onClick={handleSaveName}
+                      disabled={savingName || !editName.trim() || editName.trim() === groupName}
+                      style={{ background: editName.trim() && editName.trim() !== groupName ? 'var(--g1)' : 'var(--surf)', color: editName.trim() && editName.trim() !== groupName ? 'white' : 'var(--mute)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      {savingName ? '...' : '保存'}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>{groupName}</div>
+                )}
+              </div>
+
+              {/* メンバー一覧 */}
+              <div style={{ padding: '14px 16px 0' }}>
+                <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>メンバー {members.length}名</div>
+                {members.map(m => (
+                  <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--surf)' }}>
+                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--g2)', flexShrink: 0 }}>
+                      {m.profiles?.avatar_url
+                        ? <img src={m.profiles.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        : m.profiles?.nickname?.[0] ?? '?'}
+                    </div>
+                    <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
+                      {m.profiles?.nickname ?? '不明'}
+                      {m.user_id === myId && <span style={{ fontSize: 10, color: 'var(--mute)', marginLeft: 5 }}>（あなた）</span>}
+                    </div>
+                    {isCreator && m.user_id !== myId && (
+                      <button onClick={() => handleRemoveMember(m.user_id)} style={{ background: 'none', border: '1px solid rgba(200,60,60,.3)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#c05050', cursor: 'pointer', flexShrink: 0 }}>
+                        削除
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* メンバー追加 */}
+              <div style={{ padding: '12px 16px' }}>
+                <button onClick={openAddMembersModal} style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 600, color: 'var(--g2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  メンバーを追加
+                </button>
+              </div>
+
+              {/* 退会 */}
+              <div style={{ padding: '0 16px 40px' }}>
+                <button onClick={handleLeaveGroup} disabled={leaving} style={{ width: '100%', background: 'rgba(200,60,60,.06)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 600, color: '#c05050', cursor: leaving ? 'not-allowed' : 'pointer' }}>
+                  {leaving ? '退会中...' : 'グループから退会'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* メンバー追加モーダル */}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 110, display: 'flex', alignItems: 'flex-end' }} onClick={() => setShowAddModal(false)}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>メンバーを追加</div>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--mute)', cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {addableFriends.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', fontSize: 13, color: 'var(--mute)' }}>追加できるフレンドがいません</div>
+              ) : addableFriends.map(f => (
+                <div key={f.user_id} onClick={() => setAddSelected(prev => { const n = new Set(prev); n.has(f.user_id) ? n.delete(f.user_id) : n.add(f.user_id); return n })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer', background: addSelected.has(f.user_id) ? 'rgba(46,125,85,.06)' : 'transparent' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: `2px solid ${addSelected.has(f.user_id) ? 'var(--g2)' : 'var(--line)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--g2)', flexShrink: 0 }}>
+                    {f.avatar_url ? <img src={f.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : f.nickname?.[0]}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{f.nickname}</div>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', border: `2px solid ${addSelected.has(f.user_id) ? 'var(--g2)' : 'var(--line)'}`, background: addSelected.has(f.user_id) ? 'var(--g2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {addSelected.has(f.user_id) && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '12px 16px calc(env(safe-area-inset-bottom) + 12px)', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
+              <button onClick={handleAddMembers} disabled={addSelected.size === 0 || addingMembers} style={{ width: '100%', background: addSelected.size > 0 ? 'var(--g1)' : 'var(--mute)', color: 'white', border: 'none', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 700, cursor: addSelected.size > 0 ? 'pointer' : 'not-allowed' }}>
+                {addingMembers ? '追加中...' : addSelected.size > 0 ? `${addSelected.size}名を追加する` : 'メンバーを選択してください'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
