@@ -568,7 +568,7 @@ export default function CoursePage() {
       {/* コンペ作成モーダル */}
       {showCreateModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: createError ? 12 : 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>コンペを主催する</div>
               <button onClick={() => { setShowCreateModal(false); setCreateError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
@@ -679,7 +679,7 @@ export default function CoursePage() {
       {/* ラウンド募集作成モーダル */}
       {showCreateRoundModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '20px 16px 40px', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: createError ? 12 : 20 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>ラウンド募集を作成</div>
               <button onClick={() => { setShowCreateRoundModal(false); setCreateError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'var(--mute)' }}>×</button>
