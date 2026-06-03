@@ -62,7 +62,7 @@ export default function BlockListPage() {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '16px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <div onClick={() => router.push('/profile?tab=settings')} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>
+        <div onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
           ブロックリスト
         </div>
