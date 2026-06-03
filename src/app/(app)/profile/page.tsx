@@ -662,7 +662,7 @@ export default function ProfilePage() {
                 {(['normal', 'large'] as const).map((s) => (
                   <button
                     key={s}
-                    onClick={() => { setFontScale(s); setFontScaleState(s) }}
+                    onClick={() => { setFontScale(s); setFontScaleState(s); window.location.reload() }}
                     style={{
                       padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                       fontSize: 11, fontWeight: fontScaleState === s ? 700 : 400,
