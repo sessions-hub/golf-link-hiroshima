@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
+import { getFontScale, setFontScale } from '@/lib/fontScale'
 import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
@@ -135,6 +136,7 @@ export default function ProfilePage() {
   const [unreadNotifCount, setUnreadNotifCount] = useState(0)
   const [showPostModal, setShowPostModal] = useState(false)
   const [legalOpen, setLegalOpen] = useState(false)
+  const [fontScaleState, setFontScaleState] = useState<'normal' | 'large'>('normal')
   const [modalComments, setModalComments] = useState<any[]>([])
   const [modalCommentInput, setModalCommentInput] = useState('')
   const [commentsLoading, setCommentsLoading] = useState(false)
@@ -150,6 +152,10 @@ export default function ProfilePage() {
   const [totalPts, setTotalPts] = useState(0)
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const fileRef = React.useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setFontScaleState(getFontScale())
+  }, [])
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -641,6 +647,37 @@ export default function ProfilePage() {
               </div>
             )
           })()}
+
+          {/* 表示設定 */}
+          <div style={{ background: 'white', margin: '8px 0 0' }}>
+            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>表示設定</div>
+            <div style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>文字サイズ</div>
+              <div style={{ display: 'flex', gap: 2, background: 'var(--surf)', borderRadius: 8, padding: 3, border: '1px solid var(--line)' }}>
+                {(['normal', 'large'] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => { setFontScale(s); setFontScaleState(s) }}
+                    style={{
+                      padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                      fontSize: 11, fontWeight: fontScaleState === s ? 700 : 400,
+                      background: fontScaleState === s ? 'white' : 'transparent',
+                      color: fontScaleState === s ? 'var(--g2)' : 'var(--mute)',
+                      boxShadow: fontScaleState === s ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+                      transition: 'all .15s',
+                    }}
+                  >
+                    {s === 'normal' ? '標準' : '大きめ'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* 解約予定日 */}
           {cancelAtPeriodEnd && currentPeriodEnd && (

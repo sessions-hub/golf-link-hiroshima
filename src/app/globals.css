@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --font-scale: 1;
   --g1: #166534;
   --g2: #15803d;
   --g3: #16a34a;
@@ -36,6 +37,11 @@ body {
   font-family: 'Noto Sans JP', sans-serif;
   background: var(--off);
   color: var(--txt);
+}
+
+body.font-large {
+  --font-scale: 1.15;
+  font-size: 112%;
 }
 
 .no-scrollbar::-webkit-scrollbar {

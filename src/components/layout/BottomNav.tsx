@@ -191,7 +191,7 @@ export default function BottomNav() {
               }} />
             )}
             <span style={{
-              fontSize: 9, fontWeight: isActive ? 600 : 400,
+              fontSize: 'calc(9px * var(--font-scale, 1))', fontWeight: isActive ? 600 : 400,
               fontFamily: 'Inter, sans-serif',
             }}>
               {item.label}
