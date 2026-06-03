@@ -45,6 +45,7 @@ export default function ProfileEditPage() {
   const [preferredDays, setPreferredDays] = useState<string[]>([])
   const [area, setArea] = useState<string>('')
   const [bio, setBio] = useState('')
+  const [showAge, setShowAge] = useState(true)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -66,6 +67,7 @@ export default function ProfileEditPage() {
         setPreferredDays(data.preferred_days ?? [])
         setArea(data.areas?.[0] ?? '')
         setBio(data.bio ?? '')
+        setShowAge(data.show_age ?? true)
       }
       setLoading(false)
     }
@@ -122,6 +124,7 @@ export default function ProfileEditPage() {
         areas: area ? [area] : [],
         bio,
         avatar_url: avatarUrl,
+        show_age: showAge,
       })
       .eq('user_id', user.id)
 
@@ -307,6 +310,30 @@ export default function ProfileEditPage() {
           rows={4}
           style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: 'var(--txt)', outline: 'none', resize: 'none', marginBottom: 24, fontFamily: 'var(--sans)' }}
         />
+
+        {/* 年代表示 */}
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 8 }}>年代表示</div>
+        <div style={{ background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '14px', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ fontSize: 13, color: 'var(--txt)', fontWeight: 600 }}>年代を表示する</div>
+            <div
+              onClick={() => setShowAge(v => !v)}
+              style={{
+                width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+                background: showAge ? 'var(--g2)' : 'var(--pale)',
+                position: 'relative', transition: 'background .2s', flexShrink: 0,
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 2, left: showAge ? 22 : 2,
+                width: 20, height: 20, borderRadius: '50%',
+                background: 'white', transition: 'left .2s',
+                boxShadow: '0 1px 4px rgba(0,0,0,.2)',
+              }} />
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.5 }}>オフにすると他のユーザーに年代が表示されません</div>
+        </div>
 
         {/* 保存ボタン */}
         <button

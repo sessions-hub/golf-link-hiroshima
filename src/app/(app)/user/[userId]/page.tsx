@@ -25,6 +25,7 @@ interface Profile {
   gender: string | null
   preferred_days: string[]
   areas: string[] | null
+  show_age: boolean
 }
 
 interface Post {
@@ -418,9 +419,9 @@ export default function UserProfilePage() {
               </span>
             </div>
             {/* エリア・年代 */}
-            {(areaLabel || ageDecade) && (
+            {(areaLabel || (ageDecade && profile.show_age !== false)) && (
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--mid)', marginBottom: 5 }}>
-                {[areaLabel, ageDecade].filter(Boolean).join(' · ')}
+                {[areaLabel, profile.show_age !== false ? ageDecade : null].filter(Boolean).join(' · ')}
               </div>
             )}
             {/* タグ */}

@@ -75,6 +75,7 @@ interface Profile {
   bio: string | null
   round_freq: string | null
   preferred_days: string[] | null
+  show_age: boolean
 }
 
 const FREQ_LABEL: Record<string, string> = {
@@ -502,9 +503,9 @@ export default function ProfilePage() {
                     <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 700, color: myLevelInfo.color }}>Lv.{myLevelInfo.level}</span>
                   </span>
                 </div>
-                {(areaLabel || ageDecade) && (
+                {(areaLabel || (ageDecade && profile?.show_age !== false)) && (
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--mid)', marginBottom: 5 }}>
-                    {[areaLabel, ageDecade].filter(Boolean).join(' · ')}
+                    {[areaLabel, profile?.show_age !== false ? ageDecade : null].filter(Boolean).join(' · ')}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -523,6 +524,9 @@ export default function ProfilePage() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--mid)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               プロフィールを編集
             </button>
+            {profile?.show_age === false && (
+              <div style={{ marginTop: 6, fontSize: 10, color: 'var(--mute)', textAlign: 'center' }}>年代：非表示中</div>
+            )}
           </div>
 
           {/* お知らせ */}
