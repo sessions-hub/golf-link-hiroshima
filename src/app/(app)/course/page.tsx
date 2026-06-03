@@ -769,7 +769,6 @@ export default function CoursePage() {
           <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)', marginBottom: 12, textAlign: 'center' }}>コンペ・ラウンドを主催しませんか？</div>
             <div style={{ fontSize: 13, color: 'var(--mid)', lineHeight: 1.8, marginBottom: 8, textAlign: 'center' }}>プレミアム以上の会員になるとコンペやラウンドを主催できます</div>
-            <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.8, marginBottom: 8, textAlign: 'center' }}>個人の方はもちろん、ゴルフ場関係者の方のラウンド募集、飲食店の方のコンペ企画などお気軽にご利用ください。</div>
             <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.8, marginBottom: 24, textAlign: 'center' }}>個人の方の主催はもちろん、ゴルフ場関係者の方、飲食店関係者の方などもお気軽にご利用ください。</div>
             <button onClick={() => { setShowUpgradeModal(false); router.push('/subscription') }} style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>プランをアップグレード</button>
             <button onClick={() => setShowUpgradeModal(false)} style={{ width: '100%', background: 'var(--surf)', color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>閉じる</button>
