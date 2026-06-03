@@ -648,10 +648,32 @@ export default function ProfilePage() {
             )
           })()}
 
-          {/* 表示設定 */}
-          <div style={{ background: 'white', margin: '8px 0 0' }}>
-            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>表示設定</div>
-            <div style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* 解約予定日 */}
+          {cancelAtPeriodEnd && currentPeriodEnd && (
+            <div style={{ margin: '0 0 8px', background: '#fff8f0', borderTop: '1px solid rgba(200,100,0,.15)', borderBottom: '1px solid rgba(200,100,0,.15)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a05000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style={{ fontSize: 12, color: '#a05000', lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 700 }}>解約予定：</span>
+                {new Date(currentPeriodEnd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}まで利用可能
+              </div>
+            </div>
+          )}
+
+          {/* メニュー */}
+          <div style={{ background: 'white', marginBottom: 8 }}>
+            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>メニュー</div>
+            {MENU_ITEMS.map((item) => (
+              <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
+                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
+              </div>
+            ))}
+
+            {/* 文字サイズ */}
+            <div style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)' }}>
               <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>
@@ -677,31 +699,6 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
-          </div>
-
-          {/* 解約予定日 */}
-          {cancelAtPeriodEnd && currentPeriodEnd && (
-            <div style={{ margin: '0 0 8px', background: '#fff8f0', borderTop: '1px solid rgba(200,100,0,.15)', borderBottom: '1px solid rgba(200,100,0,.15)', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a05000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <div style={{ fontSize: 12, color: '#a05000', lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 700 }}>解約予定：</span>
-                {new Date(currentPeriodEnd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' })}まで利用可能
-              </div>
-            </div>
-          )}
-
-          {/* メニュー */}
-          <div style={{ background: 'white', marginBottom: 8 }}>
-            <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>メニュー</div>
-            {MENU_ITEMS.map((item) => (
-              <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
-                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
-              </div>
-            ))}
 
             {/* 法的情報アコーディオン */}
             <div onClick={() => setLegalOpen(o => !o)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', borderBottom: legalOpen ? '1px solid var(--surf)' : 'none' }}>
