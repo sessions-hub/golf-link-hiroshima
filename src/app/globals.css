@@ -39,18 +39,8 @@ body {
   color: var(--txt);
 }
 
-body.font-large,
-body.font-large * {
-  font-size: 120% !important;
-  line-height: 1.6 !important;
-}
-
-body.font-large svg,
-body.font-large img,
-body.font-large input,
-body.font-large textarea,
-body.font-large button svg {
-  font-size: inherit !important;
+body.font-large {
+  --font-scale: 1.15;
 }
 
 .no-scrollbar::-webkit-scrollbar {
