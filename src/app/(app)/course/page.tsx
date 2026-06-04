@@ -287,7 +287,7 @@ export default function CoursePage() {
     })
 
     if (!error) {
-      addPoints(supabase, myId, 200)
+      addPoints(supabase, myId, 300)
       await fetchCompetitions(myId)
       setShowCreateModal(false)
       setTitle('')
@@ -339,7 +339,7 @@ export default function CoursePage() {
     })
 
     if (!error) {
-      addPoints(supabase, myId, 200)
+      addPoints(supabase, myId, 100)
       await fetchCompetitions(myId)
       setShowCreateRoundModal(false)
       setRoundTitle('')

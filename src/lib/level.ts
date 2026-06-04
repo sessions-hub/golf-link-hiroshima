@@ -1,9 +1,9 @@
 export const LEVELS = [
   { level: 1, name: 'PUBLIC',   minPt: 0,    color: '#64748b' },
-  { level: 2, name: 'MEMBER',   minPt: 250,  color: '#15803d' },
-  { level: 3, name: 'CLASSIC',  minPt: 500,  color: '#3b82f6' },
-  { level: 4, name: 'CHAMPION', minPt: 2000, color: '#f59e0b' },
-  { level: 5, name: 'LEGEND',   minPt: 5000, color: '#dc2626' },
+  { level: 2, name: 'MEMBER',   minPt: 500,  color: '#15803d' },
+  { level: 3, name: 'CLASSIC',  minPt: 2000, color: '#3b82f6' },
+  { level: 4, name: 'CHAMPION', minPt: 5000, color: '#f59e0b' },
+  { level: 5, name: 'LEGEND',   minPt: 8000, color: '#dc2626' },
 ] as const
 
 export interface LevelInfo {

@@ -84,7 +84,14 @@ export async function POST(request: NextRequest) {
         }, { onConflict: 'user_id' })
 
         if (subError) console.error('Subscription upsert error:', subError)
-        else console.log(`Successfully updated plan to ${plan} for user ${user.id}`)
+        else {
+          console.log(`Successfully updated plan to ${plan} for user ${user.id}`)
+          if (plan === 'premium') {
+            await supabase.rpc('add_user_points', { p_user_id: user.id, p_amount: 50 })
+          } else if (plan === 'executive') {
+            await supabase.rpc('add_user_points', { p_user_id: user.id, p_amount: 100 })
+          }
+        }
         break
       }
 

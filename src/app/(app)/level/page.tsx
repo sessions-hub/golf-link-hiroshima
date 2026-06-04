@@ -80,7 +80,7 @@ const POINT_ACTIONS = [
     ),
   },
   {
-    label: 'マッチング成立（相互お気に入り）',
+    label: 'フレンド成立（相互お気に入り）',
     pt: 20,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -126,16 +126,6 @@ const POINT_ACTIONS = [
     ),
   },
   {
-    label: 'コンペに参加する（一覧から）',
-    pt: 50,
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="17,11 12,6 7,11"/>
-        <line x1="12" y1="6" x2="12" y2="18"/>
-      </svg>
-    ),
-  },
-  {
     label: 'コンペに参加する（詳細ページから）',
     pt: 100,
     icon: (
@@ -151,11 +141,23 @@ const POINT_ACTIONS = [
   },
   {
     label: 'コンペを主催する',
-    pt: 200,
+    pt: 300,
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="8" r="6"/>
         <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+      </svg>
+    ),
+  },
+  {
+    label: 'ラウンド募集を作成する',
+    pt: 100,
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
     ),
   },
