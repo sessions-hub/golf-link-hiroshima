@@ -122,6 +122,7 @@ export default function MatchPage() {
   const [top5Visitors, setTop5Visitors] = useState<{ userId: string; visitCount: number; profile: any }[]>([])
   const [fpCountMap, setFpCountMap] = useState<Map<string, number>>(new Map())
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null)
+  const [showAllFootprints, setShowAllFootprints] = useState(false)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -196,9 +197,10 @@ export default function MatchPage() {
           .eq('target_id', user.id)
         setWeeklyStats({ thisWeek: thisWeekCnt, lastWeek: lastWeekCnt, total: totalFpCount ?? 0 })
 
-        // per-user 訪問カウントマップ
+        // per-user 訪問カウントマップ（自分自身を除外）
         const cntMap = new Map<string, number>()
         for (const f of fpAll ?? []) {
+          if (f.user_id === user.id) continue
           cntMap.set(f.user_id, (cntMap.get(f.user_id) ?? 0) + 1)
         }
         setFpCountMap(cntMap)
@@ -215,8 +217,8 @@ export default function MatchPage() {
           setTop5Visitors(sortedVisitors.map(([userId, visitCount]) => ({ userId, visitCount, profile: pm5.get(userId) ?? null })))
         }
 
-        // 最近の30件リスト（表示用）
-        const fpRaw30 = fpAll?.slice(0, 30) ?? []
+        // 最近の30件リスト（表示用、自分を除外）
+        const fpRaw30 = (fpAll?.filter(f => f.user_id !== user.id) ?? []).slice(0, 30)
         if (fpRaw30.length > 0) {
           const visitorIds = [...new Set(fpRaw30.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
@@ -667,35 +669,42 @@ export default function MatchPage() {
                         <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ足跡がありません</div>
                       </div>
                     )}
-                    {footprints.map((fp: any, i) => {
-                      const p = fp.profiles
-                      if (!p) return null
-                      const visitCount = fpCountMap.get(fp.user_id) ?? 1
-                      const vb = visitCount === 1
-                        ? { text: '初訪問', bg: 'rgba(46,125,85,.12)', color: 'var(--g3)' }
-                        : { text: `${visitCount}回目`, bg: 'rgba(180,83,9,.1)', color: '#b45309' }
+                    {(() => {
+                      const displayed = showAllFootprints ? footprints : footprints.slice(0, 10)
                       return (
-                        <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
-                          <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
-                              <GenderBadge gender={p.gender} size={14} />
-                              <span style={{ fontSize: 10, fontWeight: 700, color: vb.color, background: vb.bg, padding: '2px 7px', borderRadius: 8 }}>{vb.text}</span>
-                            </div>
-                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                              {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
-                              {p.birth_date && p.show_age !== false && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
-                              {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
-                            </div>
-                            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
-                          </div>
-                          <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
-                            {chatLoading === p.user_id ? '...' : '💬'}
-                          </button>
-                        </div>
+                        <>
+                          {displayed.map((fp: any, i) => {
+                            const p = fp.profiles
+                            if (!p) return null
+                            return (
+                              <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
+                                <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                                    <GenderBadge gender={p.gender} size={14} />
+                                  </div>
+                                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                    {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
+                                    {p.birth_date && p.show_age !== false && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
+                                    {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
+                                  </div>
+                                  <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                                  {chatLoading === p.user_id ? '...' : '💬'}
+                                </button>
+                              </div>
+                            )
+                          })}
+                          {footprints.length > 10 && (
+                            <button onClick={() => setShowAllFootprints(!showAllFootprints)} style={{ width: '100%', background: 'white', border: '1px solid var(--line)', borderRadius: 10, padding: '10px', fontSize: 12, color: 'var(--g2)', fontWeight: 600, cursor: 'pointer' }}>
+                              {showAllFootprints ? '閉じる ▲' : `すべて見る（${footprints.length - 10}件） ▼`}
+                            </button>
+                          )}
+                        </>
                       )
-                    })}
+                    })()}
                   </div>
 
                   {/* 4. プロフィール閲覧率 */}
