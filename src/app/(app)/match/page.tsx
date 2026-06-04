@@ -84,6 +84,15 @@ const getHdcpLabel = (handicap: number) => {
 }
 
 
+const getMonday = (d: Date): Date => {
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const mon = new Date(d)
+  mon.setHours(0, 0, 0, 0)
+  mon.setDate(mon.getDate() + diff)
+  return mon
+}
+
 const getPlanBadge = (plan: Plan) => {
   if (plan === 'executive') return { label: 'EXECUTIVE', bg: 'linear-gradient(135deg, #f59e0b, #d97706)', color: 'white' }
   if (plan === 'premium') return { label: 'PREMIUM', bg: 'linear-gradient(135deg, var(--g2), var(--g3))', color: 'white' }
@@ -109,6 +118,10 @@ export default function MatchPage() {
   const [favoritedByIds, setFavoritedByIds] = useState<Set<string>>(new Set())
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set())
   const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set())
+  const [weeklyStats, setWeeklyStats] = useState({ thisWeek: 0, lastWeek: 0, total: 0 })
+  const [top5Visitors, setTop5Visitors] = useState<{ userId: string; visitCount: number; profile: any }[]>([])
+  const [fpCountMap, setFpCountMap] = useState<Map<string, number>>(new Map())
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -125,10 +138,13 @@ export default function MatchPage() {
 
       const { data: me } = await supabase
         .from('profiles')
-        .select('blood_type, birth_date')
+        .select('blood_type, birth_date, avatar_url')
         .eq('user_id', user.id)
         .single()
-      if (me) setMyProfile(me)
+      if (me) {
+        setMyProfile(me)
+        setMyAvatarUrl(me.avatar_url ?? null)
+      }
 
       // マッチング一覧
       const { data, error } = await supabase.rpc('get_matches_with_score', {
@@ -157,21 +173,58 @@ export default function MatchPage() {
       setUserPlan(plan)
 
       if (canSeeInterest(plan)) {
-        // 足跡（自分のページを見た人）— 2ステップで確実に取得
-        const { data: fpRaw } = await supabase
+        // 足跡（30日分を取得して統計・TOP5・最近リストに使い回す）
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        const { data: fpAll } = await supabase
           .from('footprints')
           .select('user_id, created_at')
           .eq('target_id', user.id)
+          .gte('created_at', thirtyDaysAgo.toISOString())
           .order('created_at', { ascending: false })
-          .limit(30)
-        if (fpRaw && fpRaw.length > 0) {
-          const visitorIds = [...new Set(fpRaw.map((f: any) => f.user_id))]
+          .limit(500)
+
+        // 週次統計
+        const thisMonday = getMonday(new Date())
+        const lastMonday = new Date(thisMonday)
+        lastMonday.setDate(lastMonday.getDate() - 7)
+        const thisWeekCnt = fpAll?.filter(f => new Date(f.created_at) >= thisMonday).length ?? 0
+        const lastWeekCnt = fpAll?.filter(f => { const d = new Date(f.created_at); return d >= lastMonday && d < thisMonday }).length ?? 0
+        const { count: totalFpCount } = await supabase
+          .from('footprints')
+          .select('*', { count: 'exact', head: true })
+          .eq('target_id', user.id)
+        setWeeklyStats({ thisWeek: thisWeekCnt, lastWeek: lastWeekCnt, total: totalFpCount ?? 0 })
+
+        // per-user 訪問カウントマップ
+        const cntMap = new Map<string, number>()
+        for (const f of fpAll ?? []) {
+          cntMap.set(f.user_id, (cntMap.get(f.user_id) ?? 0) + 1)
+        }
+        setFpCountMap(cntMap)
+
+        // TOP5（訪問回数順）
+        const sortedVisitors = [...cntMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
+        if (sortedVisitors.length > 0) {
+          const top5Ids = sortedVisitors.map(([id]) => id)
+          const { data: top5Profs } = await supabase
+            .from('profiles')
+            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
+            .in('user_id', top5Ids)
+          const pm5 = new Map(top5Profs?.map((p: any) => [p.user_id, p]) ?? [])
+          setTop5Visitors(sortedVisitors.map(([userId, visitCount]) => ({ userId, visitCount, profile: pm5.get(userId) ?? null })))
+        }
+
+        // 最近の30件リスト（表示用）
+        const fpRaw30 = fpAll?.slice(0, 30) ?? []
+        if (fpRaw30.length > 0) {
+          const visitorIds = [...new Set(fpRaw30.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
             .from('profiles')
             .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
             .in('user_id', visitorIds)
           const pm = new Map(fpProfiles?.map((p: any) => [p.user_id, p]) ?? [])
-          setFootprints(fpRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null })))
+          setFootprints(fpRaw30.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null })))
         }
 
         // お気に入りされた — 2ステップ
@@ -540,44 +593,148 @@ export default function MatchPage() {
 
               {/* 足跡タブ */}
               {interestSubTab === 'footprint' && (
-                <div style={{ padding: '8px 0' }}>
-                  <div style={{ padding: '6px 16px 10px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em' }}>最近あなたのプロフィールを見た人</div>
-                  {footprints.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                      <div style={{ fontSize: 28, marginBottom: 10 }}>👣</div>
-                      <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ足跡がありません</div>
+                <div style={{ padding: '8px 0 20px' }}>
+
+                  {/* 1. 今週の統計バナー */}
+                  <div style={{ margin: '0 16px 16px', background: 'linear-gradient(135deg, var(--g1), var(--g2))', borderRadius: 14, padding: '16px', boxShadow: '0 4px 16px rgba(13,61,43,.2)' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(168,224,99,.7)', letterSpacing: '.12em', marginBottom: 12 }}>今週の足跡統計</div>
+                    <div style={{ display: 'flex' }}>
+                      {([
+                        { label: '今週', value: weeklyStats.thisWeek, isDelta: false },
+                        { label: '先週比', value: weeklyStats.thisWeek - weeklyStats.lastWeek, isDelta: true },
+                        { label: '累計', value: weeklyStats.total, isDelta: false },
+                      ] as { label: string; value: number; isDelta: boolean }[]).map(({ label, value, isDelta }, i) => (
+                        <div key={label} style={{ flex: 1, textAlign: 'center', borderLeft: i > 0 ? '1px solid rgba(255,255,255,.15)' : 'none', paddingLeft: i > 0 ? 8 : 0 }}>
+                          <div style={{ fontSize: 9, color: 'rgba(255,255,255,.55)', letterSpacing: '.1em', marginBottom: 4 }}>{label}</div>
+                          <div style={{ fontFamily: 'Inter', fontSize: 26, fontWeight: 700, color: isDelta ? (value >= 0 ? 'var(--lime)' : '#fca5a5') : 'var(--lime)', lineHeight: 1 }}>
+                            {isDelta && value > 0 ? '+' : ''}{value}
+                          </div>
+                          {isDelta && <div style={{ fontSize: 9, color: value >= 0 ? 'rgba(168,224,99,.6)' : 'rgba(252,165,165,.6)', marginTop: 2 }}>{value >= 0 ? '▲' : '▼'} 先週より</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. よく見られた人 TOP5 */}
+                  {top5Visitors.length > 0 && (
+                    <div style={{ margin: '0 16px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', letterSpacing: '.05em' }}>よく見られた人 TOP5</span>
+                        <span style={{ fontSize: 10, color: 'var(--mute)' }}>過去30日</span>
+                      </div>
+                      {top5Visitors.map(({ userId, visitCount, profile: p }, rank) => {
+                        if (!p) return null
+                        const rankStyles = [
+                          { bg: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#fff' },
+                          { bg: '#9ca3af', color: '#fff' },
+                          { bg: 'linear-gradient(135deg,#cd7f32,#b45309)', color: '#fff' },
+                          { bg: 'var(--surf)', color: 'var(--mute)' },
+                          { bg: 'var(--surf)', color: 'var(--mute)' },
+                        ]
+                        const rs = rankStyles[rank] ?? rankStyles[4]
+                        const vb = visitCount === 1
+                          ? { text: '初訪問', bg: 'rgba(46,125,85,.12)', color: 'var(--g3)' }
+                          : { text: `${visitCount}回目`, bg: 'rgba(180,83,9,.1)', color: '#b45309' }
+                        return (
+                          <div key={userId} onClick={() => router.push(`/user/${userId}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '10px 14px', marginBottom: 8, display: 'flex', gap: 10, alignItems: 'center', boxShadow: '0 1px 4px rgba(13,61,43,.04)', cursor: 'pointer' }}>
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: rs.bg, color: rs.color, fontSize: 11, fontWeight: 700, fontFamily: 'Inter', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{rank + 1}</div>
+                            <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(userId)} size={40} borderRadius={8} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                                <GenderBadge gender={p.gender} size={13} />
+                              </div>
+                              {p.areas?.[0] && <div style={{ fontSize: 10, color: 'var(--mute)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</div>}
+                            </div>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: vb.color, background: vb.bg, padding: '3px 8px', borderRadius: 10, flexShrink: 0 }}>{vb.text}</span>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
-                  {footprints.map((fp: any, i) => {
-                    const p = fp.profiles
-                    if (!p) return null
-                    return (
-                      <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ margin: '0 16px 10px', background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
-                        <FriendAvatar
-                          avatarUrl={p.avatar_url}
-                          nickname={p.nickname}
-                          isFriend={friendIds.has(p.user_id)}
-                          size={46}
-                          borderRadius={10}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
-                            <GenderBadge gender={p.gender} size={14} />
-                          </div>
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                            {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
-                            {p.birth_date && p.show_age !== false && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
-                            {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
-                        </div>
-                        <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
-                          {chatLoading === p.user_id ? '...' : '💬'}
-                        </button>
+
+                  {/* 3. あなたを見た人 */}
+                  <div style={{ margin: '0 16px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', letterSpacing: '.05em' }}>あなたを見た人</span>
+                      <span style={{ fontSize: 10, color: 'var(--mute)' }}>最近の訪問</span>
+                    </div>
+                    {footprints.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '24px 20px', background: 'white', borderRadius: 12, border: '1px solid var(--line)' }}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="1.5" style={{ display: 'block', margin: '0 auto 8px' }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ足跡がありません</div>
                       </div>
-                    )
-                  })}
+                    )}
+                    {footprints.map((fp: any, i) => {
+                      const p = fp.profiles
+                      if (!p) return null
+                      const visitCount = fpCountMap.get(fp.user_id) ?? 1
+                      const vb = visitCount === 1
+                        ? { text: '初訪問', bg: 'rgba(46,125,85,.12)', color: 'var(--g3)' }
+                        : { text: `${visitCount}回目`, bg: 'rgba(180,83,9,.1)', color: '#b45309' }
+                      return (
+                        <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
+                          <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
+                              <GenderBadge gender={p.gender} size={14} />
+                              <span style={{ fontSize: 10, fontWeight: 700, color: vb.color, background: vb.bg, padding: '2px 7px', borderRadius: 8 }}>{vb.text}</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                              {p.blood_type && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{p.blood_type}型</span>}
+                              {p.birth_date && p.show_age !== false && ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{ZODIAC_NAMES_JP[getZodiacSign(p.birth_date)]}</span>}
+                              {p.areas?.[0] && <span style={{ fontSize: 10, color: 'var(--mid)', border: '1px solid var(--line)', borderRadius: 4, padding: '1px 6px', background: 'var(--surf)' }}>{AREA_LABELS[p.areas[0]] ?? p.areas[0]}</span>}
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 4 }}>{timeAgo(fp.created_at)}</div>
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); handleChat(p.user_id) }} disabled={chatLoading === p.user_id} style={{ background: 'var(--g1)', color: 'var(--lime)', border: 'none', borderRadius: 7, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', flexShrink: 0, opacity: chatLoading === p.user_id ? 0.6 : 1 }}>
+                            {chatLoading === p.user_id ? '...' : '💬'}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* 4. プロフィール閲覧率 */}
+                  <div style={{ margin: '0 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', letterSpacing: '.05em' }}>プロフィール閲覧率</span>
+                    </div>
+                    <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px 16px', boxShadow: '0 1px 4px rgba(13,61,43,.04)' }}>
+                      {(() => {
+                        const maxVal = Math.max(weeklyStats.thisWeek, weeklyStats.lastWeek, 1)
+                        return (
+                          <>
+                            {([
+                              { label: '今週', count: weeklyStats.thisWeek, color: 'var(--g2)' },
+                              { label: '先週', count: weeklyStats.lastWeek, color: 'var(--g3)' },
+                            ] as { label: string; count: number; color: string }[]).map(({ label, count, color }) => (
+                              <div key={label} style={{ marginBottom: 12 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                  <span style={{ fontSize: 11, color: 'var(--mid)' }}>{label}</span>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)', fontFamily: 'Inter' }}>{count}件</span>
+                                </div>
+                                <div style={{ height: 8, background: 'var(--surf)', borderRadius: 4, overflow: 'hidden' }}>
+                                  <div style={{ height: '100%', width: `${(count / maxVal) * 100}%`, background: color, borderRadius: 4, transition: 'width .5s ease' }} />
+                                </div>
+                              </div>
+                            ))}
+                            {!myAvatarUrl && (
+                              <div style={{ marginTop: 4, padding: '10px 12px', background: 'rgba(46,125,85,.06)', borderRadius: 8, border: '1px solid rgba(46,125,85,.15)' }}>
+                                <div style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, marginBottom: 2 }}>写真を追加すると閲覧率が上がります</div>
+                                <div style={{ fontSize: 10, color: 'var(--mute)', lineHeight: 1.6 }}>プロフィール写真があるユーザーは閲覧率が高い傾向にあります</div>
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
                 </div>
               )}
 
