@@ -27,10 +27,15 @@ interface Competition {
   created_at: string
 }
 
-function computeEffectiveStatus(comp: Pick<Competition, 'comp_date' | 'entry_deadline'>): 'recruiting' | 'closed' | 'finished' {
+function computeEffectiveStatus(comp: Pick<Competition, 'comp_date' | 'entry_deadline' | 'status'>): 'recruiting' | 'closed' | 'finished' {
   const now = new Date()
   const [y, m, d] = comp.comp_date.split('-').map(Number)
   const compEndOfDay = new Date(y, m - 1, d + 1)
+  if (comp.status === 'recruiting') {
+    if (now >= compEndOfDay) return 'finished'
+    return 'recruiting'
+  }
+  if (comp.status === 'closed' || comp.status === 'full' || comp.status === 'cancelled') return 'closed'
   if (now >= compEndOfDay) return 'finished'
   const deadline = comp.entry_deadline
     ? new Date(comp.entry_deadline)
@@ -231,19 +236,22 @@ export default function CompDetailPage() {
   const [cy, cm, cd] = comp.comp_date.split('-').map(Number)
   const dateStr = new Date(cy, cm - 1, cd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
   const effectiveStatus = computeEffectiveStatus(comp)
-  const statusLabel = comp.status === 'cancelled' ? '中止'
+  const statusLabel = comp.status === 'recruiting' ? (effectiveStatus === 'finished' ? '終了' : '募集中')
+    : comp.status === 'cancelled' ? '中止'
     : comp.status === 'full' ? '満員'
     : comp.status === 'closed' ? '締切'
     : effectiveStatus === 'finished' ? '終了'
     : effectiveStatus === 'closed' ? '締切'
     : '募集中'
-  const heroBadgeBg = comp.status === 'cancelled' ? '#ef4444'
+  const heroBadgeBg = comp.status === 'recruiting' ? (effectiveStatus === 'finished' ? 'rgba(255,255,255,.2)' : 'var(--lime)')
+    : comp.status === 'cancelled' ? '#ef4444'
     : comp.status === 'full' ? '#f97316'
     : comp.status === 'closed' ? 'rgba(255,255,255,.2)'
     : effectiveStatus === 'finished' ? 'rgba(255,255,255,.2)'
     : effectiveStatus === 'closed' ? 'rgba(255,255,255,.2)'
     : 'var(--lime)'
-  const heroBadgeColor = comp.status === 'cancelled' || comp.status === 'full' ? 'white'
+  const heroBadgeColor = comp.status === 'recruiting' ? (effectiveStatus === 'finished' ? 'rgba(255,255,255,.8)' : 'var(--g1)')
+    : comp.status === 'cancelled' || comp.status === 'full' ? 'white'
     : comp.status === 'closed' ? 'rgba(255,255,255,.8)'
     : effectiveStatus === 'finished' ? 'rgba(255,255,255,.8)'
     : effectiveStatus === 'closed' ? 'rgba(255,255,255,.8)'
@@ -506,7 +514,7 @@ export default function CompDetailPage() {
 
         {/* 参加ボタン */}
         <div style={{ padding: '0 16px 10px' }}>
-          {(comp.status !== 'cancelled' && (isOrganizer || (comp.status === 'recruiting' && effectiveStatus === 'recruiting'))) ? (
+          {(comp.status !== 'cancelled' && comp.status !== 'closed' && comp.status !== 'full' && (isOrganizer || effectiveStatus === 'recruiting')) ? (
             <button
               onClick={handleEntryClick}
               disabled={entering}
