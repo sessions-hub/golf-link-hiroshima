@@ -100,8 +100,6 @@ export default function CoursePage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
-  const [attendeesModalCompId, setAttendeesModalCompId] = useState<string | null>(null)
-
   // コンペ作成フォーム
   const [title, setTitle] = useState('')
   const [courseName, setCourseName] = useState('')
@@ -342,52 +340,6 @@ export default function CoursePage() {
     setCreating(false)
   }
 
-  const handleEntryClick = (e: React.MouseEvent, compId: string, isEntered: boolean) => {
-    e.stopPropagation()
-    if (isEntered) {
-      supabase.from('comp_entries').delete()
-        .eq('comp_id', compId).eq('user_id', myId)
-        .then(() => fetchCompetitions(myId))
-    } else {
-      setAttendeesModalCompId(compId)
-    }
-  }
-
-  const handleEnterWithAttendees = async (compId: string, attendeesCount: number) => {
-    if (!myId) return
-    setAttendeesModalCompId(null)
-    await supabase.from('comp_entries').insert({
-      comp_id: compId,
-      user_id: myId,
-      status: 'confirmed',
-      attendees_count: attendeesCount,
-    })
-    addPoints(supabase, myId, 50)
-    const comp = competitions.find(c => c.id === compId)
-    if (comp?.organizer_id) {
-      const isRound = comp.type === 'round'
-      await fetch('/api/push/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: comp.organizer_id,
-          title: isRound ? 'GLH. ラウンド募集に参加者が来ました！' : 'GLH. コンペに参加者が来ました！',
-          body: `${comp.title}に新しい参加者が申し込みました`,
-          url: '/course',
-        }),
-      })
-      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-entry`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ compId, applicantId: myId }),
-      })
-    }
-    await fetchCompetitions(myId)
-  }
-
   const filteredCompetitions = competitions.filter(c => {
     if (compTypeFilter === 'comp') return c.type === 'comp'
     if (compTypeFilter === 'round') return c.type === 'round'
@@ -505,14 +457,6 @@ export default function CoursePage() {
               {(c as any).image_url && c.type === 'comp' && (
                 <img src={(c as any).image_url} alt="コンペ画像" style={{ width: '100%', borderRadius: 8, marginBottom: 10, maxHeight: 200, objectFit: 'cover' }} />
               )}
-              {computeEffectiveStatus(c) === 'recruiting' && c.organizer_id !== myId && (
-                <button
-                  onClick={(e) => handleEntryClick(e, c.id, c.is_entered ?? false)}
-                  style={{ width: '100%', background: c.is_entered ? 'var(--surf)' : 'var(--g1)', color: c.is_entered ? 'var(--mute)' : 'white', border: c.is_entered ? '1px solid var(--line)' : 'none', borderRadius: 8, padding: '10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  {c.is_entered ? '参加キャンセル' : '参加申し込み'}
-                </button>
-              )}
-
               {c.organizer_id === myId && (
                 <div style={{ fontSize: 11, color: 'var(--mute)', textAlign: 'center', marginTop: 4 }}>あなたが主催する{c.type === 'round' ? 'ラウンド募集' : 'コンペ'}です</div>
               )}
@@ -766,30 +710,6 @@ export default function CoursePage() {
             </button>
           </div>
         </div>
-      )}
-
-      {attendeesModalCompId && (
-        <>
-          <div onClick={() => setAttendeesModalCompId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 200 }} />
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '16px 16px 0 0', padding: '24px 20px calc(env(safe-area-inset-bottom) + 24px)', zIndex: 201 }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 20, textAlign: 'center' }}>参加人数を選択</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-              {[1, 2, 3, 4].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => handleEnterWithAttendees(attendeesModalCompId, n)}
-                  style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '18px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  {n}人
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setAttendeesModalCompId(null)}
-              style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '13px', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: 'var(--txt)' }}
-            >キャンセル</button>
-          </div>
-        </>
       )}
 
       {showUpgradeModal && (

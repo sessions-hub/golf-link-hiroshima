@@ -190,6 +190,9 @@ export default function CompDetailPage() {
     if (!myId || !comp) return
     setShowCancelConfirm(false)
     setEntering(true)
+    const cancelledCount = rawEntriesData.find(e => e.user_id === myId)?.attendees_count ?? 1
+    const currentTotal = rawEntriesData.reduce((sum, e) => sum + (e.attendees_count ?? 1), 0)
+    const newTotal = currentTotal - cancelledCount
     await supabase.from('comp_entries').delete().eq('comp_id', comp.id).eq('user_id', myId)
     setIsEntered(false)
     setRawEntriesData(prev => prev.filter(e => e.user_id !== myId))
@@ -202,6 +205,10 @@ export default function CompDetailPage() {
       },
       body: JSON.stringify({ compId: comp.id, applicantId: myId }),
     })
+    if ((comp.status === 'closed' || comp.status === 'full') && newTotal < comp.max_players) {
+      await supabase.from('competitions').update({ status: 'recruiting' }).eq('id', comp.id)
+      setComp(prev => prev ? { ...prev, status: 'recruiting' } : prev)
+    }
     setEntering(false)
   }
 

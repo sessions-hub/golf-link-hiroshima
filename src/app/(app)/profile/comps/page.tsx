@@ -74,6 +74,7 @@ export default function CompsPage() {
   const handleCancelConfirm = async () => {
     if (!cancelTargetId) return
     setCancelling(true)
+    const cancelledComp = entries.find(en => en.comp_id === cancelTargetId)?.competitions
     await supabase.from('comp_entries').delete().eq('comp_id', cancelTargetId).eq('user_id', myId)
     fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-cancel`, {
       method: 'POST',
@@ -83,6 +84,16 @@ export default function CompsPage() {
       },
       body: JSON.stringify({ compId: cancelTargetId, applicantId: myId }),
     })
+    if (cancelledComp && (cancelledComp.status === 'closed' || cancelledComp.status === 'full')) {
+      const { data: remainingEntries } = await supabase
+        .from('comp_entries')
+        .select('attendees_count')
+        .eq('comp_id', cancelTargetId)
+      const newTotal = (remainingEntries ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0)
+      if (newTotal < cancelledComp.max_players) {
+        await supabase.from('competitions').update({ status: 'recruiting' }).eq('id', cancelTargetId)
+      }
+    }
     setEntries(prev => prev.filter(en => en.comp_id !== cancelTargetId))
     setCancelTargetId(null)
     setCancelling(false)
