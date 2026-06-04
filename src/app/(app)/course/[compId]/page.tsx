@@ -101,24 +101,30 @@ export default function CompDetailPage() {
 
       const totalAttendeesCount = (entriesData ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0)
 
-      const shouldAutoClose =
-        compData.entry_deadline && new Date(compData.entry_deadline) < new Date()
+      const isDeadlinePassed = !!(compData.entry_deadline && new Date(compData.entry_deadline) < new Date())
+      const isFull = totalAttendeesCount >= compData.max_players
 
-      if (shouldAutoClose && compData.status === 'recruiting') {
-        const reason = (compData.entry_deadline && new Date(compData.entry_deadline) < new Date()) ? 'deadline' : 'full'
-        await supabase.from('competitions').update({ status: 'closed' }).eq('id', compId)
-        setComp({ ...compData, status: 'closed' })
-        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ compId, reason }),
-        })
-      } else {
-        setComp(compData)
+      let updatedStatus = compData.status
+      if (compData.status === 'recruiting') {
+        if (isDeadlinePassed) {
+          await supabase.from('competitions').update({ status: 'closed' }).eq('id', compId)
+          updatedStatus = 'closed'
+          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ compId, reason: 'deadline' }),
+          })
+        } else if (isFull) {
+          await supabase.from('competitions').update({ status: 'full' }).eq('id', compId)
+          updatedStatus = 'full'
+          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ compId, reason: 'full' }),
+          })
+        }
       }
+      setComp({ ...compData, status: updatedStatus })
 
       if (orgData) setOrganizer(orgData)
       if (entriesData) {
