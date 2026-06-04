@@ -92,7 +92,7 @@ serve(async (req) => {
               参加者とのグループチャットが自動的に作成されました。<br>アプリからグループチャットを開いて参加者へのご連絡にお役立てください。
             </p>
             <a
-              href="https://golflink-hiroshima.com/course/${compId}"
+              href="https://golflink-hiroshima.com/comp/${compId}/chat"
               style="display:inline-block;background:#3b6b2e;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;margin-bottom:28px"
             >
               グループチャットを開く

@@ -185,11 +185,25 @@ export default function CoursePage() {
     ])
     if (data) {
       const enteredSet = new Set(myEntries?.map((e: any) => e.comp_id) ?? [])
-      setCompetitions(data.map((c: any) => ({
+      const mapped = data.map((c: any) => ({
         ...c,
         entries_count: (c.comp_entries ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0),
         is_entered: enteredSet.has(c.id),
-      })))
+      }))
+      const getOrder = (c: any) => {
+        if (c.status === 'cancelled') return 4
+        if (new Date(c.comp_date) < new Date() || c.status === 'finished') return 3
+        if (c.status === 'closed') return 2
+        if (c.status === 'full') return 1
+        return 0
+      }
+      mapped.sort((a: any, b: any) => {
+        const oa = getOrder(a), ob = getOrder(b)
+        if (oa !== ob) return oa - ob
+        if (oa >= 3) return new Date(b.comp_date).getTime() - new Date(a.comp_date).getTime()
+        return new Date(a.comp_date).getTime() - new Date(b.comp_date).getTime()
+      })
+      setCompetitions(mapped)
     }
   }
 
