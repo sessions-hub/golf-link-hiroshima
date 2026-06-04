@@ -102,8 +102,7 @@ export default function CompDetailPage() {
       const totalAttendeesCount = (entriesData ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0)
 
       const shouldAutoClose =
-        (compData.entry_deadline && new Date(compData.entry_deadline) < new Date()) ||
-        (totalAttendeesCount >= compData.max_players)
+        compData.entry_deadline && new Date(compData.entry_deadline) < new Date()
 
       if (shouldAutoClose && compData.status === 'recruiting') {
         const reason = (compData.entry_deadline && new Date(compData.entry_deadline) < new Date()) ? 'deadline' : 'full'
