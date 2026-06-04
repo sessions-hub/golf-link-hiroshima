@@ -107,21 +107,35 @@ export default function CompDetailPage() {
       let updatedStatus = compData.status
       if (compData.status === 'recruiting') {
         if (isDeadlinePassed) {
-          await supabase.from('competitions').update({ status: 'closed' }).eq('id', compId)
+          const { data: updated } = await supabase
+            .from('competitions')
+            .update({ status: 'closed' })
+            .eq('id', compId)
+            .eq('status', 'recruiting')
+            .select('id')
           updatedStatus = 'closed'
-          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ compId, reason: 'deadline' }),
-          })
+          if (updated?.length === 1) {
+            fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
+              body: JSON.stringify({ compId, reason: 'deadline' }),
+            })
+          }
         } else if (isFull) {
-          await supabase.from('competitions').update({ status: 'full' }).eq('id', compId)
+          const { data: updated } = await supabase
+            .from('competitions')
+            .update({ status: 'full' })
+            .eq('id', compId)
+            .eq('status', 'recruiting')
+            .select('id')
           updatedStatus = 'full'
-          fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ compId, reason: 'full' }),
-          })
+          if (updated?.length === 1) {
+            fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}` },
+              body: JSON.stringify({ compId, reason: 'full' }),
+            })
+          }
         }
       }
       setComp({ ...compData, status: updatedStatus })
