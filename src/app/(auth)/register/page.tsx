@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -26,6 +26,11 @@ const STEP_LABELS = ['基本情報', 'ゴルフ情報', 'エリア設定']
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref')
+    if (ref) sessionStorage.setItem('ref_source', ref)
+  }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -97,6 +102,7 @@ export default function RegisterPage() {
           avatarUrl = urlData.publicUrl
         }
       }
+      const refSource = sessionStorage.getItem('ref_source')
       await supabase.from('profiles').update({
         nickname: nickname || `${lastName}${firstName}`,
         birth_date: birthDate || '1990-01-01',
@@ -106,7 +112,9 @@ export default function RegisterPage() {
         preferred_days: days,
         gender,
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
+        ...(refSource ? { ref_source: refSource } : {}),
       }).eq('user_id', data.user.id)
+      if (refSource) sessionStorage.removeItem('ref_source')
     }
 
     router.push('/home')
