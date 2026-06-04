@@ -29,7 +29,7 @@ const PLANS = [
     priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID ?? '',
     features: [
       'PREMIUMの全機能',
-      'メンバーズカード',
+      'メンバーズカード＆特典',
     ],
     recommended: false,
     secret: true,
@@ -178,7 +178,7 @@ export default function SubscriptionPage() {
               <div style={{ background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: 'var(--mute)' }}>現在のプラン</div>
             )}
           </div>
-          {['基本プロフィール・マッチング', 'チャット・投稿・いいね・コメント', 'GPS計測・スコア記録', 'コース検索・予約', 'コンペ参加'].map((f) => (
+          {['基本プロフィール・ゴルファー検索', 'SNS投稿・いいね・コメント', '個別チャット・グループチャット', 'スコア記録・GPS距離計測', 'コース検索・予約', 'コンペ参加・ラウンド参加'].map((f) => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="3"><polyline points="20,6 9,17 4,12"/></svg>
@@ -254,7 +254,7 @@ export default function SubscriptionPage() {
                   </button>
                 ) : (
                   <div style={{ width: '100%', background: 'rgba(200,150,42,.08)', border: '1px solid rgba(200,150,42,.25)', borderRadius: 8, padding: '12px 14px', textAlign: 'center', lineHeight: 1.7 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#f0c060' }}>招待・審査制</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#f0c060' }}>招待制</div>
                     <div style={{ fontSize: 11, color: 'rgba(240,192,96,.65)' }}>申し込みには条件があります</div>
                   </div>
                 )
