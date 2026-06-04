@@ -12,10 +12,10 @@ serve(async (req) => {
   }
 
   try {
-    const { compId, applicantId } = await req.json()
+    const { compId, reason } = await req.json()
 
-    if (!compId || !applicantId) {
-      return new Response(JSON.stringify({ error: 'compId and applicantId are required' }), {
+    if (!compId || !reason) {
+      return new Response(JSON.stringify({ error: 'compId and reason are required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -26,10 +26,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // コンペ情報と主催者IDを取得
     const { data: comp, error: compError } = await supabase
       .from('competitions')
-      .select('title, organizer_id, type')
+      .select('title, organizer_id, type, entry_deadline, max_players')
       .eq('id', compId)
       .single()
 
@@ -40,16 +39,6 @@ serve(async (req) => {
       })
     }
 
-    // 応募者のニックネームを取得
-    const { data: applicant } = await supabase
-      .from('profiles')
-      .select('nickname')
-      .eq('user_id', applicantId)
-      .single()
-
-    const applicantName = applicant?.nickname ?? '参加者'
-
-    // 主催者のメールアドレスをauth.usersから取得
     const { data: { user: organizer }, error: orgError } = await supabase.auth.admin.getUserById(comp.organizer_id)
 
     if (orgError || !organizer?.email) {
@@ -67,17 +56,22 @@ serve(async (req) => {
       })
     }
 
-    const isRound = comp.type === 'round'
-    const emailSubject = isRound
-      ? `【GLH.】${applicantName}さんが${comp.title}に応募しました`
-      : `【GLH.】${applicantName}さんが${comp.title}に応募しました`
-    const emailHeading = isRound ? 'ラウンド募集への応募通知' : 'コンペへの応募通知'
-    const emailBody = isRound
-      ? `<strong>${applicantName}</strong>さんが<strong>「${comp.title}」</strong>への参加を希望しています。`
-      : `<strong>${applicantName}</strong>さんが<strong>「${comp.title}」</strong>に応募しました。`
-    const emailButtonLabel = isRound ? 'ラウンド募集の詳細を確認する' : 'コンペ詳細を確認する'
+    const isDeadline = reason === 'deadline'
 
-    // Resend でメール送信
+    const deadlineStr = comp.entry_deadline
+      ? new Date(comp.entry_deadline).toLocaleString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : ''
+
+    const emailSubject = isDeadline
+      ? `【GLH.】${comp.title}の募集が締め切られました`
+      : `【GLH.】${comp.title}が満員になりました`
+
+    const emailHeading = isDeadline ? '募集締切のお知らせ' : '満員のお知らせ'
+
+    const emailBody = isDeadline
+      ? `募集締切日時（${deadlineStr}）を過ぎたため、自動的に締め切られました。`
+      : `募集定員（${comp.max_players}名）に達したため、自動的に締め切られました。`
+
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -92,14 +86,8 @@ serve(async (req) => {
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1a1a1a">
             <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">${emailHeading}</h2>
             <p style="font-size:15px;line-height:1.7;margin-bottom:24px">
-              ${emailBody}
+              <strong>「${comp.title}」</strong>は、${emailBody}
             </p>
-            <a
-              href="https://golflink-hiroshima.com/course/${compId}"
-              style="display:inline-block;background:#3b6b2e;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700"
-            >
-              ${emailButtonLabel}
-            </a>
             <p style="font-size:12px;color:#888;margin-top:32px">
               このメールはGLH.（ゴルフリンク広島）から自動送信されています。
             </p>

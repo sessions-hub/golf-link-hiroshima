@@ -84,7 +84,6 @@ export default function CompDetailPage() {
         .single()
 
       if (!compData) { router.push('/course'); return }
-      setComp(compData)
 
       const [{ data: orgData }, { data: entriesData }, { data: myEntry }] = await Promise.all([
         supabase.from('profiles').select('user_id, nickname, avatar_url, handicap, gender')
@@ -94,6 +93,28 @@ export default function CompDetailPage() {
         supabase.from('comp_entries').select('comp_id')
           .eq('comp_id', compId).eq('user_id', user.id).maybeSingle(),
       ])
+
+      const totalAttendeesCount = (entriesData ?? []).reduce((sum: number, e: any) => sum + (e.attendees_count ?? 1), 0)
+
+      const shouldAutoClose =
+        (compData.entry_deadline && new Date(compData.entry_deadline) < new Date()) ||
+        (totalAttendeesCount >= compData.max_players)
+
+      if (shouldAutoClose && compData.status === 'recruiting') {
+        const reason = (compData.entry_deadline && new Date(compData.entry_deadline) < new Date()) ? 'deadline' : 'full'
+        await supabase.from('competitions').update({ status: 'closed' }).eq('id', compId)
+        setComp({ ...compData, status: 'closed' })
+        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-competition-closed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ compId, reason }),
+        })
+      } else {
+        setComp(compData)
+      }
 
       if (orgData) setOrganizer(orgData)
       if (entriesData) {
