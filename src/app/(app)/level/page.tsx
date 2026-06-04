@@ -212,7 +212,7 @@ export default function LevelPage() {
   const lv = getLevelInfo(totalPts)
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--off)', paddingBottom: 90 }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 90 }}>
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--line)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
