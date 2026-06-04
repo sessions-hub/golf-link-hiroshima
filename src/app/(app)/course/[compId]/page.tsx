@@ -542,8 +542,9 @@ export default function CompDetailPage() {
               {[1, 2, 3, 4].map((n) => (
                 <button
                   key={n}
+                  disabled={n > remaining}
                   onClick={() => handleEnterWithAttendees(n)}
-                  style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '18px 0', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                  style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '18px 0', fontSize: 15, fontWeight: 700, cursor: n > remaining ? 'not-allowed' : 'pointer', opacity: n > remaining ? 0.3 : 1 }}
                 >
                   {n}人
                 </button>

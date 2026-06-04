@@ -43,10 +43,15 @@ interface Competition {
   is_entered?: boolean
 }
 
-function computeEffectiveStatus(comp: Pick<Competition, 'comp_date' | 'entry_deadline'>): 'recruiting' | 'closed' | 'finished' {
+function computeEffectiveStatus(comp: { comp_date: string; entry_deadline?: string | null; status: string }): 'recruiting' | 'closed' | 'finished' {
   const now = new Date()
   const [y, m, d] = comp.comp_date.split('-').map(Number)
   const compEndOfDay = new Date(y, m - 1, d + 1)
+  if (comp.status === 'recruiting') {
+    if (now >= compEndOfDay) return 'finished'
+    return 'recruiting'
+  }
+  if (comp.status === 'closed' || comp.status === 'full' || comp.status === 'cancelled') return 'closed'
   if (now >= compEndOfDay) return 'finished'
   const deadline = comp.entry_deadline
     ? new Date(comp.entry_deadline)
@@ -426,6 +431,7 @@ export default function CoursePage() {
                       const label = c.status === 'cancelled' ? '中止'
                         : c.status === 'full' ? '満員'
                         : c.status === 'closed' ? '締切'
+                        : c.status === 'recruiting' ? (eff === 'finished' ? '終了' : '募集中')
                         : eff === 'finished' ? '終了'
                         : eff === 'closed' ? '締切'
                         : '募集中'
