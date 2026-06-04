@@ -30,7 +30,7 @@ interface ChatRoom {
 interface Profile { user_id: string; nickname: string; avatar_url: string | null; gender?: string | null }
 
 type GroupItem =
-  | { type: 'comp'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number }
+  | { type: 'comp'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number; compType: string }
   | { type: 'friend'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number; memberProfiles: Profile[] }
 
 const MiniAvatar = ({ p, size, style }: { p: Profile; size: number; style?: React.CSSProperties }) => (
@@ -146,16 +146,16 @@ export default function ChatListPage() {
 
     // コンペグループ取得
     const [{ data: orgComps }, { data: entries }] = await Promise.all([
-      supabase.from('competitions').select('id, title').eq('organizer_id', userId),
+      supabase.from('competitions').select('id, title, type').eq('organizer_id', userId),
       supabase.from('comp_entries').select('comp_id').eq('user_id', userId),
     ])
-    const compMap = new Map<string, string>()
-    orgComps?.forEach(c => compMap.set(c.id, c.title))
+    const compMap = new Map<string, { title: string; compType: string }>()
+    orgComps?.forEach(c => compMap.set(c.id, { title: c.title, compType: c.type ?? 'comp' }))
     if (entries && entries.length > 0) {
       const enteredIds = entries.map(e => e.comp_id).filter(id => !compMap.has(id))
       if (enteredIds.length > 0) {
-        const { data: enteredComps } = await supabase.from('competitions').select('id, title').in('id', enteredIds)
-        enteredComps?.forEach(c => compMap.set(c.id, c.title))
+        const { data: enteredComps } = await supabase.from('competitions').select('id, title, type').in('id', enteredIds)
+        enteredComps?.forEach(c => compMap.set(c.id, { title: c.title, compType: c.type ?? 'comp' }))
       }
     }
 
@@ -172,7 +172,7 @@ export default function ChatListPage() {
     }
 
     // 最終メッセージ + 未読を並列取得
-    const compPromises = Array.from(compMap.entries()).map(async ([compId, name]) => {
+    const compPromises = Array.from(compMap.entries()).map(async ([compId, { title: name, compType }]) => {
       const { data: lastMsg } = await supabase
         .from('comp_group_messages')
         .select('content, image_url, created_at')
@@ -192,7 +192,7 @@ export default function ChatListPage() {
         unread = count ?? 0
       }
       return {
-        type: 'comp' as const, id: compId, name,
+        type: 'comp' as const, id: compId, name, compType,
         lastMessage: lastMsg ? (lastMsg.image_url ? '📷 画像' : lastMsg.content) : null,
         lastMessageAt: lastMsg?.created_at ?? null,
         unread,
@@ -444,7 +444,11 @@ export default function ChatListPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ fontSize: 14, fontWeight: g.unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>{g.name}</div>
-                      {g.type === 'comp' && <span style={{ fontSize: 9, background: 'var(--g1)', color: 'white', padding: '1px 5px', borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>コンペ</span>}
+                      {g.type === 'comp' && (
+                        g.compType === 'round'
+                          ? <span style={{ fontSize: 9, background: 'rgba(22,163,74,.12)', color: '#16a34a', border: '1px solid rgba(22,163,74,.3)', padding: '1px 5px', borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>⛳ ラウンド</span>
+                          : <span style={{ fontSize: 9, background: 'rgba(245,158,11,.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,.3)', padding: '1px 5px', borderRadius: 4, fontWeight: 700, flexShrink: 0 }}>🏆 コンペ</span>
+                      )}
                     </div>
                     {g.lastMessageAt && <div style={{ fontSize: 11, color: 'var(--mute)', flexShrink: 0 }}>{formatTime(g.lastMessageAt)}</div>}
                   </div>

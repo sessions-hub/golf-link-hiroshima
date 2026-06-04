@@ -85,10 +85,19 @@ serve(async (req) => {
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1a1a1a">
             <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">${emailHeading}</h2>
-            <p style="font-size:15px;line-height:1.7;margin-bottom:24px">
+            <p style="font-size:15px;line-height:1.7;margin-bottom:20px">
               <strong>「${comp.title}」</strong>は、${emailBody}
             </p>
-            <p style="font-size:12px;color:#888;margin-top:32px">
+            <p style="font-size:14px;line-height:1.7;margin-bottom:20px;color:#333">
+              参加者とのグループチャットが自動的に作成されました。<br>アプリからグループチャットを開いて参加者へのご連絡にお役立てください。
+            </p>
+            <a
+              href="https://golflink-hiroshima.com/course/${compId}"
+              style="display:inline-block;background:#3b6b2e;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;margin-bottom:28px"
+            >
+              グループチャットを開く
+            </a>
+            <p style="font-size:12px;color:#888;margin-top:8px">
               このメールはGLH.（ゴルフリンク広島）から自動送信されています。
             </p>
           </div>

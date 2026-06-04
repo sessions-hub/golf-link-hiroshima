@@ -224,18 +224,23 @@ export default function CompDetailPage() {
   const [cy, cm, cd] = comp.comp_date.split('-').map(Number)
   const dateStr = new Date(cy, cm - 1, cd).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
   const effectiveStatus = computeEffectiveStatus(comp)
-  const statusLabel = comp.status === 'full' ? '満員'
-    : comp.status === 'cancelled' ? '中止'
-    : effectiveStatus === 'recruiting' ? '募集中'
+  const statusLabel = comp.status === 'cancelled' ? '中止'
+    : comp.status === 'full' ? '満員'
+    : comp.status === 'closed' ? '締切'
+    : effectiveStatus === 'finished' ? '終了'
     : effectiveStatus === 'closed' ? '締切'
-    : '終了'
-  const heroBadgeBg = comp.status === 'full' ? '#f97316'
-    : comp.status === 'cancelled' ? '#ef4444'
-    : effectiveStatus === 'recruiting' ? 'var(--lime)'
-    : 'rgba(255,255,255,.2)'
-  const heroBadgeColor = comp.status === 'full' || comp.status === 'cancelled' ? 'white'
-    : effectiveStatus === 'recruiting' ? 'var(--g1)'
-    : 'rgba(255,255,255,.8)'
+    : '募集中'
+  const heroBadgeBg = comp.status === 'cancelled' ? '#ef4444'
+    : comp.status === 'full' ? '#f97316'
+    : comp.status === 'closed' ? 'rgba(255,255,255,.2)'
+    : effectiveStatus === 'finished' ? 'rgba(255,255,255,.2)'
+    : effectiveStatus === 'closed' ? 'rgba(255,255,255,.2)'
+    : 'var(--lime)'
+  const heroBadgeColor = comp.status === 'cancelled' || comp.status === 'full' ? 'white'
+    : comp.status === 'closed' ? 'rgba(255,255,255,.8)'
+    : effectiveStatus === 'finished' ? 'rgba(255,255,255,.8)'
+    : effectiveStatus === 'closed' ? 'rgba(255,255,255,.8)'
+    : 'var(--g1)'
   const deadlineDate = comp.entry_deadline
     ? new Date(comp.entry_deadline)
     : new Date(cy, cm - 1, cd - 1, 23, 59, 0)
@@ -453,7 +458,13 @@ export default function CompDetailPage() {
           >
             <span style={{ fontSize: 22 }}>💬</span>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>参加者グループチャット</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>参加者グループチャット</div>
+                {isRound
+                  ? <span style={{ background: 'rgba(22,163,74,.35)', color: 'white', border: '1px solid rgba(255,255,255,.4)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>⛳ ラウンド</span>
+                  : <span style={{ background: 'rgba(245,158,11,.35)', color: 'white', border: '1px solid rgba(255,255,255,.4)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>🏆 コンペ</span>
+                }
+              </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>参加者・主催者と連絡を取り合えます</div>
             </div>
             {unreadCount > 0 && (

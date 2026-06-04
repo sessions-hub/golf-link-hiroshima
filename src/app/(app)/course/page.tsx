@@ -457,9 +457,23 @@ export default function CoursePage() {
                     {c.organizer_id === myId && <span style={{ background: 'var(--lime)', color: 'var(--g1)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>主催</span>}
                     {(() => {
                       const eff = computeEffectiveStatus(c)
+                      const label = c.status === 'cancelled' ? '中止'
+                        : c.status === 'full' ? '満員'
+                        : c.status === 'closed' ? '締切'
+                        : eff === 'finished' ? '終了'
+                        : eff === 'closed' ? '締切'
+                        : '募集中'
+                      const isRecruiting = label === '募集中'
+                      const isCancelled = label === '中止'
+                      const isFull = label === '満員'
                       return (
-                        <span style={{ background: eff === 'recruiting' ? 'var(--lime)' : 'var(--surf)', color: eff === 'recruiting' ? 'var(--g1)' : 'var(--mute)', padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700, border: eff !== 'recruiting' ? '1px solid var(--line)' : 'none' }}>
-                          {eff === 'recruiting' ? '募集中' : eff === 'closed' ? '締切' : '終了'}
+                        <span style={{
+                          background: isRecruiting ? 'var(--lime)' : isCancelled ? '#ef4444' : isFull ? '#f97316' : 'var(--surf)',
+                          color: isRecruiting ? 'var(--g1)' : (isCancelled || isFull) ? 'white' : 'var(--mute)',
+                          padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 700,
+                          border: !isRecruiting && !isCancelled && !isFull ? '1px solid var(--line)' : 'none',
+                        }}>
+                          {label}
                         </span>
                       )
                     })()}
