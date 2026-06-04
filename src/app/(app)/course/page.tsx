@@ -60,6 +60,17 @@ function computeEffectiveStatus(comp: { comp_date: string; entry_deadline?: stri
   return 'recruiting'
 }
 
+const getDisplayStatus = (c: Competition): 'cancelled' | 'full' | 'closed' | 'finished' | 'recruiting' => {
+  if (c.status === 'cancelled') return 'cancelled'
+  if (c.status === 'full') return 'full'
+  if (c.status === 'closed') return 'closed'
+  if ((c.entries_count ?? 0) >= c.max_players) return 'full'
+  const eff = computeEffectiveStatus(c)
+  if (eff === 'finished') return 'finished'
+  if (eff === 'closed') return 'closed'
+  return 'recruiting'
+}
+
 const COURSE_FILTERS = ['広島県', '山口県', '岡山県', '島根県']
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -427,13 +438,11 @@ export default function CoursePage() {
                     <TypeTag type={c.type} />
                     {c.organizer_id === myId && <span style={{ background: 'var(--lime)', color: 'var(--g1)', padding: '1px 6px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>主催</span>}
                     {(() => {
-                      const eff = computeEffectiveStatus(c)
-                      const label = c.status === 'cancelled' ? '中止'
-                        : c.status === 'full' ? '満員'
-                        : c.status === 'closed' ? '締切'
-                        : c.status === 'recruiting' ? (eff === 'finished' ? '終了' : '募集中')
-                        : eff === 'finished' ? '終了'
-                        : eff === 'closed' ? '締切'
+                      const ds = getDisplayStatus(c)
+                      const label = ds === 'cancelled' ? '中止'
+                        : ds === 'full' ? '満員'
+                        : ds === 'closed' ? '締切'
+                        : ds === 'finished' ? '終了'
                         : '募集中'
                       const isRecruiting = label === '募集中'
                       const isCancelled = label === '中止'
