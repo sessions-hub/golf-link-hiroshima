@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 const SECTIONS = [
   {
     title: '第1条（適用）',
-    content: `本利用規約（以下「本規約」）は、Golf Link Hiroshima 運営事務局（以下「当社」）が提供するサービス「GLH.」（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは本規約に同意の上、本サービスをご利用ください。本サービスを利用した時点で、本規約に同意したものとみなします。`,
+    content: `本利用規約（以下「本規約」）は、Golf Link Hiroshima（以下「当社」）が提供するサービス「GLH.」（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは本規約に同意の上、本サービスをご利用ください。本サービスを利用した時点で、本規約に同意したものとみなします。`,
   },
   {
     title: '第2条（定義）',
@@ -26,7 +26,7 @@ const SECTIONS = [
     content: `1. ユーザーは自己の責任においてIDおよびパスワードを管理してください。
 2. アカウントの貸与・譲渡・売買を禁止します。
 3. アカウント情報の不正利用による損害について、当社は一切の責任を負いません。
-4. 不正利用が疑われる場合は、速やかに info@golflink-hiroshima.com までご連絡ください。`,
+4. 不正利用が疑われる場合は、速やかに info@sessions-inc.jp までご連絡ください。`,
   },
   {
     title: '第5条（禁止事項）',
@@ -133,15 +133,15 @@ export default function TermsPage() {
 
         <div style={{ marginTop: 32, lineHeight: 2 }}>
           <p style={{ color: 'var(--mute)', fontSize: 11, marginBottom: 4 }}>
-            Golf Link Hiroshima / Tomoharu Sawada{'\n'}
+            Golf Link Hiroshima{'\n'}
             https://golflink-hiroshima.com
           </p>
           <p style={{ color: 'var(--mute)', fontSize: 11, marginBottom: 4 }}>お問い合わせ</p>
           <a
-            href="mailto:info@golflink-hiroshima.com"
+            href="mailto:info@sessions-inc.jp"
             style={{ fontSize: 13, fontWeight: 700, color: 'var(--g2)', textDecoration: 'none', wordBreak: 'break-all' }}
           >
-            info@golflink-hiroshima.com
+            info@sessions-inc.jp
           </a>
         </div>
       </div>

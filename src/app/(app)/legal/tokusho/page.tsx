@@ -7,10 +7,6 @@ const ITEMS = [
     value: 'Golf Link Hiroshima',
   },
   {
-    label: '運営責任者',
-    value: 'Tomoharu Sawada',
-  },
-  {
     label: '所在地',
     value: 'Hiroshima City, Hiroshima Prefecture, Japan\n（詳細はメールにてお問い合わせください）',
   },
@@ -20,7 +16,7 @@ const ITEMS = [
   },
   {
     label: 'メールアドレス',
-    value: 'info@golflink-hiroshima.com\n受付時間：平日10:00〜18:00（土日祝・年末年始を除く）',
+    value: 'info@sessions-inc.jp\n受付時間：平日10:00〜18:00（土日祝・年末年始を除く）',
   },
   {
     label: 'ウェブサイト',
@@ -97,10 +93,10 @@ export default function TokushoPage() {
             ご不明な点はお気軽にお問い合わせください。
           </div>
           <a
-            href="mailto:info@golflink-hiroshima.com"
+            href="mailto:info@sessions-inc.jp"
             style={{ display: 'block', marginTop: 4, fontSize: 13, fontWeight: 700, color: 'var(--g2)', textDecoration: 'none', wordBreak: 'break-all' }}
           >
-            info@golflink-hiroshima.com
+            info@sessions-inc.jp
           </a>
         </div>
       </div>

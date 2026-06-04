@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 const SECTIONS = [
   {
     title: '第1条（事業者情報）',
-    content: `Golf Link Hiroshima（運営責任者：Tomoharu Sawada、以下「当社」）は、ユーザーの個人情報を適切に保護することを重要な責務と考え、個人情報の保護に関する法律（個人情報保護法）および関連法令を遵守します。\n\nウェブサイト：https://golflink-hiroshima.com`,
+    content: `Golf Link Hiroshima（以下「当社」）は、ユーザーの個人情報を適切に保護することを重要な責務と考え、個人情報の保護に関する法律（個人情報保護法）および関連法令を遵守します。\n\nウェブサイト：https://golflink-hiroshima.com`,
   },
   {
     title: '第2条（取得する個人情報）',
@@ -110,7 +110,6 @@ const SECTIONS = [
     content: `個人情報の取扱いに関するご質問・ご相談は下記までお問い合わせください。
 
 Golf Link Hiroshima
-運営責任者：Tomoharu Sawada
 所在地：Hiroshima City, Hiroshima Prefecture, Japan
 ウェブサイト：https://golflink-hiroshima.com
 受付時間：平日10:00〜18:00（土日祝・年末年始を除く）`,
@@ -139,10 +138,10 @@ export default function PrivacyPage() {
             <div style={{ whiteSpace: 'pre-line', color: 'var(--txt)' }}>{section.content}</div>
             {section.title === CONTACT_SECTION_TITLE && (
               <a
-                href="mailto:info@golflink-hiroshima.com"
+                href="mailto:info@sessions-inc.jp"
                 style={{ display: 'inline-block', marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--g2)', textDecoration: 'none', wordBreak: 'break-all' }}
               >
-                info@golflink-hiroshima.com
+                info@sessions-inc.jp
               </a>
             )}
           </div>
