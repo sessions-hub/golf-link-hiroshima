@@ -23,7 +23,7 @@ test.describe('/home ホームページ', () => {
 
     // マッチングカード
     await expect(page.locator('text=フレンドを探す')).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=マッチングを見る')).toBeVisible()
+    await expect(page.locator('text=VIEW MATCHES')).toBeVisible()
   })
 
   test('ホームタブにスコアと GPS カードが表示される', async ({ page }) => {

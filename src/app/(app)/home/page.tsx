@@ -590,37 +590,54 @@ export default function HomePage() {
           })()}
 
           {/* マッチング待ちカード */}
-          <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: 16, position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(13,61,43,.2)', cursor: 'pointer' }}>
-            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(168,224,99,.18) 0%,transparent 70%)' }}/>
-            <div style={{ fontSize: 11, color: 'rgba(168,224,99,.7)', marginBottom: 4 }}>あなたに相性抜群のゴルファー</div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'white', marginBottom: 4, lineHeight: 1.2 }}>フレンドを探す</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.45)', marginBottom: 12, lineHeight: 1.6 }}>血液型・星座・年代など独自アルゴリズムで表示</div>
-            <button style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 6, padding: '7px 16px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>マッチングを見る →</button>
+          <div onClick={() => router.push('/match')} style={{ margin: '0 16px 10px', background: 'linear-gradient(135deg, #12392E 0%, #1E4D3F 100%)', borderRadius: 14, padding: '22px 20px', position: 'relative', overflow: 'hidden', boxShadow: '0 6px 20px rgba(0,0,0,.12)', cursor: 'pointer' }}>
+            <svg style={{position:'absolute',right:0,top:0,bottom:0,height:'100%',width:'130px',opacity:.06,pointerEvents:'none'}} viewBox="0 0 150 130" preserveAspectRatio="xMaxYMid slice">
+              <path d="M 120 0 Q 100 22 112 48 Q 124 74 108 98 Q 94 118 106 140" fill="none" stroke="white" strokeWidth="1.3"/>
+              <path d="M 145 5 Q 124 30 136 58 Q 148 86 130 112 Q 114 134 126 158" fill="none" stroke="white" strokeWidth="1"/>
+              <path d="M 96 0 Q 78 24 90 52 Q 102 78 87 104 Q 74 126 85 150" fill="none" stroke="white" strokeWidth="0.8"/>
+            </svg>
+            <div style={{position:'absolute',top:0,right:0,width:'55%',height:'100%',background:'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255,255,255,.06), transparent 60%)',pointerEvents:'none'}}/>
+            <div style={{fontFamily:'Inter',fontSize:10,fontWeight:500,letterSpacing:'.22em',color:'rgba(214,194,154,.8)',textTransform:'uppercase',marginBottom:10}}>DISCOVER</div>
+            <div style={{fontSize:20,fontWeight:600,color:'#F5F3EE',marginBottom:6,lineHeight:1.2}}>フレンドを探す</div>
+            <div style={{fontSize:11,color:'rgba(245,243,238,.58)',marginBottom:18,lineHeight:1.6,fontWeight:300}}>独自アルゴリズムで相性の良いゴルファーと繋がる</div>
+            <button style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,#D4AA6A,#C49A50)',border:'none',borderRadius:100,padding:'10px 20px',fontFamily:'Inter',fontSize:11,fontWeight:600,letterSpacing:'.12em',color:'#17372D',cursor:'pointer',boxShadow:'0 4px 14px rgba(196,154,80,.35)'}}>
+              VIEW MATCHES
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#17372D" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+            </button>
           </div>
 
           {/* スコア + GPS 横並び */}
           <div style={{ margin: '0 16px 10px', display: 'flex', gap: 8 }}>
             {/* スコアカード */}
-            <div onClick={() => router.push('/score')} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div onClick={() => router.push('/score')} style={{ flex: 1, background: 'linear-gradient(160deg, #1B312A 0%, #223D34 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer' }}>
+              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <polyline points="7,17 9.5,14 12,15.5 15,12 17,13" strokeWidth="1.2"/>
+                </svg>
+                <div>
+                  <div style={{fontFamily:'Inter',fontSize:8,fontWeight:500,letterSpacing:'.16em',color:'#BFD9CC',textTransform:'uppercase',marginBottom:3}}>SCORE LOG</div>
+                  <div style={{fontSize:14,fontWeight:600,color:'#F5F3EE'}}>スコア記録</div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>スコア記録</span>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)', fontFamily: 'Inter' }}>
-                {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'タップして記録'}
+              <div style={{fontSize:10,color:'rgba(245,243,238,.42)',fontWeight:300}}>
+                {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'ラウンドをスマートに残す'}
               </div>
             </div>
             {/* GPSカード */}
-            <div onClick={() => router.push('/gps')} style={{ flex: 1, background: 'linear-gradient(135deg,#0a1f0a,#1a3a1a)', borderRadius: 12, padding: 12, border: '1px solid rgba(168,224,99,.2)', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: 'rgba(168,224,99,.15)', border: '1px solid rgba(168,224,99,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            <div onClick={() => router.push('/gps')} style={{ flex: 1, background: 'linear-gradient(160deg, #1C322B 0%, #244036 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer' }}>
+              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <div>
+                  <div style={{fontFamily:'Inter',fontSize:8,fontWeight:500,letterSpacing:'.16em',color:'#BFD9CC',textTransform:'uppercase',marginBottom:3}}>GPS TRACKING</div>
+                  <div style={{fontSize:14,fontWeight:600,color:'#F5F3EE'}}>GPS計測</div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>GPS計測</span>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(168,224,99,.6)' }}>距離をリアルタイム計測</div>
+              <div style={{fontSize:10,color:'rgba(245,243,238,.42)',fontWeight:300}}>距離をリアルタイムで確認</div>
             </div>
           </div>
 
