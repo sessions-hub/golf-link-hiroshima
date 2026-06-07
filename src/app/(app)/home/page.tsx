@@ -461,13 +461,14 @@ export default function HomePage() {
 
     const newPostId = newPost.id
 
-    // B. 初回投稿なら公式いいね
+    // B. 公式いいね（その投稿にまだいいねしていない場合）
     if (OFFICIAL_USER_ID) {
-      const { count } = await supabase
-        .from('posts')
+      const { count: likeCount } = await supabase
+        .from('post_likes')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      if (count === 1) {
+        .eq('post_id', newPostId)
+        .eq('user_id', OFFICIAL_USER_ID)
+      if (likeCount === 0) {
         await supabase.from('post_likes').insert({
           post_id: newPostId,
           user_id: OFFICIAL_USER_ID,
