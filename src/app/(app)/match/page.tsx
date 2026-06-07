@@ -124,6 +124,7 @@ export default function MatchPage() {
   const [fpCountMap, setFpCountMap] = useState<Map<string, number>>(new Map())
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null)
   const [showAllFootprints, setShowAllFootprints] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const p = new URLSearchParams(window.location.search)
@@ -406,6 +407,9 @@ export default function MatchPage() {
       const active = filters.filter(f => cat.includes(f))
       return active.length === 0 || active.some(f => matchSingle(f, m))
     })
+  }).filter(m => {
+    if (!searchQuery.trim()) return true
+    return m.nickname?.toLowerCase().includes(searchQuery.trim().toLowerCase())
   })
 
   return (
@@ -441,6 +445,38 @@ export default function MatchPage() {
                   fontWeight: filters.includes(f) ? 600 : 400,
                 }}>{f}</button>
               ))}
+            </div>
+          </div>
+
+          <div style={{ padding: '8px 16px 4px' }}>
+            <div style={{ position: 'relative' }}>
+              <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="ニックネームで検索"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'white',
+                  border: '1px solid var(--line)',
+                  borderRadius: 10,
+                  padding: '9px 12px 9px 32px',
+                  fontSize: 13,
+                  color: 'var(--txt)',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
+              {searchQuery && (
+                <div onClick={() => setSearchQuery('')}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--mute)', fontSize: 16 }}>
+                  ×
+                </div>
+              )}
             </div>
           </div>
 
