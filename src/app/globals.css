@@ -40,7 +40,21 @@ body {
 }
 
 body.font-large {
-  --font-scale: 1.15;
+  font-size: 118% !important;
+}
+
+body.font-large p,
+body.font-large span,
+body.font-large div,
+body.font-large button,
+body.font-large a,
+body.font-large li {
+  font-size: inherit !important;
+}
+
+body.font-large svg,
+body.font-large img {
+  font-size: initial !important;
 }
 
 .no-scrollbar::-webkit-scrollbar {
