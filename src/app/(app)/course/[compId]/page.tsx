@@ -52,6 +52,13 @@ interface Profile {
   gender: string | null
 }
 
+const getHdcpLabel = (handicap: number) => {
+  if (handicap >= 30) return '初心者'
+  if (handicap >= 19) return '初級者'
+  if (handicap >= 9) return '中級者'
+  return '上級者'
+}
+
 export default function CompDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -404,7 +411,7 @@ export default function CompDetailPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', display: 'flex', alignItems: 'center', gap: 4 }}>{organizer.nickname}<GenderBadge gender={organizer.gender} size={13} /></div>
-                <div style={{ fontSize: 12, color: 'var(--mute)' }}>HCP {organizer.handicap}</div>
+                <div style={{ fontSize: 12, color: 'var(--mute)' }}>{getHdcpLabel(organizer.handicap)}</div>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
             </div>
