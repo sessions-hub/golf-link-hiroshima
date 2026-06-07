@@ -11,6 +11,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import GenderBadge from '@/components/GenderBadge'
+import { OFFICIAL_USER_ID } from '@/lib/official'
 
 interface MatchProfile {
   user_id: string
@@ -151,7 +152,7 @@ export default function MatchPage() {
       const { data, error } = await supabase.rpc('get_matches_with_score', {
         p_user_id: user.id, p_limit: 20, p_offset: 0, p_min_score: 0,
       })
-      if (!error) setMatches(data ?? [])
+      if (!error) setMatches((data ?? []).filter((m: any) => m.user_id !== OFFICIAL_USER_ID))
 
       // お気に入り・ブロック一覧
       const [{ data: favData }, { data: favMeData }, { data: iBlockData }, { data: blockedByData }] = await Promise.all([
@@ -197,10 +198,11 @@ export default function MatchPage() {
           .eq('target_id', user.id)
         setWeeklyStats({ thisWeek: thisWeekCnt, lastWeek: lastWeekCnt, total: totalFpCount ?? 0 })
 
-        // per-user 訪問カウントマップ（自分自身を除外）
+        // per-user 訪問カウントマップ（自分自身・公式を除外）
         const cntMap = new Map<string, number>()
         for (const f of fpAll ?? []) {
           if (f.user_id === user.id) continue
+          if (OFFICIAL_USER_ID && f.user_id === OFFICIAL_USER_ID) continue
           cntMap.set(f.user_id, (cntMap.get(f.user_id) ?? 0) + 1)
         }
         setFpCountMap(cntMap)
@@ -217,8 +219,8 @@ export default function MatchPage() {
           setTop5Visitors(sortedVisitors.map(([userId, visitCount]) => ({ userId, visitCount, profile: pm5.get(userId) ?? null })))
         }
 
-        // 最近の30件リスト（表示用、自分を除外）
-        const fpRaw30 = (fpAll?.filter(f => f.user_id !== user.id) ?? []).slice(0, 30)
+        // 最近の30件リスト（表示用、自分・公式を除外）
+        const fpRaw30 = (fpAll?.filter(f => f.user_id !== user.id && (!OFFICIAL_USER_ID || f.user_id !== OFFICIAL_USER_ID)) ?? []).slice(0, 30)
         if (fpRaw30.length > 0) {
           const visitorIds = [...new Set(fpRaw30.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
@@ -230,12 +232,14 @@ export default function MatchPage() {
         }
 
         // お気に入りされた — 2ステップ
-        const { data: fbRaw } = await supabase
+        let favoritedByQuery = supabase
           .from('favorites')
           .select('user_id, created_at')
           .eq('target_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30)
+        if (OFFICIAL_USER_ID) favoritedByQuery = favoritedByQuery.neq('user_id', OFFICIAL_USER_ID)
+        const { data: fbRaw } = await favoritedByQuery
         if (fbRaw && fbRaw.length > 0) {
           const fbIds = fbRaw.map((f: any) => f.user_id)
           const { data: fbProfiles } = await supabase
@@ -249,12 +253,14 @@ export default function MatchPage() {
         }
 
         // お気に入りした — 2ステップ
-        const { data: myFavIds } = await supabase
+        let favoritingQuery = supabase
           .from('favorites')
           .select('target_id, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(30)
+        if (OFFICIAL_USER_ID) favoritingQuery = favoritingQuery.neq('target_id', OFFICIAL_USER_ID)
+        const { data: myFavIds } = await favoritingQuery
         if (myFavIds && myFavIds.length > 0) {
           const ids = myFavIds.map((f: any) => f.target_id)
           const { data: favProfiles } = await supabase
@@ -326,6 +332,7 @@ export default function MatchPage() {
 
   const handleChat = async (otherUserId: string) => {
     if (!myId) return
+    if (OFFICIAL_USER_ID && otherUserId === OFFICIAL_USER_ID) return
     setChatLoading(otherUserId)
     await recordFootprint(otherUserId)
 

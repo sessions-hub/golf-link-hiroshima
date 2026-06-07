@@ -370,6 +370,7 @@ export default function UserProfilePage() {
   )
 
   const isMe = myId === userId
+  const isOfficial = OFFICIAL_USER_ID ? userId === OFFICIAL_USER_ID : false
   const zodiac = profile.birth_date ? ZODIAC_NAMES_JP[getZodiacSign(profile.birth_date)] : null
   const profileLevelInfo = getLevelInfo(profilePts)
   const areaLabel = profile.areas && profile.areas.length > 0 ? AREA_LABELS[profile.areas[0]] ?? profile.areas[0] : null
@@ -443,7 +444,7 @@ export default function UserProfilePage() {
         )}
 
         {/* アクションボタン */}
-        {!isMe && (
+        {!isMe && !isOfficial && (
           <div style={{ marginTop: 12 }}>
             {isBlocked && (
               <div style={{ marginBottom: 8, textAlign: 'center' }}>
@@ -470,6 +471,11 @@ export default function UserProfilePage() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="4.5" y1="4.5" x2="19.5" y2="19.5"/></svg>
               </button>
             </div>
+          </div>
+        )}
+        {!isMe && isOfficial && (
+          <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surf)', borderRadius: 10, border: '1px solid var(--line)' }}>
+            <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7 }}>GLH.からのお知らせや最新情報をお届けします。</div>
           </div>
         )}
       </div>
