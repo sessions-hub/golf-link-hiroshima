@@ -462,7 +462,10 @@ export default function HomePage() {
     const newPostId = newPost.id
 
     // B. 公式いいね（Edge Function経由）
+    console.log('OFFICIAL_USER_ID:', OFFICIAL_USER_ID)
+    console.log('newPostId:', newPostId)
     if (OFFICIAL_USER_ID) {
+      console.log('official-like 送信中...')
       fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/official-like`, {
         method: 'POST',
         headers: {
