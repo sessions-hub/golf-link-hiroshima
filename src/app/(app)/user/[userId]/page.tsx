@@ -10,6 +10,7 @@ import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import { OFFICIAL_USER_ID } from '@/lib/official'
 
 interface Profile {
   user_id: string
@@ -406,6 +407,7 @@ export default function UserProfilePage() {
             {/* 名前・性別バッジ・プランバッジ */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 4, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--txt)' }}>{profile.nickname}</span>
+              {OFFICIAL_USER_ID && profile.user_id === OFFICIAL_USER_ID && <span style={{background:'var(--g1)',color:'var(--lime)',borderRadius:4,padding:'2px 6px',fontSize:9,fontWeight:700,flexShrink:0}}>公式</span>}
               {profile.gender && (
                 <span style={{ width: 15, height: 15, borderRadius: 3, background: profile.gender === 'male' ? '#3b82f6' : profile.gender === 'female' ? '#ec4899' : '#9ca3af', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {profile.gender === 'male' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><circle cx="10" cy="14" r="6"/><line x1="14.5" y1="9.5" x2="21" y2="3"/><polyline points="16,3 21,3 21,8"/></svg>}

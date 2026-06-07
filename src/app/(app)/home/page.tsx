@@ -13,6 +13,7 @@ import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import GenderBadge from '@/components/GenderBadge'
+import { OFFICIAL_USER_ID } from '@/lib/official'
 
 const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed'
 
@@ -458,6 +459,22 @@ export default function HomePage() {
     setTotalPts(p => p + 10)
     setTodayPts(p => p + 10)
 
+    const newPostId = newPost.id
+
+    // B. 初回投稿なら公式いいね
+    if (OFFICIAL_USER_ID) {
+      const { count } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+      if (count === 1) {
+        await supabase.from('post_likes').insert({
+          post_id: newPostId,
+          user_id: OFFICIAL_USER_ID,
+        })
+      }
+    }
+
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
@@ -471,6 +488,48 @@ export default function HomePage() {
     setPhotoPreview(null)
     setShowPostModal(false)
     setPosting(false)
+
+    // A. フレンド・近いエリアへプッシュ通知（fire-and-forget）
+    const myNickname = profile?.nickname ?? 'ゴルファー'
+    const notifyFollowers = async () => {
+      const { data: myFavs } = await supabase
+        .from('favorites')
+        .select('target_id')
+        .eq('user_id', user.id)
+
+      const { data: favsMe } = await supabase
+        .from('favorites')
+        .select('user_id')
+        .in('user_id', (myFavs ?? []).map((f: any) => f.target_id))
+        .eq('target_id', user.id)
+
+      const friendIds = (favsMe ?? []).map((f: any) => f.user_id)
+
+      let targetIds = [...friendIds]
+      if (targetIds.length < 20) {
+        const { data: nearby } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .neq('user_id', user.id)
+          .not('user_id', 'in', `(${targetIds.join(',')})`)
+          .limit(20 - targetIds.length)
+        targetIds = [...targetIds, ...(nearby ?? []).map((p: any) => p.user_id)]
+      }
+
+      targetIds.slice(0, 20).forEach(userId => {
+        fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            title: `${myNickname}さんが投稿しました`,
+            body: caption.length > 40 ? caption.slice(0, 40) + '...' : caption,
+            url: '/home',
+          }),
+        })
+      })
+    }
+    notifyFollowers()
   }
 
   const toggleLike = async (postId: string, liked: boolean) => {
@@ -828,7 +887,7 @@ export default function HomePage() {
                     onClick={() => router.push(`/user/${post.user_id}`)}
                   />
                   <div style={{ flex: 1 }}>
-                    <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{post.profiles?.nickname ?? 'ゴルファー'}<GenderBadge gender={post.profiles?.gender} size={12} /></div>
+                    <div onClick={() => router.push(`/user/${post.user_id}`)} style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>{post.profiles?.nickname ?? 'ゴルファー'}<GenderBadge gender={post.profiles?.gender} size={12} />{OFFICIAL_USER_ID && post.user_id === OFFICIAL_USER_ID && <span style={{background:'var(--g1)',color:'var(--lime)',borderRadius:4,padding:'2px 6px',fontSize:9,fontWeight:700,marginLeft:4,flexShrink:0}}>公式</span>}</div>
                     <div style={{ fontSize: 10, color: 'var(--mute)' }}>{new Date(post.created_at).toLocaleDateString('ja-JP')}</div>
                   </div>
                   {post.user_id === myId && (

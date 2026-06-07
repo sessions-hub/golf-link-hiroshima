@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { OFFICIAL_USER_ID } from '@/lib/official'
 
 const HDCP_OPTIONS = [
   { label: '初心者', value: 36 },
@@ -115,6 +116,13 @@ export default function RegisterPage() {
         ...(refSource ? { ref_source: refSource } : {}),
       }).eq('user_id', data.user.id)
       if (refSource) sessionStorage.removeItem('ref_source')
+
+      if (OFFICIAL_USER_ID) {
+        await supabase.from('favorites').insert({
+          user_id: OFFICIAL_USER_ID,
+          target_id: data.user.id,
+        })
+      }
     }
 
     router.push('/home')
