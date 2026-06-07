@@ -116,6 +116,10 @@ export default function UserProfilePage() {
   const [showBlockModal, setShowBlockModal] = useState(false)
 
   useEffect(() => {
+    if (OFFICIAL_USER_ID && userId === OFFICIAL_USER_ID) {
+      router.replace('/home')
+      return
+    }
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
