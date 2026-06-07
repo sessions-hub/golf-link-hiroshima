@@ -10,7 +10,7 @@ import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
-import { OFFICIAL_USER_ID } from '@/lib/official'
+import { OFFICIAL_USER_ID, OFFICIAL_AVATAR } from '@/lib/official'
 
 interface Profile {
   user_id: string
@@ -395,7 +395,7 @@ export default function UserProfilePage() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
           {/* アバター */}
           <FriendAvatar
-            avatarUrl={profile.avatar_url}
+            avatarUrl={profile.avatar_url ?? (isOfficial ? OFFICIAL_AVATAR : null)}
             nickname={profile.nickname}
             isFriend={friendIds.has(userId)}
             size={64}
@@ -421,25 +421,29 @@ export default function UserProfilePage() {
                 <span style={{ fontSize: 12, fontFamily: 'Inter', fontWeight: 700, color: profileLevelInfo.color }}>Lv.{profileLevelInfo.level}</span>
               </span>
             </div>
-            {/* エリア・年代 */}
-            {(areaLabel || (ageDecade && profile.show_age !== false)) && (
+            {/* エリア・年代（公式は非表示） */}
+            {!isOfficial && (areaLabel || (ageDecade && profile.show_age !== false)) && (
               <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--mid)', marginBottom: 5 }}>
                 {[areaLabel, profile.show_age !== false ? ageDecade : null].filter(Boolean).join(' · ')}
               </div>
             )}
-            {/* タグ */}
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-              {profile.blood_type && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{profile.blood_type}型</span>}
-              {zodiac && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{zodiac}</span>}
-              {profile.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getHdcpLabel(profile.handicap)}</span>}
-              {profile.round_freq && FREQ_LABEL[profile.round_freq] && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{FREQ_LABEL[profile.round_freq]}</span>}
-              {profile.preferred_days && profile.preferred_days.length > 0 && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{DAY_ORDER.filter(d => profile.preferred_days.includes(d)).map(d => DAY_LABEL[d]).join('・')}</span>}
-            </div>
+            {/* タグ（公式は非表示） */}
+            {!isOfficial && (
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                {profile.blood_type && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{profile.blood_type}型</span>}
+                {zodiac && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{zodiac}</span>}
+                {profile.handicap != null && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{getHdcpLabel(profile.handicap)}</span>}
+                {profile.round_freq && FREQ_LABEL[profile.round_freq] && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{FREQ_LABEL[profile.round_freq]}</span>}
+                {profile.preferred_days && profile.preferred_days.length > 0 && <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 9, border: '1px solid var(--line)', color: 'var(--mid)', background: 'var(--surf)' }}>{DAY_ORDER.filter(d => profile.preferred_days.includes(d)).map(d => DAY_LABEL[d]).join('・')}</span>}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 自己紹介 */}
-        {profile.bio && (
+        {/* 自己紹介（公式は説明文を表示） */}
+        {isOfficial ? (
+          <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7, paddingTop: 10, borderTop: '1px solid var(--surf)', marginTop: 4 }}>GLH.からのお知らせや最新情報をお届けします。</div>
+        ) : profile.bio && (
           <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7, paddingTop: 10, borderTop: '1px solid var(--surf)', marginTop: 4 }}>{profile.bio}</div>
         )}
 
@@ -471,11 +475,6 @@ export default function UserProfilePage() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9"/><line x1="4.5" y1="4.5" x2="19.5" y2="19.5"/></svg>
               </button>
             </div>
-          </div>
-        )}
-        {!isMe && isOfficial && (
-          <div style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surf)', borderRadius: 10, border: '1px solid var(--line)' }}>
-            <div style={{ fontSize: 12, color: 'var(--mid)', lineHeight: 1.7 }}>GLH.からのお知らせや最新情報をお届けします。</div>
           </div>
         )}
       </div>

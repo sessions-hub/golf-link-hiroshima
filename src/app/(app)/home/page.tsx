@@ -13,7 +13,7 @@ import { addPoints } from '@/lib/points'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import GenderBadge from '@/components/GenderBadge'
-import { OFFICIAL_USER_ID } from '@/lib/official'
+import { OFFICIAL_USER_ID, OFFICIAL_AVATAR } from '@/lib/official'
 
 const INSTALL_DISMISSED_KEY = 'pwa_install_dismissed'
 
@@ -879,7 +879,7 @@ export default function HomePage() {
               <div key={post.id} style={{ background: 'white', borderBottom: '1px solid var(--line)', marginBottom: 4 }}>
                 <div style={{ padding: '12px 16px 8px', display: 'flex', gap: 10, alignItems: 'center' }}>
                   <FriendAvatar
-                    avatarUrl={post.profiles?.avatar_url ?? null}
+                    avatarUrl={post.profiles?.avatar_url ?? (OFFICIAL_USER_ID && post.user_id === OFFICIAL_USER_ID ? OFFICIAL_AVATAR : null)}
                     nickname={post.profiles?.nickname ?? ''}
                     isFriend={friendIds.has(post.user_id)}
                     size={40}
