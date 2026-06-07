@@ -461,19 +461,16 @@ export default function HomePage() {
 
     const newPostId = newPost.id
 
-    // B. 公式いいね（その投稿にまだいいねしていない場合）
+    // B. 公式いいね（Edge Function経由）
     if (OFFICIAL_USER_ID) {
-      const { count: likeCount } = await supabase
-        .from('post_likes')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', newPostId)
-        .eq('user_id', OFFICIAL_USER_ID)
-      if (likeCount === 0) {
-        await supabase.from('post_likes').insert({
-          post_id: newPostId,
-          user_id: OFFICIAL_USER_ID,
-        })
-      }
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/official-like`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ postId: newPostId }),
+      })
     }
 
     // 投稿後にDBから再取得
