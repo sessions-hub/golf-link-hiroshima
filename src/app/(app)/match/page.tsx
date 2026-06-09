@@ -406,8 +406,8 @@ export default function MatchPage() {
     else if (bloodCompat === '○') score += 12
     else if (bloodCompat === '△') score -= 8
 
-    const mySign = myProfile?.birth_date ? getZodiacSign(new Date(myProfile.birth_date)) : null
-    const otherSign = m.birth_date ? getZodiacSign(new Date(m.birth_date)) : null
+    const mySign = myProfile?.birth_date ? getZodiacSign(myProfile.birth_date) : null
+    const otherSign = m.birth_date ? getZodiacSign(m.birth_date) : null
     if (mySign && otherSign) {
       const zodiacCompat = getZodiacCompat(mySign, otherSign)
       if (zodiacCompat === '◎') score += 20
