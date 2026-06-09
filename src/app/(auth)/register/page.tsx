@@ -14,7 +14,7 @@ const BLOOD_TYPES = ['A', 'B', 'O', 'AB']
 const DAYS = ['月', '火', '水', '木', '金', '土', '日']
 const DAY_VALUES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const AREAS = ['広島/廿日市エリア', '広島北部エリア', '東広島/呉エリア', '竹原/三原/尾道エリア', '福山エリア']
-const PURPOSES = ['ラウンド仲間', 'コンペ仲間', '練習仲間', 'コーチ希望']
+const PURPOSES = ['ラウンド仲間', 'コンペ仲間', 'SNS', 'チャット']
 
 const GENDER_OPTIONS = [
   { label: '男性', value: 'male', icon: '♂' },
@@ -111,6 +111,7 @@ export default function RegisterPage() {
         handicap: hdcp,
         best_score: bestScore ? parseInt(bestScore) : null,
         preferred_days: days,
+        purposes,
         gender,
         ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
         ...(refSource ? { ref_source: refSource } : {}),
