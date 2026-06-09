@@ -14,7 +14,7 @@ const BLOOD_TYPES = ['A', 'B', 'O', 'AB']
 const DAYS = ['月', '火', '水', '木', '金', '土', '日']
 const DAY_VALUES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const AREAS = ['広島/廿日市エリア', '広島北部エリア', '東広島/呉エリア', '竹原/三原/尾道エリア', '福山エリア']
-const PURPOSES = ['ラウンド仲間', 'コンペ仲間', 'SNS', 'チャット']
+const PURPOSES = ['ラウンド仲間', 'コンペ仲間', 'スコア記録', 'GPS距離計測', 'SNS', 'チャット', 'その他']
 
 const GENDER_OPTIONS = [
   { label: '男性', value: 'male', icon: '♂' },
@@ -253,8 +253,6 @@ export default function RegisterPage() {
       {step === 2 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>活動エリアと希望</div>
-          <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 18 }}>マッチング精度を上げるために設定してください</div>
-
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>主な活動エリア（1つ選択）</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 14 }}>
             {AREAS.map((a) => (
@@ -269,7 +267,8 @@ export default function RegisterPage() {
             ))}
           </div>
 
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>マッチングの目的</div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 2 }}>アプリ登録の目的</div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', marginBottom: 6 }}>複数選択可能</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 20 }}>
             {PURPOSES.map((p) => (
               <button key={p} onClick={() => toggleItem(p, purposes, setPurposes)} style={{ padding: '4px 10px', borderRadius: 5, fontSize: 11, cursor: 'pointer', border: `1px solid ${purposes.includes(p) ? 'var(--g3)' : 'var(--line)'}`, color: purposes.includes(p) ? 'var(--g2)' : 'var(--mid)', background: purposes.includes(p) ? 'rgba(46,125,85,.1)' : 'var(--surf)', fontWeight: purposes.includes(p) ? 600 : 400 }}>{p}</button>
