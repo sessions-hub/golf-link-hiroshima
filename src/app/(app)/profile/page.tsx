@@ -865,7 +865,7 @@ export default function ProfilePage() {
                       </div>
                       <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myUserId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />
                     </div>
-                    <button onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
+                    <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
                   </div>
                 </div>
               ))}

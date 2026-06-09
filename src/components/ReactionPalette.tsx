@@ -1,4 +1,5 @@
 'use client'
+import { useRef, useEffect } from 'react'
 
 export const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '👏']
 
@@ -9,36 +10,48 @@ interface PaletteProps {
 }
 
 export function ReactionPalette({ myEmoji, onSelect, onClose }: PaletteProps) {
+  const ref = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  useEffect(() => {
+    const handler = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onCloseRef.current()
+      }
+    }
+    // バブリングフェーズで取得（stopPropagationで各ページ側からキャンセル可能）
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [])
+
   return (
-    <>
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, zIndex: 348 }}
-      />
-      <div style={{
+    <div
+      ref={ref}
+      style={{
         display: 'inline-flex', gap: 2, background: 'white',
         borderRadius: 999, padding: '6px 10px',
         boxShadow: '0 4px 24px rgba(0,0,0,.2)',
         border: '1px solid var(--line)', zIndex: 349, position: 'relative',
-      }}>
-        {REACTION_EMOJIS.map(emoji => (
-          <button
-            key={emoji}
-            onClick={(e) => { e.stopPropagation(); onSelect(emoji); onClose() }}
-            style={{
-              width: 38, height: 38, borderRadius: '50%', border: 'none',
-              background: myEmoji === emoji ? 'rgba(22,101,52,.1)' : 'transparent',
-              fontSize: 22, cursor: 'pointer', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-              outline: myEmoji === emoji ? '2px solid var(--g3)' : 'none',
-              outlineOffset: -2,
-            }}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </>
+      }}
+    >
+      {REACTION_EMOJIS.map(emoji => (
+        <button
+          key={emoji}
+          onClick={(e) => { e.stopPropagation(); onSelect(emoji); onClose() }}
+          style={{
+            width: 38, height: 38, borderRadius: '50%', border: 'none',
+            background: myEmoji === emoji ? 'rgba(22,101,52,.1)' : 'transparent',
+            fontSize: 22, cursor: 'pointer', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            outline: myEmoji === emoji ? '2px solid var(--g3)' : 'none',
+            outlineOffset: -2,
+          }}
+        >
+          {emoji}
+        </button>
+      ))}
+    </div>
   )
 }
 

@@ -893,9 +893,9 @@ export default function HomePage() {
                   </div>
                   {post.user_id === myId && (
                     <div style={{ position: 'relative' }}>
-                      <button onClick={() => setPostMenu(postMenu === post.id ? null : post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 18, padding: '2px 6px', lineHeight: 1 }}>···</button>
+                      <button onClick={() => { setCommentReactionPaletteId(null); setPostMenu(postMenu === post.id ? null : post.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 18, padding: '2px 6px', lineHeight: 1 }}>···</button>
                       {postMenu === post.id && (
-                        <div style={{ position: 'absolute', right: 0, top: 28, background: 'white', borderRadius: 10, border: '1px solid var(--line)', boxShadow: '0 4px 16px rgba(0,0,0,.1)', zIndex: 10, minWidth: 120, overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', right: 0, top: 28, background: 'white', borderRadius: 10, border: '1px solid var(--line)', boxShadow: '0 4px 16px rgba(0,0,0,.1)', zIndex: 400, minWidth: 120, overflow: 'hidden' }}>
                           <div onClick={() => { setEditPostId(post.id); setEditCaption(post.caption ?? ''); setPostMenu(null) }} style={{ padding: '12px 16px', fontSize: 13, color: 'var(--txt)', cursor: 'pointer', borderBottom: '1px solid var(--surf)' }}>編集</div>
                           <div onClick={() => handleDeletePost(post.id)} style={{ padding: '12px 16px', fontSize: 13, color: '#c05050', cursor: 'pointer' }}>削除</div>
                         </div>
@@ -950,7 +950,7 @@ export default function HomePage() {
                             <ReactionBar reactions={commentReactions[c.id] ?? {}} myId={myId} onToggle={(emoji) => toggleCommentReaction(c.id, emoji)} />
                           </div>
                           <div style={{ display: 'flex', flexShrink: 0, alignItems: 'flex-start', gap: 2 }}>
-                            <button onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
+                            <button onPointerDown={(e) => e.stopPropagation()} onClick={() => setCommentReactionPaletteId(prev => prev === c.id ? null : c.id)} style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid var(--line)', background: 'white', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--mute)', flexShrink: 0, lineHeight: 1 }}>+</button>
                             {c.user_id === myId && (
                               <button onClick={() => handleDeleteComment(c.id, post.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', fontSize: 11, padding: '4px', flexShrink: 0 }}>✕</button>
                             )}
