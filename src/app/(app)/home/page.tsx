@@ -657,13 +657,15 @@ export default function HomePage() {
               <path d="M 96 0 Q 78 24 90 52 Q 102 78 87 104 Q 74 126 85 150" fill="none" stroke="white" strokeWidth="0.8"/>
             </svg>
             <div style={{position:'absolute',top:0,right:0,width:'55%',height:'100%',background:'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255,255,255,.06), transparent 60%)',pointerEvents:'none'}}/>
-            <div style={{fontFamily:'Inter',fontSize:10,fontWeight:500,letterSpacing:'.22em',color:'rgba(214,194,154,.8)',textTransform:'uppercase',marginBottom:10}}>DISCOVER</div>
+            <div style={{position:'absolute',top:-8,left:-4,fontFamily:'Inter',fontSize:58,fontWeight:900,color:'white',opacity:.08,letterSpacing:'-.02em',lineHeight:1,pointerEvents:'none',userSelect:'none',whiteSpace:'nowrap'}}>DISCOVER</div>
+            <div style={{paddingTop:36}}>
             <div style={{fontSize:20,fontWeight:600,color:'#F5F3EE',marginBottom:6,lineHeight:1.2}}>フレンドを探す</div>
             <div style={{fontSize:11,color:'rgba(245,243,238,.58)',marginBottom:18,lineHeight:1.6,fontWeight:300}}>独自アルゴリズムで相性の良いゴルファーと繋がる</div>
             <button style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,#D4AA6A,#C49A50)',border:'none',borderRadius:100,padding:'10px 20px',fontFamily:'Inter',fontSize:11,fontWeight:600,letterSpacing:'.12em',color:'#17372D',cursor:'pointer',boxShadow:'0 4px 14px rgba(196,154,80,.35)'}}>
               VIEW MATCHES
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#17372D" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
             </button>
+            </div>
           </div>
 
           {/* スコア + GPS 横並び */}
