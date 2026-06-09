@@ -667,39 +667,40 @@ export default function HomePage() {
           </div>
 
           {/* スコア + GPS 横並び */}
-          <div style={{ margin: '0 16px 10px', display: 'flex', gap: 8 }}>
-            {/* スコアカード */}
-            <div onClick={() => router.push('/score')} style={{ flex: 1, background: 'linear-gradient(160deg, #1B312A 0%, #223D34 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer' }}>
-              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <polyline points="7,17 9.5,14 12,15.5 15,12 17,13" strokeWidth="1.2"/>
-                </svg>
-                <div>
-                  <div style={{fontFamily:'Inter',fontSize:8,fontWeight:500,letterSpacing:'.16em',color:'#BFD9CC',textTransform:'uppercase',marginBottom:3}}>SCORE LOG</div>
-                  <div style={{fontSize:14,fontWeight:600,color:'#F5F3EE'}}>スコア記録</div>
-                </div>
-              </div>
-              <div style={{fontSize:10,color:'rgba(245,243,238,.42)',fontWeight:300}}>
-                {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'ラウンドをスマートに残す'}
-              </div>
-            </div>
-            {/* GPSカード */}
-            <div onClick={() => router.push('/gps')} style={{ flex: 1, background: 'linear-gradient(160deg, #1C322B 0%, #244036 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer' }}>
-              <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:10}}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
-                <div>
-                  <div style={{fontFamily:'Inter',fontSize:8,fontWeight:500,letterSpacing:'.16em',color:'#BFD9CC',textTransform:'uppercase',marginBottom:3}}>GPS TRACKING</div>
-                  <div style={{fontSize:14,fontWeight:600,color:'#F5F3EE'}}>GPS計測</div>
-                </div>
-              </div>
-              <div style={{fontSize:10,color:'rgba(245,243,238,.42)',fontWeight:300}}>距離をリアルタイムで確認</div>
-            </div>
-          </div>
+<div style={{ margin: '0 16px 10px', display: 'flex', gap: 8 }}>
+  {/* スコアカード */}
+  <div onClick={() => router.push('/score')} style={{ flex: 1, background: 'linear-gradient(160deg, #1B312A 0%, #223D34 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', top: -6, left: -4, fontFamily: 'Inter', fontSize: 36, fontWeight: 900, color: 'white', opacity: .08, letterSpacing: '-.02em', lineHeight: 1, pointerEvents: 'none', userSelect: 'none', whiteSpace: 'nowrap' }}>SCORE LOG</div>
+    <div style={{ position: 'relative', zIndex: 2, paddingTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <polyline points="7,17 9.5,14 12,15.5 15,12 17,13" strokeWidth="1.2"/>
+        </svg>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#F5F3EE' }}>スコア記録</div>
+      </div>
+      <div style={{ fontSize: 10, color: 'rgba(245,243,238,.42)', fontWeight: 300 }}>
+        {lastScore ? `直近 ${lastScore} · ${roundCount}回` : 'ラウンドをスマートに残す'}
+      </div>
+    </div>
+  </div>
+
+  {/* GPSカード */}
+  <div onClick={() => router.push('/gps')} style={{ flex: 1, background: 'linear-gradient(160deg, #1C322B 0%, #244036 100%)', borderRadius: 12, padding: 14, border: '1px solid rgba(214,194,154,.12)', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', top: -6, left: -4, fontFamily: 'Inter', fontSize: 36, fontWeight: 900, color: 'white', opacity: .08, letterSpacing: '-.02em', lineHeight: 1, pointerEvents: 'none', userSelect: 'none', whiteSpace: 'nowrap' }}>TRACKING</div>
+    <div style={{ position: 'relative', zIndex: 2, paddingTop: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D6C29A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#F5F3EE' }}>GPS計測</div>
+      </div>
+      <div style={{ fontSize: 10, color: 'rgba(245,243,238,.42)', fontWeight: 300 }}>距離をリアルタイムで確認</div>
+    </div>
+  </div>
+</div>
 
           {/* ライムライン */}
           <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
