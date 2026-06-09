@@ -750,33 +750,65 @@ export default function MatchPage() {
                     })()}
                   </div>
 
-                  {/* 4. プロフィール閲覧率 */}
+                  {/* 4. プロフィール閲覧数 */}
                   <div style={{ margin: '0 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', letterSpacing: '.05em' }}>プロフィール閲覧率</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', letterSpacing: '.05em' }}>プロフィール閲覧数</span>
                     </div>
                     <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '14px 16px', boxShadow: '0 1px 4px rgba(13,61,43,.04)' }}>
                       {(() => {
                         const maxVal = Math.max(weeklyStats.thisWeek, weeklyStats.lastWeek, 1)
+                        const changeRate = weeklyStats.lastWeek === 0
+                          ? 100
+                          : Math.round(((weeklyStats.thisWeek - weeklyStats.lastWeek) / weeklyStats.lastWeek) * 100)
+                        const isUp = weeklyStats.thisWeek >= weeklyStats.lastWeek
                         return (
                           <>
                             {([
-                              { label: '今週', count: weeklyStats.thisWeek, color: 'var(--g2)' },
-                              { label: '先週', count: weeklyStats.lastWeek, color: 'var(--g3)' },
-                            ] as { label: string; count: number; color: string }[]).map(({ label, count, color }) => (
+                              { label: '今週', count: weeklyStats.thisWeek, color: 'var(--g2)', showBadge: true },
+                              { label: '先週', count: weeklyStats.lastWeek, color: 'var(--g3)', showBadge: false },
+                            ] as { label: string; count: number; color: string; showBadge: boolean }[]).map(({ label, count, color, showBadge }) => (
                               <div key={label} style={{ marginBottom: 12 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                   <span style={{ fontSize: 11, color: 'var(--mid)' }}>{label}</span>
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)', fontFamily: 'Inter' }}>{count}件</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)', fontFamily: 'Inter' }}>{count}回閲覧</span>
+                                    {showBadge && (
+                                      <span style={{
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        fontFamily: 'Inter',
+                                        padding: '1px 5px',
+                                        borderRadius: 4,
+                                        background: changeRate === 0
+                                          ? 'rgba(120,120,120,.1)'
+                                          : isUp
+                                            ? 'rgba(22,101,52,.1)'
+                                            : 'rgba(185,28,28,.1)',
+                                        color: changeRate === 0
+                                          ? 'var(--mute)'
+                                          : isUp
+                                            ? '#166534'
+                                            : '#b91c1c',
+                                      }}>
+                                        {changeRate === 0
+                                          ? '→ 0%'
+                                          : isUp
+                                            ? `▲ ${changeRate}%`
+                                            : `▼ ${Math.abs(changeRate)}%`}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                                 <div style={{ height: 8, background: 'var(--surf)', borderRadius: 4, overflow: 'hidden' }}>
                                   <div style={{ height: '100%', width: `${(count / maxVal) * 100}%`, background: color, borderRadius: 4, transition: 'width .5s ease' }} />
                                 </div>
                               </div>
                             ))}
+                            <div style={{ fontSize: 9, color: 'var(--mute)', marginTop: 2 }}>足跡数をもとに集計</div>
                             {!myAvatarUrl && (
-                              <div style={{ marginTop: 4, padding: '10px 12px', background: 'rgba(46,125,85,.06)', borderRadius: 8, border: '1px solid rgba(46,125,85,.15)' }}>
+                              <div style={{ marginTop: 8, padding: '10px 12px', background: 'rgba(46,125,85,.06)', borderRadius: 8, border: '1px solid rgba(46,125,85,.15)' }}>
                                 <div style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, marginBottom: 2 }}>写真を追加すると閲覧率が上がります</div>
                                 <div style={{ fontSize: 10, color: 'var(--mute)', lineHeight: 1.6 }}>プロフィール写真があるユーザーは閲覧率が高い傾向にあります</div>
                               </div>
