@@ -456,7 +456,7 @@ export default function ProfilePage() {
 
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
       {/* ヘッダー */}
-      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Logo variant="screen" />
         <span style={{ background: planBadge.bg, color: planBadge.color, padding: '4px 12px', borderRadius: 4, fontSize: 10, fontWeight: 700, fontFamily: 'Inter', letterSpacing: '.06em', border: userPlan === 'free' ? '1px solid var(--line)' : 'none' }}>
           {planBadge.label}
