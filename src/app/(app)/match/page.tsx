@@ -108,7 +108,7 @@ export default function MatchPage() {
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [filters, setFilters] = useState<string[]>(['全員'])
-  const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string } | null>(null)
+  const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string; gender?: string } | null>(null)
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -141,7 +141,7 @@ export default function MatchPage() {
 
       const { data: me } = await supabase
         .from('profiles')
-        .select('blood_type, birth_date, avatar_url')
+        .select('blood_type, birth_date, avatar_url, gender')
         .eq('user_id', user.id)
         .single()
       if (me) {
@@ -398,6 +398,32 @@ export default function MatchPage() {
     return true
   }
 
+  const myGender = myProfile?.gender ?? null
+
+  const calcMatchScore = (m: MatchProfile): number => {
+    let score = 60
+
+    const bloodCompat = BLOOD_COMPAT[myProfile?.blood_type ?? '']?.[m.blood_type]
+    if (bloodCompat === '◎') score += 15
+    else if (bloodCompat === '○') score += 8
+    else if (bloodCompat === '△') score -= 10
+
+    const mySign = myProfile?.birth_date ? getZodiacSign(myProfile.birth_date) : null
+    const otherSign = m.birth_date ? getZodiacSign(m.birth_date) : null
+    if (mySign && otherSign) {
+      const zodiacCompat = getZodiacCompat(mySign, otherSign)
+      if (zodiacCompat === '◎') score += 15
+      else if (zodiacCompat === '○') score += 8
+      else if (zodiacCompat === '△') score -= 10
+    }
+
+    if (myGender && m.gender && myGender !== m.gender) {
+      score += 12
+    }
+
+    return Math.min(Math.max(score, 40), 99)
+  }
+
   const filteredMatches = matches.filter(m => {
     if (blockedUserIds.has(m.user_id)) return false
     if (filters.includes('全員')) return true
@@ -567,7 +593,7 @@ export default function MatchPage() {
                           {isFav ? Icons.heart(16, '#e05070', true) : Icons.heart(16, 'var(--mute)')}
                         </button>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{Math.round(m.match_score)}<span style={{ fontSize: 11 }}>%</span></div>
+                          <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{calcMatchScore(m)}<span style={{ fontSize: 11 }}>%</span></div>
                           <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
                         </div>
                       </div>
