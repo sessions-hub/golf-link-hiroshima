@@ -478,6 +478,12 @@ export default function MatchPage() {
     return m.nickname?.toLowerCase().includes(searchQuery.trim().toLowerCase())
   })
 
+  const sortedMatches = [...filteredMatches].sort((a, b) => {
+    const scoreA = filters.includes('相性診断') ? calcCompatScore(a) : calcMatchScore(a)
+    const scoreB = filters.includes('相性診断') ? calcCompatScore(b) : calcMatchScore(b)
+    return scoreB - scoreA
+  })
+
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
@@ -583,7 +589,7 @@ export default function MatchPage() {
                 </div>
               </div>
             )}
-            {!loading && filteredMatches.map((m, i) => {
+            {!loading && sortedMatches.map((m, i) => {
               const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length]
               const bloodCompat = myProfile ? BLOOD_COMPAT[myProfile.blood_type]?.[m.blood_type] : null
               const zodiacCompat = myProfile && m.birth_date
