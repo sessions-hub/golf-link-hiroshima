@@ -141,7 +141,7 @@ export default function MatchPage() {
 
       const { data: me } = await supabase
         .from('profiles')
-        .select('blood_type, birth_date, avatar_url, gender')
+        .select('blood_type, birth_date, avatar_url, gender, areas, handicap')
         .eq('user_id', user.id)
         .single()
       if (me) {
@@ -398,28 +398,40 @@ export default function MatchPage() {
     return true
   }
 
-  const myGender = myProfile?.gender ?? null
-
   const calcMatchScore = (m: MatchProfile): number => {
-    let score = 60
+    let score = 50
 
     const bloodCompat = BLOOD_COMPAT[myProfile?.blood_type ?? '']?.[m.blood_type]
-    if (bloodCompat === '◎') score += 15
-    else if (bloodCompat === '○') score += 8
-    else if (bloodCompat === '△') score -= 10
+    if (bloodCompat === '◎') score += 20
+    else if (bloodCompat === '○') score += 12
+    else if (bloodCompat === '△') score -= 8
 
-    const mySign = myProfile?.birth_date ? getZodiacSign(myProfile.birth_date) : null
-    const otherSign = m.birth_date ? getZodiacSign(m.birth_date) : null
+    const mySign = myProfile?.birth_date ? getZodiacSign(new Date(myProfile.birth_date)) : null
+    const otherSign = m.birth_date ? getZodiacSign(new Date(m.birth_date)) : null
     if (mySign && otherSign) {
       const zodiacCompat = getZodiacCompat(mySign, otherSign)
-      if (zodiacCompat === '◎') score += 15
-      else if (zodiacCompat === '○') score += 8
-      else if (zodiacCompat === '△') score -= 10
+      if (zodiacCompat === '◎') score += 20
+      else if (zodiacCompat === '○') score += 12
+      else if (zodiacCompat === '△') score -= 8
     }
 
-    if (myGender && m.gender && myGender !== m.gender) {
-      score += 12
+    if (myProfile?.gender && m.gender && myProfile.gender !== m.gender &&
+        m.gender !== 'other' && myProfile.gender !== 'other') {
+      score += 10
     }
+
+    const myAreas = (myProfile as any)?.areas ?? []
+    const otherAreas = m.areas ?? []
+    const areaMatch = myAreas.some((a: string) => otherAreas.includes(a))
+    if (areaMatch) score += 8
+
+    const myHdcp = (myProfile as any)?.handicap ?? 36
+    const myBand = myHdcp >= 30 ? 0 : myHdcp >= 19 ? 1 : myHdcp >= 9 ? 2 : 3
+    const otherBand = (m.handicap ?? 36) >= 30 ? 0 : (m.handicap ?? 36) >= 19 ? 1 : (m.handicap ?? 36) >= 9 ? 2 : 3
+    if (myBand === otherBand) score += 6
+
+    const seed = m.user_id.charCodeAt(0) + m.user_id.charCodeAt(1)
+    score += (seed % 7) - 3
 
     return Math.min(Math.max(score, 40), 99)
   }
