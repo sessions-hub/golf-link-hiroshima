@@ -398,6 +398,34 @@ export default function MatchPage() {
     return true
   }
 
+  const calcCompatScore = (m: MatchProfile): number => {
+    let score = 50
+
+    const bloodCompat = BLOOD_COMPAT[myProfile?.blood_type ?? '']?.[m.blood_type]
+    if (bloodCompat === '◎') score += 22
+    else if (bloodCompat === '○') score += 13
+    else if (bloodCompat === '△') score -= 10
+
+    const mySign = myProfile?.birth_date ? getZodiacSign(myProfile.birth_date) : null
+    const otherSign = m.birth_date ? getZodiacSign(m.birth_date) : null
+    if (mySign && otherSign) {
+      const zodiacCompat = getZodiacCompat(mySign, otherSign)
+      if (zodiacCompat === '◎') score += 22
+      else if (zodiacCompat === '○') score += 13
+      else if (zodiacCompat === '△') score -= 10
+    }
+
+    if (myProfile?.gender && m.gender && myProfile.gender !== m.gender &&
+        m.gender !== 'other' && myProfile.gender !== 'other') {
+      score += 12
+    }
+
+    const seed = m.user_id.charCodeAt(0) + m.user_id.charCodeAt(1)
+    score += (seed % 5) - 2
+
+    return Math.min(Math.max(score, 40), 99)
+  }
+
   const calcMatchScore = (m: MatchProfile): number => {
     let score = 50
 
@@ -605,7 +633,7 @@ export default function MatchPage() {
                           {isFav ? Icons.heart(16, '#e05070', true) : Icons.heart(16, 'var(--mute)')}
                         </button>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{calcMatchScore(m)}<span style={{ fontSize: 11 }}>%</span></div>
+                          <div style={{ fontFamily: 'Inter', fontSize: 22, fontWeight: 700, color: 'var(--g2)', lineHeight: 1 }}>{filters.includes('相性診断') ? calcCompatScore(m) : calcMatchScore(m)}<span style={{ fontSize: 11 }}>%</span></div>
                           <div style={{ fontSize: 8, color: 'var(--mute)' }}>マッチ度</div>
                         </div>
                       </div>
