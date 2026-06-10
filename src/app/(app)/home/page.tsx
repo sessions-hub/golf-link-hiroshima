@@ -710,14 +710,8 @@ export default function HomePage() {
           {/* 新着情報 */}
           {(() => {
             const newsItems = [
-              ...allChats.map(c => ({ kind: 'chat' as const, sortAt: c.lastMessageAt, chatData: c })),
               ...allComps.map(c => ({ kind: 'event' as const, sortAt: c.created_at, eventData: c })),
-            ].sort((a, b) => {
-              if (!a.sortAt && !b.sortAt) return 0
-              if (!a.sortAt) return 1
-              if (!b.sortAt) return -1
-              return new Date(b.sortAt).getTime() - new Date(a.sortAt).getTime()
-            }).slice(0, 3)
+            ]
             if (newsItems.length === 0) return null
             return (
               <>
@@ -726,52 +720,6 @@ export default function HomePage() {
                   <span onClick={() => router.push('/notifications')} style={{ fontSize: 11, color: 'var(--g3)', fontWeight: 600, cursor: 'pointer' }}>すべて見る</span>
                 </div>
                 {newsItems.map((item) => {
-                  if (item.kind === 'chat') {
-                    const c = item.chatData
-                    const { unread } = c
-                    const time = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' }) : ''
-                    const href = c.type === 'dm' ? `/chat/${c.id}` : c.type === 'comp' ? `/comp/${c.id}/chat` : `/chat/group/${c.id}`
-                    return (
-                      <div key={`chat-${c.type}-${c.id}`} onClick={() => router.push(href)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                          {c.type === 'dm' && c.otherUser ? (
-                            <FriendAvatar avatarUrl={c.otherUser.avatar_url} nickname={c.otherUser.nickname} isFriend={c.isFriend ?? false} size={42} border="1px solid var(--line)" />
-                          ) : c.type === 'comp' ? (
-                            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg, var(--g1), var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" width={20} height={20}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                            </div>
-                          ) : (
-                            <div style={{ width: 42, height: 42, borderRadius: 10, background: 'var(--surf)', border: '1px solid var(--line)', position: 'relative' }}>
-                              {(c.memberProfiles ?? []).slice(0, 2).map((p, i) => (
-                                <div key={p.user_id} style={{ position: 'absolute', width: 22, height: 22, borderRadius: '50%', background: 'var(--surf)', border: '1.5px solid white', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--g1)', left: i === 0 ? 2 : undefined, right: i === 1 ? 2 : undefined, top: i === 0 ? 2 : undefined, bottom: i === 1 ? 2 : undefined }}>
-                                  {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : p.nickname?.[0]}
-                                </div>
-                              ))}
-                              {(c.memberProfiles ?? []).length === 0 && <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👥</div>}
-                            </div>
-                          )}
-                          {unread > 0 && (
-                            <div style={{ position: 'absolute', top: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', border: '2px solid white' }}>
-                              {unread > 9 ? '9+' : unread}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: unread > 0 ? 700 : 600, color: 'var(--txt)', overflow: 'hidden', maxWidth: 160 }}>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                              {c.type === 'dm' && <GenderBadge gender={c.otherUser?.gender} size={12} />}
-                            </div>
-                            <div style={{ fontSize: 10, color: 'var(--mute)', flexShrink: 0 }}>{time}</div>
-                          </div>
-                          <div style={{ fontSize: 12, color: unread > 0 ? 'var(--txt)' : 'var(--mute)', fontWeight: unread > 0 ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {c.lastMessage ?? 'チャットを始めましょう'}
-                          </div>
-                        </div>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" strokeWidth="2"><polyline points="9,18 15,12 9,6"/></svg>
-                      </div>
-                    )
-                  }
                   const ev = item.eventData
                   const isRound = ev.type === 'round'
                   const iconBg = isRound ? '#dcfce7' : '#fef3c7'

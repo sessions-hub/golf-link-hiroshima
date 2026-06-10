@@ -263,7 +263,7 @@ export default function CompGroupChatPage() {
                     <span style={{ fontSize: 12 }}>{m.file_name ?? 'ファイル'}</span>
                   </a>
                 )}
-                {m.content && <div style={{ padding: m.image_url || m.file_url ? '4px 4px 0' : '0' }}>{m.content}</div>}
+                {m.content && <div style={{ padding: m.image_url || m.file_url ? '4px 4px 0' : '0', fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{m.content}</div>}
               </div>
               <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 3, textAlign: isMe ? 'right' : 'left' }}>
                 {isTemp ? '送信中...' : time}
