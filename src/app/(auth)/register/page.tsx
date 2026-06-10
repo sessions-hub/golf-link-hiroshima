@@ -32,8 +32,26 @@ export default function RegisterPage() {
     const ref = new URLSearchParams(window.location.search).get('ref')
     if (ref) sessionStorage.setItem('ref_source', ref)
   }, [])
+
+  useEffect(() => {
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent))
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(1)
+  const [registeredUserId, setRegisteredUserId] = useState('')
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [isIOS, setIsIOS] = useState(false)
+  const [isStandalone, setIsStandalone] = useState(false)
+  const [notifDone, setNotifDone] = useState(false)
 
   // Step 1
   const [firstName, setFirstName] = useState('')
@@ -66,6 +84,31 @@ export default function RegisterPage() {
 
   const toggleItem = (item: string, list: string[], setList: (v: string[]) => void) => {
     setList(list.includes(item) ? list.filter(i => i !== item) : [...list, item])
+  }
+
+  const subscribePushFromRegister = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      router.push('/home')
+      return
+    }
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') { router.push('/home'); return }
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY,
+      })
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, userId: registeredUserId }),
+      })
+      setNotifDone(true)
+      setTimeout(() => router.push('/home'), 1500)
+    } catch {
+      router.push('/home')
+    }
   }
 
   const handleRegister = async () => {
@@ -124,10 +167,13 @@ export default function RegisterPage() {
           target_id: data.user.id,
         })
       }
+      setRegisteredUserId(data.user.id)
+      setLoading(false)
+      setShowOnboarding(true)
+      return
     }
 
     router.push('/home')
-    router.refresh()
   }
 
   return (
@@ -284,6 +330,91 @@ export default function RegisterPage() {
           <button onClick={handleRegister} disabled={loading} style={{ width: '100%', background: loading ? 'var(--mute)' : 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {loading ? '登録中...' : '登録を完了する 🎉'}
           </button>
+        </div>
+      )}
+
+      {/* オンボーディングモーダル */}
+      {showOnboarding && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', zIndex: 500, display: 'flex', alignItems: 'flex-end' }}>
+          <div style={{ background: 'white', borderRadius: '20px 20px 0 0', width: '100%', padding: '28px 22px 52px' }}>
+            {onboardingStep === 1 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                <div style={{ fontSize: 36 }}>📱</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', textAlign: 'center' }}>GLH.をホーム画面に追加</div>
+                <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center' }}>アプリのようにすぐ開けます</div>
+                {isStandalone ? (
+                  <div style={{ fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>✓ すでにホーム画面に追加済みです</div>
+                ) : deferredPrompt ? (
+                  <button
+                    onClick={async () => {
+                      deferredPrompt.prompt()
+                      await deferredPrompt.userChoice
+                      setDeferredPrompt(null)
+                      setOnboardingStep(2)
+                    }}
+                    style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    インストールする
+                  </button>
+                ) : isIOS ? (
+                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>①</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>
+                        画面下の <span style={{ fontWeight: 700 }}>共有ボタン</span>（
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ verticalAlign: 'middle' }}><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16,6 12,2 8,6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                        ）をタップ
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>②</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>
+                        「<span style={{ fontWeight: 700 }}>ホーム画面に追加</span>」を選択
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center' }}>ブラウザのメニューからホーム画面に追加できます</div>
+                )}
+                <button
+                  onClick={() => setOnboardingStep(2)}
+                  style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 12, padding: '13px', fontSize: 14, color: 'var(--mid)', cursor: 'pointer', marginTop: 4 }}
+                >
+                  スキップ
+                </button>
+              </div>
+            ) : notifDone ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '20px 0' }}>
+                <div style={{ fontSize: 48 }}>✅</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)' }}>設定完了！</div>
+                <div style={{ fontSize: 13, color: 'var(--mute)' }}>ホームへ移動します...</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                <div style={{ fontSize: 36 }}>🔔</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', textAlign: 'center' }}>通知をONにしよう</div>
+                <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center', lineHeight: 1.7 }}>
+                  チャットの新着メッセージやコンペ・ラウンド募集の情報をリアルタイムでお届けします
+                </div>
+                <button
+                  onClick={subscribePushFromRegister}
+                  style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  通知を許可する
+                </button>
+                <button
+                  onClick={() => router.push('/home')}
+                  style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 12, padding: '13px', fontSize: 14, color: 'var(--mid)', cursor: 'pointer' }}
+                >
+                  あとで設定する
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

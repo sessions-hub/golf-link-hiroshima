@@ -110,6 +110,7 @@ export default function HomePage() {
   const deferredPromptRef = useRef<any>(null)
   const [totalPts, setTotalPts] = useState(0)
   const [todayPts, setTodayPts] = useState(0)
+  const [showPushBanner, setShowPushBanner] = useState(false)
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -138,6 +139,16 @@ export default function HomePage() {
       clearTimeout(timer)
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    if (!isStandalone) return
+    if (Notification.permission !== 'default') return
+    if (localStorage.getItem('push_banner_dismissed')) return
+    setShowPushBanner(true)
   }, [])
 
   const handleInstallDismiss = () => {
@@ -565,6 +576,27 @@ export default function HomePage() {
     ))
   }
 
+  const subscribePush = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') return
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY,
+      })
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, userId: user.id }),
+      })
+      setShowPushBanner(false)
+    } catch {}
+  }
+
   const filteredPosts = posts.filter(p =>
     !searchQuery ||
     p.caption?.includes(searchQuery) ||
@@ -706,6 +738,18 @@ export default function HomePage() {
 
           {/* ライムライン */}
           <div style={{ height: 2, background: 'linear-gradient(90deg,var(--g3),var(--lime))', margin: '0 16px 10px', borderRadius: 1 }}/>
+
+          {/* プッシュ通知バナー */}
+          {showPushBanner && (
+            <div style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>🔔 通知をONにする</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>チャットやコンペの最新情報をお届けします</div>
+              </div>
+              <button onClick={subscribePush} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>設定する</button>
+              <button onClick={() => { setShowPushBanner(false); localStorage.setItem('push_banner_dismissed', '1') }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontSize: 18, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>×</button>
+            </div>
+          )}
 
           {/* 新着情報 */}
           {(() => {
