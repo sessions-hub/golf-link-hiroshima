@@ -46,6 +46,9 @@ export default function ProfileEditPage() {
   const [area, setArea] = useState<string>('')
   const [bio, setBio] = useState('')
   const [showAge, setShowAge] = useState(true)
+  const [birthDate, setBirthDate] = useState('')
+  const [bloodType, setBloodType] = useState('A')
+  const [gender, setGender] = useState('other')
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -68,6 +71,9 @@ export default function ProfileEditPage() {
         setArea(data.areas?.[0] ?? '')
         setBio(data.bio ?? '')
         setShowAge(data.show_age ?? true)
+        setBirthDate(data.birth_date ?? '')
+        setBloodType(data.blood_type ?? 'A')
+        setGender(data.gender ?? 'other')
       }
       setLoading(false)
     }
@@ -125,6 +131,9 @@ export default function ProfileEditPage() {
         bio,
         avatar_url: avatarUrl,
         show_age: showAge,
+        birth_date: birthDate || null,
+        blood_type: bloodType,
+        gender: gender,
       })
       .eq('user_id', user.id)
 
@@ -252,6 +261,47 @@ export default function ProfileEditPage() {
           onChange={e => setNickname(e.target.value)}
           style={{ width: '100%', background: 'white', border: '1.5px solid var(--g3)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, boxShadow: '0 0 0 3px rgba(46,125,85,.08)' }}
         />
+
+        {/* 性別 */}
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>性別</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {[
+            { label: '男性', value: 'male' },
+            { label: '女性', value: 'female' },
+            { label: 'その他', value: 'other' },
+          ].map(g => (
+            <button key={g.value} onClick={() => setGender(g.value)}
+              style={{ flex: 1, padding: '10px', borderRadius: 10,
+                background: gender === g.value ? 'rgba(46,125,85,.1)' : 'var(--surf)',
+                border: `1px solid ${gender === g.value ? 'var(--g3)' : 'var(--line)'}`,
+                color: gender === g.value ? 'var(--g2)' : 'var(--txt)',
+                fontWeight: gender === g.value ? 700 : 400, fontSize: 13, cursor: 'pointer' }}>
+              {g.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 生年月日 */}
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>生年月日</div>
+        <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)}
+          style={{ width: '100%', border: '1px solid var(--line)', borderRadius: 10,
+            padding: '11px 13px', fontSize: 13, outline: 'none', fontFamily: 'inherit',
+            background: 'white', color: 'var(--txt)', marginBottom: 14 }}/>
+
+        {/* 血液型 */}
+        <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>血液型</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {['A', 'B', 'O', 'AB'].map(b => (
+            <button key={b} onClick={() => setBloodType(b)}
+              style={{ flex: 1, padding: '10px', borderRadius: 10,
+                background: bloodType === b ? 'rgba(46,125,85,.1)' : 'var(--surf)',
+                border: `1px solid ${bloodType === b ? 'var(--g3)' : 'var(--line)'}`,
+                color: bloodType === b ? 'var(--g2)' : 'var(--txt)',
+                fontWeight: bloodType === b ? 700 : 400, fontSize: 14, cursor: 'pointer' }}>
+              {b}型
+            </button>
+          ))}
+        </div>
 
         {/* ハンデキャップ */}
         <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ハンデキャップ</div>
