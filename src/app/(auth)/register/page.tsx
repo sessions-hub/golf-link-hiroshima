@@ -34,7 +34,19 @@ export default function RegisterPage() {
   }, [])
 
   useEffect(() => {
-    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent))
+    const ua = navigator.userAgent
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua)
+    const isIOSSafari = isIOSDevice && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua)
+    const isIOSChrome = isIOSDevice && /CriOS/.test(ua)
+    const isIOSOther = isIOSDevice && !isIOSSafari && !isIOSChrome
+    const isAndroidDevice = /Android/.test(ua)
+    const isMacOS = /Macintosh/.test(ua) && !isIOSDevice
+    const isWindows = /Windows/.test(ua)
+
+    setIsIOS(isIOSSafari)
+    setIsAndroid(isAndroidDevice)
+    setIsIOSNonSafari(isIOSChrome || isIOSOther)
+    setIsPCChrome((isMacOS || isWindows) && /Chrome/.test(ua) && !/Edge|OPR/.test(ua))
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
     const handler = (e: Event) => {
       e.preventDefault()
@@ -50,6 +62,9 @@ export default function RegisterPage() {
   const [registeredUserId, setRegisteredUserId] = useState('')
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isIOS, setIsIOS] = useState(false)
+  const [isAndroid, setIsAndroid] = useState(false)
+  const [isIOSNonSafari, setIsIOSNonSafari] = useState(false)
+  const [isPCChrome, setIsPCChrome] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
   const [notifDone, setNotifDone] = useState(false)
 
@@ -85,6 +100,12 @@ export default function RegisterPage() {
   const toggleItem = (item: string, list: string[], setList: (v: string[]) => void) => {
     setList(list.includes(item) ? list.filter(i => i !== item) : [...list, item])
   }
+
+  useEffect(() => {
+    if (showOnboarding && isStandalone) {
+      setOnboardingStep(2)
+    }
+  }, [showOnboarding, isStandalone])
 
   const subscribePushFromRegister = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -343,7 +364,7 @@ export default function RegisterPage() {
                 <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--txt)', textAlign: 'center' }}>GLH.をホーム画面に追加</div>
                 <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center' }}>アプリのようにすぐ開けます</div>
                 {isStandalone ? (
-                  <div style={{ fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>✓ すでにホーム画面に追加済みです</div>
+                  <div style={{ fontSize: 13, color: 'var(--g2)', fontWeight: 600 }}>✅ すでにホーム画面に追加済みです</div>
                 ) : deferredPrompt ? (
                   <button
                     onClick={async () => {
@@ -377,8 +398,50 @@ export default function RegisterPage() {
                       </div>
                     </div>
                   </div>
+                ) : isIOSNonSafari ? (
+                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
+                    <div style={{ fontSize: 28 }}>📱</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Safariで開いてください</div>
+                    <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.6 }}>iPhoneでホーム画面に追加するには<br />Safariブラウザが必要です</div>
+                    <button
+                      onClick={() => { window.location.href = window.location.href }}
+                      style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Safariで開く
+                    </button>
+                  </div>
+                ) : isAndroid ? (
+                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.6 }}>
+                      <span style={{ fontWeight: 700 }}>Chromeブラウザで開く</span>と<br />ホーム画面に追加できます
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.6 }}>
+                      Chromeでこのページを開き、<br />アドレスバー右上のメニュー（⋮）から<br />「ホーム画面に追加」を選択
+                    </div>
+                  </div>
+                ) : isPCChrome ? (
+                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>①</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>
+                        アドレスバー右端の <span style={{ fontWeight: 700 }}>⊕ アイコン</span>をクリック
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>②</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>
+                        「<span style={{ fontWeight: 700 }}>インストール</span>」を選択
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center' }}>ブラウザのメニューからホーム画面に追加できます</div>
+                  <div style={{ fontSize: 13, color: 'var(--mute)', textAlign: 'center', lineHeight: 1.7 }}>
+                    ブラウザのメニューから<br />「ホーム画面に追加」または<br />「インストール」を選択してください
+                  </div>
                 )}
                 <button
                   onClick={() => setOnboardingStep(2)}
