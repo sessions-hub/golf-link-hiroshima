@@ -37,17 +37,19 @@ export default function RegisterPage() {
     const ua = navigator.userAgent
     const isIOSDevice = /iPad|iPhone|iPod/.test(ua)
     const isIOSSafari = isIOSDevice && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua)
-    const isIOSChrome = isIOSDevice && /CriOS/.test(ua)
-    const isIOSOther = isIOSDevice && !isIOSSafari && !isIOSChrome
+    const isIOSNonSafariVal = isIOSDevice && !isIOSSafari
     const isAndroidDevice = /Android/.test(ua)
     const isMacOS = /Macintosh/.test(ua) && !isIOSDevice
     const isWindows = /Windows/.test(ua)
+    const isPCChromeVal = (isMacOS || isWindows) && /Chrome/.test(ua) && !/Edge|OPR/.test(ua)
+    const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches
 
     setIsIOS(isIOSSafari)
+    setIsIOSNonSafari(isIOSNonSafariVal)
     setIsAndroid(isAndroidDevice)
-    setIsIOSNonSafari(isIOSChrome || isIOSOther)
-    setIsPCChrome((isMacOS || isWindows) && /Chrome/.test(ua) && !/Edge|OPR/.test(ua))
-    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches)
+    setIsPCChrome(isPCChromeVal)
+    setIsStandalone(isStandaloneMode)
+    if (isIOSNonSafariVal) setShowSafariBanner(true)
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -67,6 +69,7 @@ export default function RegisterPage() {
   const [isPCChrome, setIsPCChrome] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
   const [notifDone, setNotifDone] = useState(false)
+  const [showSafariBanner, setShowSafariBanner] = useState(false)
 
   // Step 1
   const [firstName, setFirstName] = useState('')
@@ -225,6 +228,22 @@ export default function RegisterPage() {
       {error && (
         <div style={{ margin: '10px 22px 0', background: 'rgba(200,60,60,.1)', border: '1px solid rgba(200,60,60,.25)', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#c05050' }}>
           {error}
+        </div>
+      )}
+
+      {showSafariBanner && (
+        <div style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.3)', borderRadius: 12, padding: '12px 14px', margin: '12px 22px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>📱</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>Safariで開くことをおすすめします</div>
+            <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>プッシュ通知やホーム画面への追加はSafariが必要です。登録後に案内しますが、今すぐSafariで開くとスムーズです。</div>
+            <button
+              onClick={() => { window.location.href = window.location.href }}
+              style={{ marginTop: 8, background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Safariで開く
+            </button>
+          </div>
         </div>
       )}
 
@@ -400,23 +419,20 @@ export default function RegisterPage() {
                   </div>
                 ) : isIOSNonSafari ? (
                   <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-                    <div style={{ fontSize: 28 }}>📱</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Safariで開いてください</div>
-                    <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.6 }}>iPhoneでホーム画面に追加するには<br />Safariブラウザが必要です</div>
+                    <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.6 }}>
+                      iPhoneでホーム画面への追加・プッシュ通知を<br />利用するにはSafariが必要です
+                    </div>
                     <button
                       onClick={() => { window.location.href = window.location.href }}
-                      style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                      style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       Safariで開く
                     </button>
                   </div>
                 ) : isAndroid ? (
-                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'center' }}>
-                    <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.6 }}>
-                      <span style={{ fontWeight: 700 }}>Chromeブラウザで開く</span>と<br />ホーム画面に追加できます
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.6 }}>
-                      Chromeでこのページを開き、<br />アドレスバー右上のメニュー（⋮）から<br />「ホーム画面に追加」を選択
+                  <div style={{ width: '100%', background: 'var(--surf)', borderRadius: 14, padding: '16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.7 }}>
+                      Chromeブラウザのメニューから<br />「<span style={{ fontWeight: 700 }}>ホーム画面に追加</span>」を選択してください
                     </div>
                   </div>
                 ) : isPCChrome ? (
@@ -425,8 +441,13 @@ export default function RegisterPage() {
                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>①</span>
                       </div>
-                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>
-                        アドレスバー右端の <span style={{ fontWeight: 700 }}>⊕ アイコン</span>をクリック
+                      <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                        アドレスバー右端の
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontWeight: 700 }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ verticalAlign: 'middle' }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                          アイコン
+                        </span>
+                        をクリック
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
