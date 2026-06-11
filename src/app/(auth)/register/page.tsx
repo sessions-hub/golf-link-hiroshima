@@ -110,6 +110,11 @@ export default function RegisterPage() {
     }
   }, [showOnboarding, isStandalone])
 
+  const openInSafari = () => {
+    const currentUrl = window.location.href
+    window.location.href = currentUrl.replace('https://', 'x-safari-https://')
+  }
+
   const subscribePushFromRegister = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       router.push('/home')
@@ -238,7 +243,7 @@ export default function RegisterPage() {
             <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', marginBottom: 4 }}>Safariで開くことをおすすめします</div>
             <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>プッシュ通知やホーム画面への追加はSafariが必要です。登録後に案内しますが、今すぐSafariで開くとスムーズです。</div>
             <button
-              onClick={() => { window.location.href = window.location.href }}
+              onClick={openInSafari}
               style={{ marginTop: 8, background: '#f59e0b', color: 'white', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
               Safariで開く
@@ -423,7 +428,7 @@ export default function RegisterPage() {
                       iPhoneでホーム画面への追加・プッシュ通知を<br />利用するにはSafariが必要です
                     </div>
                     <button
-                      onClick={() => { window.location.href = window.location.href }}
+                      onClick={openInSafari}
                       style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       Safariで開く
