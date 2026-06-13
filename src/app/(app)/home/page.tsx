@@ -3,6 +3,7 @@ import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import { Avatar } from '@/components/Avatar'
 import AttachmentPicker from '@/components/AttachmentPicker'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -614,11 +615,8 @@ export default function HomePage() {
         <Logo variant="screen" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
 
-          <div onClick={() => router.push('/profile')} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', cursor: 'pointer', border: '1px solid var(--line)', overflow: 'hidden' }}>
-            {profile?.avatar_url
-              ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : profile?.nickname?.[0] ?? '?'
-            }
+          <div onClick={() => router.push('/profile')} style={{ cursor: 'pointer', lineHeight: 0 }}>
+            <Avatar size={34} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} />
           </div>
         </div>
       </div>
@@ -821,8 +819,8 @@ export default function HomePage() {
                     ? <img src={post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--lime)', marginBottom: 4, flexShrink: 0 }}>
-                          {post.profiles?.nickname?.[0] ?? '?'}
+                        <div style={{ marginBottom: 4, lineHeight: 0 }}>
+                          <Avatar size={28} nickname={post.profiles?.nickname ?? ''} gender={post.profiles?.gender} avatarUrl={post.profiles?.avatar_url ?? null} />
                         </div>
                         <div style={{ fontSize: 9, color: 'var(--txt)', textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                           {post.caption ?? ''}
@@ -877,6 +875,7 @@ export default function HomePage() {
                   <FriendAvatar
                     avatarUrl={post.profiles?.avatar_url ?? (OFFICIAL_USER_ID && post.user_id === OFFICIAL_USER_ID ? OFFICIAL_AVATAR : null)}
                     nickname={post.profiles?.nickname ?? ''}
+                    gender={post.profiles?.gender}
                     isFriend={friendIds.has(post.user_id)}
                     size={40}
                     flexShrink={0}
@@ -931,6 +930,7 @@ export default function HomePage() {
                           <FriendAvatar
                             avatarUrl={c.profiles?.avatar_url ?? null}
                             nickname={c.profiles?.nickname ?? ''}
+                            gender={c.profiles?.gender}
                             isFriend={!!c.user_id && friendIds.has(c.user_id)}
                             size={28}
                             border="1px solid var(--line)"

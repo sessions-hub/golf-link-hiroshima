@@ -14,6 +14,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import { Avatar } from '@/components/Avatar'
 
 const SVG_ICONS: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
@@ -479,11 +480,8 @@ export default function ProfilePage() {
           {/* プロフィールバナー */}
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
-              <div onClick={() => router.push('/profile/edit')} style={{ width: 64, height: 64, borderRadius: 14, background: 'var(--surf)', border: '1.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', cursor: 'pointer', position: 'relative' }}>
-                {profile?.avatar_url
-                  ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : profile?.nickname?.[0] ?? '?'
-                }
+              <div onClick={() => router.push('/profile/edit')} style={{ position: 'relative', flexShrink: 0, cursor: 'pointer', lineHeight: 0, border: '1.5px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
+                <Avatar size={64} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} borderRadius={14} />
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </div>
@@ -535,8 +533,8 @@ export default function ProfilePage() {
               {!showAllNotif ? (
                 <>
                   <div onClick={() => handleNotifClick(notifications[0])} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                      {notifications[0].actor?.avatar_url ? <img src={notifications[0].actor.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : notifications[0].actor?.nickname?.[0] ?? '?'}
+                    <div style={{ position: 'relative', flexShrink: 0, lineHeight: 0 }}>
+                      <Avatar size={34} nickname={notifications[0].actor?.nickname ?? ''} gender={notifications[0].actor?.gender} avatarUrl={notifications[0].actor?.avatar_url ?? null} />
                       <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: notifications[0].type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
                         {notifications[0].type === 'like' ? '❤' : '💬'}
                       </div>
@@ -569,8 +567,8 @@ export default function ProfilePage() {
                   </div>
                   {notifications.map((n: any) => (
                     <div key={n.id} onClick={() => handleNotifClick(n)} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', background: n.is_read ? 'white' : '#fffbf5', borderBottom: '1px solid var(--surf)' }}>
-                      <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                        {n.actor?.avatar_url ? <img src={n.actor.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : n.actor?.nickname?.[0] ?? '?'}
+                      <div style={{ position: 'relative', flexShrink: 0, lineHeight: 0 }}>
+                        <Avatar size={34} nickname={n.actor?.nickname ?? ''} gender={n.actor?.gender} avatarUrl={n.actor?.avatar_url ?? null} />
                         <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: n.type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
                           {n.type === 'like' ? '❤' : '💬'}
                         </div>
@@ -852,6 +850,7 @@ export default function ProfilePage() {
                     <FriendAvatar
                       avatarUrl={c.profiles?.avatar_url ?? null}
                       nickname={c.profiles?.nickname ?? ''}
+                      gender={c.profiles?.gender}
                       isFriend={!!c.profiles?.user_id && friendIds.has(c.profiles.user_id)}
                       size={28}
                       border="1px solid var(--line)"

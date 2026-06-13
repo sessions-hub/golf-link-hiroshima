@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { PageLoading } from '@/components/LoadingDots'
+import { Avatar } from '@/components/Avatar'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { useRouter } from 'next/navigation'
@@ -171,13 +172,10 @@ export default function ProfileEditPage() {
 
         {/* アバター */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <div onClick={() => fileRef.current?.click()} style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 700, color: 'var(--lime)', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
-            {avatarUrl
-              ? <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : nickname?.[0] ?? '?'
-            }
+          <div onClick={() => fileRef.current?.click()} style={{ position: 'relative', cursor: 'pointer', lineHeight: 0 }}>
+            <Avatar size={80} nickname={nickname} gender={gender} avatarUrl={avatarUrl} />
             {avatarUploading && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>...</div>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>...</div>
             )}
             <div style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>

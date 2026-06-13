@@ -352,10 +352,9 @@ export default function ChatRoomPage() {
         <FriendAvatar
           avatarUrl={otherProfile?.avatar_url ?? null}
           nickname={otherProfile?.nickname ?? ''}
+          gender={otherProfile?.gender}
           isFriend={isFriend}
           size={38}
-          bg="#E8F0F8"
-          textColor="#3a6aaa"
           onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)}
         />
         <div>

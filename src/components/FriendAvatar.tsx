@@ -1,13 +1,13 @@
 'use client'
+import { Avatar } from '@/components/Avatar'
 
 interface FriendAvatarProps {
   avatarUrl: string | null
   nickname: string
   isFriend: boolean
   size: number
+  gender?: string | null
   borderRadius?: string | number
-  bg?: string
-  textColor?: string
   border?: string
   fontSize?: number
   flexShrink?: number
@@ -19,15 +19,13 @@ export function FriendAvatar({
   nickname,
   isFriend,
   size,
+  gender,
   borderRadius = '50%',
-  bg = 'var(--surf)',
-  textColor = 'var(--g1)',
   border = 'none',
   fontSize,
   flexShrink,
   onClick,
 }: FriendAvatarProps) {
-  const fs = fontSize ?? Math.round(size * 0.36)
   return (
     <div
       onClick={onClick}
@@ -38,24 +36,8 @@ export function FriendAvatar({
         cursor: onClick ? 'pointer' : 'default',
       }}
     >
-      <div style={{
-        width: size,
-        height: size,
-        borderRadius,
-        background: bg,
-        border,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: fs,
-        fontWeight: 700,
-        color: textColor,
-        overflow: 'hidden',
-      }}>
-        {avatarUrl
-          ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : nickname?.[0] ?? '?'
-        }
+      <div style={{ borderRadius, border, overflow: 'hidden', flexShrink: 0, lineHeight: 0 }}>
+        <Avatar size={size} nickname={nickname} gender={gender} avatarUrl={avatarUrl} borderRadius={borderRadius} />
       </div>
       {isFriend && (
         <div style={{

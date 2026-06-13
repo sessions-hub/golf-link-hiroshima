@@ -6,6 +6,7 @@ import { addPoints } from '@/lib/points'
 import { PageLoading } from '@/components/LoadingDots'
 import BottomNav from '@/components/layout/BottomNav'
 import GenderBadge from '@/components/GenderBadge'
+import { Avatar } from '@/components/Avatar'
 
 
 
@@ -403,12 +404,7 @@ export default function CompDetailPage() {
           <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>主催者</div>
             <div onClick={() => router.push(`/user/${organizer.user_id}`)} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: 'var(--g1)', flexShrink: 0, overflow: 'hidden' }}>
-                {organizer.avatar_url
-                  ? <img src={organizer.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : organizer.nickname?.[0] ?? '?'
-                }
-              </div>
+              <Avatar size={48} nickname={organizer.nickname} gender={organizer.gender} avatarUrl={organizer.avatar_url} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', display: 'flex', alignItems: 'center', gap: 4 }}>{organizer.nickname}<GenderBadge gender={organizer.gender} size={13} /></div>
                 <div style={{ fontSize: 12, color: 'var(--mute)' }}>{getHdcpLabel(organizer.handicap)}</div>
@@ -470,12 +466,7 @@ export default function CompDetailPage() {
                 return (
                 <div key={p.user_id} onClick={() => router.push(`/user/${p.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
                   <div style={{ position: 'relative', width: 44, height: 44 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, overflow: 'hidden' }}>
-                      {p.avatar_url
-                        ? <img src={p.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : p.nickname?.[0] ?? '?'
-                      }
-                    </div>
+                    <Avatar size={44} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} />
                     {count > 1 && (
                       <div style={{ position: 'absolute', bottom: 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>+{count - 1}</div>
                     )}

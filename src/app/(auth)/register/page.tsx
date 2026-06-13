@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Avatar } from '@/components/Avatar'
 import { OFFICIAL_USER_ID } from '@/lib/official'
 
 const HDCP_OPTIONS = [
@@ -290,11 +291,8 @@ export default function RegisterPage() {
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           {/* アバター */}
           <div onClick={() => avatarRef.current?.click()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18, cursor: 'pointer' }}>
-            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'var(--g1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: 'var(--lime)', overflow: 'hidden', border: avatarPreview ? '2px solid var(--g3)' : 'none' }}>
-              {avatarPreview
-                ? <img src={avatarPreview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : (nickname?.[0] || '?')
-              }
+            <div style={{ border: avatarPreview ? '2px solid var(--g3)' : 'none', borderRadius: '50%', lineHeight: 0 }}>
+              <Avatar size={68} nickname={nickname} gender={gender} avatarUrl={avatarPreview ?? null} />
             </div>
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を登録（任意）</div>
           </div>

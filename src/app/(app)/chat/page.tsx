@@ -8,6 +8,7 @@ import { getUserPlan, type Plan } from '@/lib/plan'
 import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import { Avatar } from '@/components/Avatar'
 import GenderBadge from '@/components/GenderBadge'
 
 const getPlanBadge = (plan: Plan) => {
@@ -34,8 +35,8 @@ type GroupItem =
   | { type: 'friend'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number; memberProfiles: Profile[] }
 
 const MiniAvatar = ({ p, size, style }: { p: Profile; size: number; style?: React.CSSProperties }) => (
-  <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--surf)', border: '1.5px solid white', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: Math.round(size * 0.36), fontWeight: 700, color: 'var(--g1)', ...style }}>
-    {p.avatar_url ? <img src={p.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : p.nickname?.[0] ?? '?'}
+  <div style={{ border: '1.5px solid white', borderRadius: '50%', overflow: 'hidden', lineHeight: 0, ...style }}>
+    <Avatar size={size} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} />
   </div>
 )
 
@@ -387,7 +388,7 @@ export default function ChatListPage() {
               return (
                 <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ background: unread > 0 ? '#fffbf5' : 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative', borderLeft: unread > 0 ? '3px solid #e05070' : '3px solid transparent' }}>
                   <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); router.push(`/user/${room.other_user.user_id}`) }}>
-                    <FriendAvatar avatarUrl={room.other_user.avatar_url} nickname={room.other_user.nickname} isFriend={friendIds.has(room.other_user.user_id)} size={52} border="1px solid var(--line)" />
+                    <FriendAvatar avatarUrl={room.other_user.avatar_url} nickname={room.other_user.nickname} gender={room.other_user.gender} isFriend={friendIds.has(room.other_user.user_id)} size={52} border="1px solid var(--line)" />
                     {unread > 0 && (
                       <div style={{ position: 'absolute', top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white', padding: '0 4px' }}>{unread > 99 ? '99+' : unread}</div>
                     )}

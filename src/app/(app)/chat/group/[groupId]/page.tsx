@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { PageLoading } from '@/components/LoadingDots'
 import AttachmentPicker from '@/components/AttachmentPicker'
 import GenderBadge from '@/components/GenderBadge'
+import { Avatar } from '@/components/Avatar'
 
 interface FriendGroupMessage {
   id: string
@@ -26,7 +27,7 @@ interface Profile {
 
 interface Member {
   user_id: string
-  profiles: { user_id: string; nickname: string; avatar_url: string | null } | null
+  profiles: { user_id: string; nickname: string; avatar_url: string | null; gender?: string | null } | null
 }
 
 export default function FriendGroupChatPage() {
@@ -349,10 +350,8 @@ export default function FriendGroupChatPage() {
         <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, overflowX: 'auto', flexShrink: 0 }}>
           {members.map(m => (
             <div key={m.user_id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: '2px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'var(--g2)' }}>
-                {m.profiles?.avatar_url
-                  ? <img src={m.profiles.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                  : m.profiles?.nickname?.[0] ?? '?'}
+              <div style={{ border: '2px solid var(--line)', borderRadius: '50%', overflow: 'hidden', lineHeight: 0 }}>
+                <Avatar size={40} nickname={m.profiles?.nickname ?? ''} gender={m.profiles?.gender} avatarUrl={m.profiles?.avatar_url ?? null} />
               </div>
               <div style={{ fontSize: 8, color: 'var(--mute)', maxWidth: 40, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>
                 {m.profiles?.nickname ?? ''}
@@ -380,11 +379,7 @@ export default function FriendGroupChatPage() {
             <div key={m.id} style={{ maxWidth: '76%', alignSelf: isMe ? 'flex-end' : 'flex-start', opacity: isTemp ? 0.7 : 1 }}>
               {!isMe && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--surf)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'var(--g1)', flexShrink: 0 }}>
-                    {profile?.avatar_url
-                      ? <img src={profile.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                      : profile?.nickname?.[0] ?? '?'}
-                  </div>
+                  <Avatar size={22} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} />
                   <span style={{ fontSize: 10, color: 'var(--mute)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>{profile?.nickname ?? 'メンバー'}<GenderBadge gender={profile?.gender} size={10} /></span>
                 </div>
               )}
@@ -497,11 +492,7 @@ export default function FriendGroupChatPage() {
                 <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10 }}>メンバー {members.length}名</div>
                 {members.map(m => (
                   <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--surf)' }}>
-                    <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--surf)', overflow: 'hidden', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: 'var(--g2)', flexShrink: 0 }}>
-                      {m.profiles?.avatar_url
-                        ? <img src={m.profiles.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
-                        : m.profiles?.nickname?.[0] ?? '?'}
-                    </div>
+                    <Avatar size={38} nickname={m.profiles?.nickname ?? ''} gender={m.profiles?.gender} avatarUrl={m.profiles?.avatar_url ?? null} />
                     <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
                       {m.profiles?.nickname ?? '不明'}
                       {m.user_id === myId && <span style={{ fontSize: 10, color: 'var(--mute)', marginLeft: 5 }}>（あなた）</span>}

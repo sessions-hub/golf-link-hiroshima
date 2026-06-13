@@ -604,11 +604,10 @@ export default function MatchPage() {
                     <FriendAvatar
                       avatarUrl={m.avatar_url}
                       nickname={m.nickname}
+                      gender={m.gender}
                       isFriend={friendIds.has(m.user_id)}
                       size={46}
                       borderRadius={10}
-                      bg={avatarColor.bg}
-                      textColor={avatarColor.text}
                       onClick={() => router.push(`/user/${m.user_id}`)}
                     />
                     <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => router.push(`/user/${m.user_id}`)}>
@@ -756,7 +755,7 @@ export default function MatchPage() {
                         return (
                           <div key={userId} onClick={() => router.push(`/user/${userId}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '10px 14px', marginBottom: 8, display: 'flex', gap: 10, alignItems: 'center', boxShadow: '0 1px 4px rgba(13,61,43,.04)', cursor: 'pointer' }}>
                             <div style={{ width: 24, height: 24, borderRadius: '50%', background: rs.bg, color: rs.color, fontSize: 11, fontWeight: 700, fontFamily: 'Inter', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{rank + 1}</div>
-                            <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(userId)} size={40} borderRadius={8} />
+                            <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} isFriend={friendIds.has(userId)} size={40} borderRadius={8} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
@@ -793,7 +792,7 @@ export default function MatchPage() {
                             if (!p) return null
                             return (
                               <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
-                                <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
+                                <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
@@ -913,6 +912,7 @@ export default function MatchPage() {
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
+                          gender={p.gender}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
@@ -962,6 +962,7 @@ export default function MatchPage() {
                         <FriendAvatar
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
+                          gender={p.gender}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}

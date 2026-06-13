@@ -401,6 +401,7 @@ export default function UserProfilePage() {
           <FriendAvatar
             avatarUrl={profile.avatar_url ?? (isOfficial ? OFFICIAL_AVATAR : null)}
             nickname={profile.nickname}
+            gender={profile.gender}
             isFriend={friendIds.has(userId)}
             size={64}
             borderRadius={14}
@@ -493,6 +494,7 @@ export default function UserProfilePage() {
               <FriendAvatar
                 avatarUrl={profile.avatar_url}
                 nickname={profile.nickname}
+                gender={profile.gender}
                 isFriend={friendIds.has(userId)}
                 size={36}
                 border="1px solid var(--line)"
@@ -528,6 +530,7 @@ export default function UserProfilePage() {
                     <FriendAvatar
                       avatarUrl={c.profiles?.avatar_url ?? null}
                       nickname={c.profiles?.nickname ?? ''}
+                      gender={c.profiles?.gender}
                       isFriend={!!c.user_id && friendIds.has(c.user_id)}
                       size={28}
                       border="1px solid var(--line)"
@@ -628,6 +631,7 @@ export default function UserProfilePage() {
                     <FriendAvatar
                       avatarUrl={c.profiles?.avatar_url ?? null}
                       nickname={c.profiles?.nickname ?? ''}
+                      gender={c.profiles?.gender}
                       isFriend={!!c.user_id && friendIds.has(c.user_id)}
                       size={28}
                       border="1px solid var(--line)"
