@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/EmptyState'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
+import { Avatar } from '@/components/Avatar'
 import { OFFICIAL_USER_ID, OFFICIAL_AVATAR } from '@/lib/official'
 
 interface Profile {
@@ -121,6 +122,7 @@ export default function UserProfilePage() {
   const [myGender, setMyGender] = useState<'male' | 'female'>('male')
   const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null)
   const [showMatchModal, setShowMatchModal] = useState(false)
+  const [showAvatarModal, setShowAvatarModal] = useState(false)
 
   useEffect(() => {
     if (OFFICIAL_USER_ID && userId === OFFICIAL_USER_ID) {
@@ -429,9 +431,8 @@ export default function UserProfilePage() {
             characterId={profile.avatar_character_id ?? null}
             isFriend={friendIds.has(userId)}
             size={64}
-            borderRadius={14}
-            border="1.5px solid var(--line)"
             flexShrink={0}
+            onClick={!isMe ? () => setShowAvatarModal(true) : undefined}
           />
           {/* 情報 */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -728,6 +729,21 @@ export default function UserProfilePage() {
                 {isBlocked ? 'ブロック解除' : 'ブロックする'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAvatarModal && profile && (
+        <div onClick={() => setShowAvatarModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+            <Avatar
+              size={280}
+              nickname={profile.nickname}
+              gender={profile.gender}
+              avatarUrl={profile.avatar_url ?? (isOfficial ? OFFICIAL_AVATAR : null)}
+              characterId={profile.avatar_character_id ?? null}
+            />
+            <button onClick={() => setShowAvatarModal(false)} style={{ position: 'absolute', top: -14, right: -14, width: 30, height: 30, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.3)', lineHeight: 1 }}>×</button>
           </div>
         </div>
       )}
