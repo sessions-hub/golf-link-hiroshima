@@ -32,7 +32,7 @@ test.describe('/chat チャットページ', () => {
     await page.goto('/chat')
 
     await expect(
-      page.locator('img[src="/avatars/bear-cream.png"]').first()
+      page.locator('img[src="/avatars/bear-black.png"]').first()
     ).toBeVisible({ timeout: 10_000 })
   })
 
