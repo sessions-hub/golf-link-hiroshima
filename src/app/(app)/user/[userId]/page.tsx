@@ -245,18 +245,7 @@ export default function UserProfilePage() {
           addPoints(supabase, myId, 20)
           addPoints(supabase, userId, 20)
           localStorage.setItem(mutualKey, '1')
-          // フレンド成立通知（重複防止のため存在チェック後 insert）
-          const { data: existingFriendNotif } = await supabase
-            .from('post_notifications')
-            .select('id')
-            .eq('user_id', userId).eq('actor_id', myId).eq('type', 'friend_match')
-            .maybeSingle()
-          if (!existingFriendNotif) {
-            await supabase.from('post_notifications').insert([
-              { user_id: userId, actor_id: myId, type: 'friend_match' },
-              { user_id: myId, actor_id: userId, type: 'friend_match' },
-            ])
-          }
+          // 通知はサーバーサイドトリガー（handle_mutual_favorite）が作成する
           setShowMatchModal(true)
         }
       }
