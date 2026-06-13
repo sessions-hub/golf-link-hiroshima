@@ -7,6 +7,7 @@ import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
+import { MatchSuccessModal } from '@/components/MatchSuccessModal'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
@@ -114,6 +115,10 @@ export default function UserProfilePage() {
   const [isBlocked, setIsBlocked] = useState(false)
   const [isBlockedByThem, setIsBlockedByThem] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
+  const [myNickname, setMyNickname] = useState('')
+  const [myGender, setMyGender] = useState<'male' | 'female'>('male')
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null)
+  const [showMatchModal, setShowMatchModal] = useState(false)
 
   useEffect(() => {
     if (OFFICIAL_USER_ID && userId === OFFICIAL_USER_ID) {
@@ -125,6 +130,17 @@ export default function UserProfilePage() {
       if (!user) { router.push('/login'); return }
       const currentId = user.id
       setMyId(currentId)
+
+      const { data: myProf } = await supabase
+        .from('profiles')
+        .select('nickname, gender, avatar_url')
+        .eq('user_id', currentId)
+        .single()
+      if (myProf) {
+        setMyNickname(myProf.nickname ?? '')
+        setMyGender(myProf.gender === 'female' ? 'female' : 'male')
+        setMyAvatarUrl(myProf.avatar_url ?? null)
+      }
 
       const { data: prof } = await supabase
         .from('profiles')
@@ -222,6 +238,7 @@ export default function UserProfilePage() {
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, userId, 20)
+          setShowMatchModal(true)
         }
         localStorage.setItem(favKey, '1')
       }
@@ -709,6 +726,22 @@ export default function UserProfilePage() {
         </div>
       )}
 
+      {showMatchModal && profile && (
+        <MatchSuccessModal
+          me={{
+            nickname: myNickname,
+            gender: myGender,
+            avatarUrl: myAvatarUrl,
+          }}
+          partner={{
+            nickname: profile.nickname,
+            gender: profile.gender === 'female' ? 'female' : 'male',
+            avatarUrl: profile.avatar_url,
+          }}
+          onMessage={() => { setShowMatchModal(false); handleChat() }}
+          onClose={() => setShowMatchModal(false)}
+        />
+      )}
       <BottomNav />
     </div>
   )

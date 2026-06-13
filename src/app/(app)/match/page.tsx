@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { MatchSuccessModal } from '@/components/MatchSuccessModal'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -108,7 +109,8 @@ export default function MatchPage() {
   const [loading, setLoading] = useState(true)
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [filters, setFilters] = useState<string[]>(['全員'])
-  const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string; gender?: string } | null>(null)
+  const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string; gender?: string; nickname?: string } | null>(null)
+  const [matchModal, setMatchModal] = useState<{ partnerNickname: string; partnerGender: string; partnerAvatarUrl: string | null; partnerId: string } | null>(null)
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -141,7 +143,7 @@ export default function MatchPage() {
 
       const { data: me } = await supabase
         .from('profiles')
-        .select('blood_type, birth_date, avatar_url, gender, areas, handicap')
+        .select('blood_type, birth_date, avatar_url, gender, areas, handicap, nickname')
         .eq('user_id', user.id)
         .single()
       if (me) {
@@ -324,6 +326,15 @@ export default function MatchPage() {
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, targetId, 20)
+          const partner = matches.find(m => m.user_id === targetId)
+          if (partner) {
+            setMatchModal({
+              partnerNickname: partner.nickname,
+              partnerGender: partner.gender ?? 'male',
+              partnerAvatarUrl: partner.avatar_url,
+              partnerId: targetId,
+            })
+          }
         }
         localStorage.setItem(favKey, '1')
       }
@@ -997,6 +1008,22 @@ export default function MatchPage() {
         </div>
       )}
 
+      {matchModal && (
+        <MatchSuccessModal
+          me={{
+            nickname: myProfile?.nickname ?? '',
+            gender: myProfile?.gender === 'female' ? 'female' : 'male',
+            avatarUrl: myAvatarUrl,
+          }}
+          partner={{
+            nickname: matchModal.partnerNickname,
+            gender: matchModal.partnerGender === 'female' ? 'female' : 'male',
+            avatarUrl: matchModal.partnerAvatarUrl,
+          }}
+          onMessage={() => { setMatchModal(null); handleChat(matchModal.partnerId) }}
+          onClose={() => setMatchModal(null)}
+        />
+      )}
       <BottomNav />
     </div>
   )
