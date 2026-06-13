@@ -211,15 +211,14 @@ export default function ProfilePage() {
       if (notifData && notifData.length > 0) {
         // actorのプロフィールを別途取得
         const actorIds = [...new Set(notifData.map((n: any) => n.actor_id))]
-        const postIds = [...new Set(notifData.map((n: any) => n.post_id))]
+        const postIds = [...new Set(notifData.map((n: any) => n.post_id).filter(Boolean))]
         const { data: actorData } = await supabase
           .from('profiles')
-          .select('user_id, nickname, avatar_url, avatar_character_id')
+          .select('user_id, nickname, avatar_url, avatar_character_id, gender')
           .in('user_id', actorIds)
-        const { data: postData } = await supabase
-          .from('posts')
-          .select('id, photo_url, caption')
-          .in('id', postIds)
+        const { data: postData } = postIds.length > 0
+          ? await supabase.from('posts').select('id, photo_url, caption').in('id', postIds)
+          : { data: [] }
         const enriched = notifData.map((n: any) => ({
           ...n,
           actor: actorData?.find((a: any) => a.user_id === n.actor_id) ?? null,
@@ -261,11 +260,18 @@ export default function ProfilePage() {
   }
 
   const handleNotifClick = async (notif: any) => {
-    // 既読にする
     await supabase.from('post_notifications').update({ is_read: true }).eq('id', notif.id)
     setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n))
     setUnreadNotifCount(prev => Math.max(0, prev - 1))
-    // 自分の個人ページの該当投稿へ
+    if (notif.type === 'friend_match') {
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('id')
+        .or(`and(user1_id.eq.${myUserId},user2_id.eq.${notif.actor_id}),and(user1_id.eq.${notif.actor_id},user2_id.eq.${myUserId})`)
+        .maybeSingle()
+      router.push(room ? `/chat/${room.id}` : `/user/${notif.actor_id}`)
+      return
+    }
     router.push(`/user/${notif.user_id}?postId=${notif.post_id}&from=notif`)
   }
 
@@ -536,16 +542,16 @@ export default function ProfilePage() {
                 <>
                   <div onClick={() => handleNotifClick(notifications[0])} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
                     <div style={{ position: 'relative', flexShrink: 0, lineHeight: 0 }}>
-                      <Avatar size={34} nickname={notifications[0].actor?.nickname ?? ''} gender={notifications[0].actor?.gender} avatarUrl={notifications[0].actor?.avatar_url ?? null} />
-                      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: notifications[0].type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
-                        {notifications[0].type === 'like' ? '❤' : '💬'}
+                      <Avatar size={34} nickname={notifications[0].actor?.nickname ?? ''} gender={notifications[0].actor?.gender} avatarUrl={notifications[0].actor?.avatar_url ?? null} characterId={notifications[0].actor?.avatar_character_id ?? null} />
+                      <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: notifications[0].type === 'like' ? '#e05070' : notifications[0].type === 'friend_match' ? 'var(--g2)' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
+                        {notifications[0].type === 'like' ? '❤' : notifications[0].type === 'friend_match' ? '🤝' : '💬'}
                       </div>
                     </div>
                     <div style={{ flex: 1, fontSize: 12, color: 'var(--txt)', lineHeight: 1.4 }}>
                       <strong style={{ fontWeight: 700 }}>{notifications[0].actor?.nickname ?? 'ゴルファー'}</strong>
-                      {notifications[0].type === 'like' ? 'さんがいいねしました' : `さんがコメント：「${notifications[0].comment_text ?? ''}」`}
+                      {notifications[0].type === 'like' ? 'さんがいいねしました' : notifications[0].type === 'friend_match' ? 'さんとフレンドになりました🎉' : `さんがコメント：「${notifications[0].comment_text ?? ''}」`}
                     </div>
-                    {notifications[0].post?.photo_url && (
+                    {notifications[0].type !== 'friend_match' && notifications[0].post?.photo_url && (
                       <div style={{ width: 34, height: 34, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
                         <img src={notifications[0].post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
@@ -568,23 +574,23 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   {notifications.map((n: any) => (
-                    <div key={n.id} onClick={() => handleNotifClick(n)} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', background: n.is_read ? 'white' : '#fffbf5', borderBottom: '1px solid var(--surf)' }}>
+                    <div key={n.id} onClick={() => handleNotifClick(n)} style={{ padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer', background: n.is_read ? 'white' : (n.type === 'friend_match' ? 'rgba(46,125,85,.05)' : '#fffbf5'), borderBottom: '1px solid var(--surf)' }}>
                       <div style={{ position: 'relative', flexShrink: 0, lineHeight: 0 }}>
-                        <Avatar size={34} nickname={n.actor?.nickname ?? ''} gender={n.actor?.gender} avatarUrl={n.actor?.avatar_url ?? null} />
-                        <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: n.type === 'like' ? '#e05070' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
-                          {n.type === 'like' ? '❤' : '💬'}
+                        <Avatar size={34} nickname={n.actor?.nickname ?? ''} gender={n.actor?.gender} avatarUrl={n.actor?.avatar_url ?? null} characterId={n.actor?.avatar_character_id ?? null} />
+                        <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: n.type === 'like' ? '#e05070' : n.type === 'friend_match' ? 'var(--g2)' : '#3b82f6', border: '1.5px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7 }}>
+                          {n.type === 'like' ? '❤' : n.type === 'friend_match' ? '🤝' : '💬'}
                         </div>
                       </div>
                       <div style={{ flex: 1, fontSize: 12, color: n.is_read ? 'var(--mute)' : 'var(--txt)', lineHeight: 1.4 }}>
                         <strong style={{ fontWeight: 700, color: n.is_read ? 'var(--mid)' : 'var(--txt)' }}>{n.actor?.nickname ?? 'ゴルファー'}</strong>
-                        {n.type === 'like' ? 'さんがいいねしました' : `さんがコメント：「${n.comment_text ?? ''}」`}
+                        {n.type === 'like' ? 'さんがいいねしました' : n.type === 'friend_match' ? 'さんとフレンドになりました🎉' : `さんがコメント：「${n.comment_text ?? ''}」`}
                       </div>
-                      {n.post?.photo_url && (
+                      {n.type !== 'friend_match' && n.post?.photo_url && (
                         <div style={{ width: 34, height: 34, borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
                           <img src={n.post.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       )}
-                      {!n.is_read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#e05070', flexShrink: 0 }} />}
+                      {!n.is_read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: n.type === 'friend_match' ? 'var(--g2)' : '#e05070', flexShrink: 0 }} />}
                     </div>
                   ))}
                 </>
