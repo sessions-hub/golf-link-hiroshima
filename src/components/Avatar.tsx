@@ -25,8 +25,8 @@ export function Avatar({
         fontFamily:'"Noto Sans JP",sans-serif', fontWeight:900, lineHeight:.8,
         fontSize:size*1.25, color:char.ink, zIndex:1, whiteSpace:'nowrap', userSelect:'none',
         WebkitUserSelect:'none' }}>{initial}</span>
-      <img src={char.src} alt="" style={{ position:'absolute', left:'50%', top:'54%',
-        transform:'translate(-50%,-50%)', height:'98%', objectFit:'contain', zIndex:2 }} />
+      <img src={char.src} alt="" style={{ position:'absolute', left:'50%', top:'50%',
+        transform:'translate(-50%,-50%)', height:'90%', objectFit:'contain', zIndex:2 }} />
     </div>
   )
 }
