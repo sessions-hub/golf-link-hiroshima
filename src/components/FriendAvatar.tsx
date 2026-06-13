@@ -7,6 +7,7 @@ interface FriendAvatarProps {
   isFriend: boolean
   size: number
   gender?: string | null
+  characterId?: string | null
   borderRadius?: string | number
   border?: string
   fontSize?: number
@@ -20,6 +21,7 @@ export function FriendAvatar({
   isFriend,
   size,
   gender,
+  characterId = null,
   borderRadius = '50%',
   border = 'none',
   fontSize,
@@ -37,7 +39,7 @@ export function FriendAvatar({
       }}
     >
       <div style={{ borderRadius, border, overflow: 'hidden', flexShrink: 0, lineHeight: 0 }}>
-        <Avatar size={size} nickname={nickname} gender={gender} avatarUrl={avatarUrl} borderRadius={borderRadius} />
+        <Avatar size={size} nickname={nickname} gender={gender} avatarUrl={avatarUrl} characterId={characterId} />
       </div>
       {isFriend && (
         <div style={{

@@ -29,6 +29,7 @@ interface Profile {
   preferred_days: string[]
   areas: string[] | null
   show_age: boolean
+  avatar_character_id?: string | null
 }
 
 interface Post {
@@ -424,6 +425,7 @@ export default function UserProfilePage() {
             avatarUrl={profile.avatar_url ?? (isOfficial ? OFFICIAL_AVATAR : null)}
             nickname={profile.nickname}
             gender={profile.gender}
+            characterId={profile.avatar_character_id ?? null}
             isFriend={friendIds.has(userId)}
             size={64}
             borderRadius={14}
@@ -517,6 +519,7 @@ export default function UserProfilePage() {
                 avatarUrl={profile.avatar_url}
                 nickname={profile.nickname}
                 gender={profile.gender}
+                characterId={profile.avatar_character_id ?? null}
                 isFriend={friendIds.has(userId)}
                 size={36}
                 border="1px solid var(--line)"

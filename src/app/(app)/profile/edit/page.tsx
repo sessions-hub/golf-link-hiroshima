@@ -2,6 +2,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { PageLoading } from '@/components/LoadingDots'
 import { Avatar } from '@/components/Avatar'
+import { AvatarPicker } from '@/components/AvatarPicker'
+import { getLevelInfo } from '@/lib/level'
+import type { Gender } from '@/lib/avatars'
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import { useRouter } from 'next/navigation'
@@ -31,13 +34,16 @@ export default function ProfileEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [userId, setUserId] = useState('')
 
   const [nickname, setNickname] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarCharacterId, setAvatarCharacterId] = useState<string | null>(null)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [crop, setCrop] = useState<Crop>()
   const [showCropModal, setShowCropModal] = useState(false)
+  const [level, setLevel] = useState(1)
   const fileRef = useRef<HTMLInputElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const [handicap, setHandicap] = useState(36)
@@ -55,16 +61,17 @@ export default function ProfileEditPage() {
     const fetchProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setUserId(user.id)
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      const [{ data }, { data: ptsData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('user_points').select('total_points').eq('user_id', user.id).maybeSingle(),
+      ])
 
       if (data) {
         setNickname(data.nickname ?? '')
-      setAvatarUrl(data.avatar_url ?? null)
+        setAvatarUrl(data.avatar_url ?? null)
+        setAvatarCharacterId(data.avatar_character_id ?? null)
         setHandicap(data.handicap ?? 36)
         setBestScore(data.best_score?.toString() ?? '')
         setRoundFreq(data.round_freq ?? 'monthly_1')
@@ -76,6 +83,7 @@ export default function ProfileEditPage() {
         setBloodType(data.blood_type ?? 'A')
         setGender(data.gender ?? 'other')
       }
+      setLevel(getLevelInfo(ptsData?.total_points ?? 0).level)
       setLoading(false)
     }
     fetchProfile()
@@ -90,7 +98,6 @@ export default function ProfileEditPage() {
   const handleAvatarUpload = async (file: File) => {
     setAvatarUploading(true)
     try {
-      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -103,16 +110,31 @@ export default function ProfileEditPage() {
 
       if (!error) {
         const { data } = supabase.storage.from('user-photos').getPublicUrl(filePath)
-        // キャッシュ回避のためタイムスタンプを付与
-        setAvatarUrl(`${data.publicUrl}?t=${Date.now()}`)
+        const newUrl = `${data.publicUrl}?t=${Date.now()}`
+        setAvatarUrl(newUrl)
+        setAvatarCharacterId(null)
+        await supabase.from('profiles').update({ avatar_url: newUrl, avatar_character_id: null }).eq('user_id', user.id)
       } else {
-        console.error('Upload error:', error)
         alert('アップロードに失敗しました: ' + error.message)
       }
     } catch (e) {
       console.error('Avatar upload error:', e)
     }
     setAvatarUploading(false)
+  }
+
+  const handleSelectCharacter = async (id: string) => {
+    setAvatarCharacterId(id)
+    if (userId) {
+      await supabase.from('profiles').update({ avatar_character_id: id }).eq('user_id', userId)
+    }
+  }
+
+  const handleSelectPhoto = async () => {
+    setAvatarCharacterId(null)
+    if (userId) {
+      await supabase.from('profiles').update({ avatar_character_id: null }).eq('user_id', userId)
+    }
   }
 
   const handleSave = async () => {
@@ -131,6 +153,7 @@ export default function ProfileEditPage() {
         areas: area ? [area] : [],
         bio,
         avatar_url: avatarUrl,
+        avatar_character_id: avatarCharacterId,
         show_age: showAge,
         birth_date: birthDate || null,
         blood_type: bloodType,
@@ -148,6 +171,8 @@ export default function ProfileEditPage() {
   }
 
   if (loading) return <PageLoading />
+
+  const safeGender: Gender = gender === 'female' ? 'female' : 'male'
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
@@ -171,17 +196,25 @@ export default function ProfileEditPage() {
       <div style={{ flex: 1, padding: '16px 22px 100px' }}>
 
         {/* アバター */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-          <div onClick={() => fileRef.current?.click()} style={{ position: 'relative', cursor: 'pointer', lineHeight: 0 }}>
-            <Avatar size={80} nickname={nickname} gender={gender} avatarUrl={avatarUrl} />
-            {avatarUploading && (
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>...</div>
-            )}
-            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--g3)" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ position: 'relative', lineHeight: 0 }}>
+              <Avatar size={118} nickname={nickname} gender={gender} avatarUrl={avatarUrl} characterId={avatarCharacterId} />
+              {avatarUploading && (
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white' }}>...</div>
+              )}
             </div>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 8 }}>タップして写真を変更</div>
+          <AvatarPicker
+            nickname={nickname}
+            gender={safeGender}
+            avatarUrl={avatarUrl}
+            avatarCharacterId={avatarCharacterId}
+            level={level}
+            onSelectCharacter={handleSelectCharacter}
+            onSelectPhoto={handleSelectPhoto}
+            onUpload={() => fileRef.current?.click()}
+          />
           <input ref={fileRef} type="file" accept="image/*" onChange={(e) => {
             const file = e.target.files?.[0]
             if (!file) return
@@ -191,6 +224,7 @@ export default function ProfileEditPage() {
               setShowCropModal(true)
             }
             reader.readAsDataURL(file)
+            e.target.value = ''
           }} style={{ display: 'none' }} />
 
           {/* トリミングモーダル */}

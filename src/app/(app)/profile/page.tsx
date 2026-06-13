@@ -78,6 +78,7 @@ interface Profile {
   round_freq: string | null
   preferred_days: string[] | null
   show_age: boolean
+  avatar_character_id: string | null
 }
 
 const FREQ_LABEL: Record<string, string> = {
@@ -213,7 +214,7 @@ export default function ProfilePage() {
         const postIds = [...new Set(notifData.map((n: any) => n.post_id))]
         const { data: actorData } = await supabase
           .from('profiles')
-          .select('user_id, nickname, avatar_url')
+          .select('user_id, nickname, avatar_url, avatar_character_id')
           .in('user_id', actorIds)
         const { data: postData } = await supabase
           .from('posts')
@@ -482,7 +483,7 @@ export default function ProfilePage() {
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
               <div onClick={() => router.push('/profile/edit')} style={{ position: 'relative', flexShrink: 0, cursor: 'pointer', lineHeight: 0, border: '1.5px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
-                <Avatar size={64} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} borderRadius={14} />
+                <Avatar size={64} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} characterId={profile?.avatar_character_id ?? null} />
                 <div style={{ position: 'absolute', bottom: 0, right: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </div>

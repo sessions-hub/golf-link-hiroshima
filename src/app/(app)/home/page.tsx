@@ -26,6 +26,7 @@ interface Profile {
   user_id: string
   avatar_url: string | null
   gender: string | null
+  avatar_character_id?: string | null
 }
 
 
@@ -178,7 +179,7 @@ export default function HomePage() {
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('nickname, handicap, best_score, user_id, avatar_url, gender')
+        .select('nickname, handicap, best_score, user_id, avatar_url, gender, avatar_character_id')
         .eq('user_id', user.id)
         .single()
       if (prof) setProfile(prof)
@@ -310,7 +311,7 @@ export default function HomePage() {
 
       const { data: postData2 } = await supabase
         .from('posts')
-        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`)
+        .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender, avatar_character_id), post_likes(count), post_comments(count)`)
         .order('created_at', { ascending: false })
         .limit(30)
 
@@ -461,7 +462,7 @@ export default function HomePage() {
       caption: caption.trim() || null,
       photo_url: photoUrl,
       post_type: photo ? 'round_photo' : 'text',
-    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`).single()
+    }).select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender, avatar_character_id), post_likes(count), post_comments(count)`).single()
     if (postError) {
       console.error('Post error:', postError)
       setPosting(false)
@@ -492,7 +493,7 @@ export default function HomePage() {
     // 投稿後にDBから再取得
     const { data: refreshedPosts } = await supabase
       .from('posts')
-      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender), post_likes(count), post_comments(count)`)
+      .select(`*, profiles!posts_user_id_fkey(nickname, avatar_url, user_id, gender, avatar_character_id), post_likes(count), post_comments(count)`)
       .order('created_at', { ascending: false })
       .limit(30)
     if (refreshedPosts) setPosts(refreshedPosts.map((p: any) => ({ ...p, likes_count: Number(p.post_likes?.[0]?.count ?? 0), comment_count: Number(p.post_comments?.[0]?.count ?? 0), liked_by_me: false })) as any)
@@ -617,7 +618,7 @@ export default function HomePage() {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
 
           <div onClick={() => router.push('/profile')} style={{ cursor: 'pointer', lineHeight: 0 }}>
-            <Avatar size={34} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} />
+            <Avatar size={34} nickname={profile?.nickname ?? ''} gender={profile?.gender} avatarUrl={profile?.avatar_url ?? null} characterId={profile?.avatar_character_id ?? null} />
           </div>
         </div>
       </div>
@@ -817,7 +818,7 @@ export default function HomePage() {
                     : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 6 }}>
                         <div style={{ marginBottom: 4, lineHeight: 0 }}>
-                          <Avatar size={28} nickname={post.profiles?.nickname ?? ''} gender={post.profiles?.gender} avatarUrl={post.profiles?.avatar_url ?? null} />
+                          <Avatar size={28} nickname={post.profiles?.nickname ?? ''} gender={post.profiles?.gender} avatarUrl={post.profiles?.avatar_url ?? null} characterId={post.profiles?.avatar_character_id ?? null} />
                         </div>
                         <div style={{ fontSize: 9, color: 'var(--txt)', textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                           {post.caption ?? ''}
@@ -869,6 +870,7 @@ export default function HomePage() {
                     avatarUrl={post.profiles?.avatar_url ?? (OFFICIAL_USER_ID && post.user_id === OFFICIAL_USER_ID ? OFFICIAL_AVATAR : null)}
                     nickname={post.profiles?.nickname ?? ''}
                     gender={post.profiles?.gender}
+                    characterId={post.profiles?.avatar_character_id ?? null}
                     isFriend={friendIds.has(post.user_id)}
                     size={40}
                     flexShrink={0}
