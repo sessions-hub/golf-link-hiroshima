@@ -12,7 +12,7 @@ export const AVATAR_CHARACTERS: AvatarCharacter[] = [
   { id:'bear-black', name:'クラシックベア（黒）', src:'/avatars/bear-black.png',
     bg:'radial-gradient(circle at 50% 32%,#f6f2e8,#dcd5c2)', ink:'rgba(150,124,46,.30)', minLevel:0, gender:'male' },
   { id:'bear-cream', name:'クラシックベア（白）', src:'/avatars/bear-cream.png',
-    bg:'radial-gradient(circle at 50% 32%,#1d4831,#0f281b)', ink:'rgba(216,189,106,.26)', minLevel:0, gender:'female' },
+    bg:'radial-gradient(circle at 50% 32%,#fce4ee,#f6c9da)', ink:'rgba(196,108,140,.30)', minLevel:0, gender:'female' },
 ]
 export function defaultCharacterFor(gender: Gender): AvatarCharacter {
   return AVATAR_CHARACTERS.find(c => c.gender === gender) ?? AVATAR_CHARACTERS[0]
