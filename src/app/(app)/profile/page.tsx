@@ -388,7 +388,8 @@ export default function ProfilePage() {
 
     let photoUrl: string | null = null
     if (photo) {
-      const fileName = `${user.id}/${Date.now()}_${photo.name}`
+      const ext = photo.name.split('.').pop() ?? 'jpg'
+      const fileName = `${user.id}/${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('user-photos')
         .upload(fileName, photo, { contentType: photo.type, upsert: true })
