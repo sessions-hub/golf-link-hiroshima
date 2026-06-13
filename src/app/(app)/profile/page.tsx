@@ -15,6 +15,7 @@ import Logo from '@/components/layout/Logo'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import { Avatar } from '@/components/Avatar'
+import { EmptyState } from '@/components/EmptyState'
 
 const SVG_ICONS: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
@@ -593,12 +594,7 @@ export default function ProfilePage() {
           {/* 投稿グリッド */}
           <div style={{ padding: '8px 16px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>投稿</div>
           {posts.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 20px' }}>
-              <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center' }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--mute)' }}>まだ投稿がありません</div>
-            </div>
+            <EmptyState message="まだ投稿がありません" subText="最初の投稿をシェアしてみましょう" />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
               {posts.map(post => (

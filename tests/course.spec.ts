@@ -45,16 +45,16 @@ test.describe('/course コース・コンペページ', () => {
     await page.goto('/course')
 
     await expect(
-      page.locator('text=コンペ・ラウンド募集がまだありません')
+      page.locator('text=募集中のコンペはありません')
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('フリープランのコンペタブにプレミアムへの誘導がある', async ({ page }) => {
+  test('コンペタブの空の状態にサブテキストが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/course')
 
     await expect(
-      page.locator('button', { hasText: 'プレミアムに申し込む' })
+      page.locator('text=新しいコンペが募集されるとここに表示されます')
     ).toBeVisible({ timeout: 10_000 })
   })
 

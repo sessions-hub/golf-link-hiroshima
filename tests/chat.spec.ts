@@ -22,27 +22,26 @@ test.describe('/chat チャットページ', () => {
     await page.goto('/chat')
 
     await expect(
-      page.locator('text=チャットがまだありません')
+      page.locator('text=まだトークがありません')
     ).toBeVisible({ timeout: 10_000 })
-    await expect(page.locator('text=フレンドと')).toBeVisible()
+    await expect(page.locator('text=気になるゴルファーにメッセージを送ってみましょう')).toBeVisible()
   })
 
-  test('空の状態からマッチングページへのボタンがある', async ({ page }) => {
+  test('空の状態にクリームベアのマスコットが表示される', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/chat')
 
-    const button = page.locator('button', { hasText: 'マッチングを探す' })
-    await expect(button).toBeVisible({ timeout: 10_000 })
+    await expect(
+      page.locator('img[src="/avatars/bear-cream.png"]').first()
+    ).toBeVisible({ timeout: 10_000 })
   })
 
-  test('マッチングを探すボタンで /match に遷移する', async ({ page }) => {
+  test('個人タブが表示されている', async ({ page }) => {
     await mockAuthenticatedUser(page, 'free')
     await page.goto('/chat')
 
-    const button = page.locator('button', { hasText: 'マッチングを探す' })
-    await button.waitFor({ timeout: 10_000 })
-    await button.click()
-    await page.waitForURL('**/match', { timeout: 5_000 })
-    await expect(page).toHaveURL(/\/match/)
+    await expect(
+      page.locator('text=まだトークがありません')
+    ).toBeVisible({ timeout: 10_000 })
   })
 })

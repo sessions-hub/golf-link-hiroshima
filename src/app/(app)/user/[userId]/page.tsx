@@ -8,6 +8,7 @@ import { addPoints } from '@/lib/points'
 import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import { MatchSuccessModal } from '@/components/MatchSuccessModal'
+import { EmptyState } from '@/components/EmptyState'
 import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
@@ -606,10 +607,7 @@ export default function UserProfilePage() {
         )}
 
         {posts.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📸</div>
-            <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>まだ投稿がありません</div>
-          </div>
+          <EmptyState message="まだ投稿がありません" />
         )}
       </div>
 

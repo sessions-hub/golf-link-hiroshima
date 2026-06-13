@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { EmptyState } from '@/components/EmptyState'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -405,15 +406,9 @@ export default function CoursePage() {
           {loading && <SectionLoading />}
 
           {!loading && filteredCompetitions.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ marginBottom: 12, color: 'var(--mute)' }}>{Icons.trophy(32, 'var(--mute)')}</div>
-              <div style={{ fontSize: 14, color: 'var(--txt)', fontWeight: 600, marginBottom: 6 }}>コンペ・ラウンド募集がまだありません</div>
-              <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 8 }}>プレミアム以上の会員になるとコンペやラウンドを主催できます</div>
-              <div style={{ fontSize: 11, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 20 }}>個人の方はもちろん、ゴルフ場関係者の方のラウンド募集、飲食店の方のコンペ企画などお気軽にご利用ください。</div>
-              {!canHostComp(userPlan) && (
-                <button onClick={() => router.push('/subscription')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>プレミアムに申し込む</button>
-              )}
-            </div>
+            compTypeFilter === 'round'
+              ? <EmptyState message="募集中のラウンドはありません" />
+              : <EmptyState message="募集中のコンペはありません" subText="新しいコンペが募集されるとここに表示されます" />
           )}
 
           {filteredCompetitions.map((c) => (

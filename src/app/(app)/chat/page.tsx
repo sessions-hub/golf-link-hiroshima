@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { EmptyState } from '@/components/EmptyState'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -376,12 +377,7 @@ export default function ChatListPage() {
           <>
             {loading && <SectionLoading />}
             {!loading && rooms.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                <div style={{ marginBottom: 16, color: 'var(--mute)' }}>{Icons.chat(48, 'var(--mute)')}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', marginBottom: 8 }}>チャットがまだありません</div>
-                <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 24 }}>フレンドと<br/>チャットを始めましょう</div>
-                <button onClick={() => router.push('/match')} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '12px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>マッチングを探す</button>
-              </div>
+              <EmptyState message="まだトークがありません" subText="気になるゴルファーにメッセージを送ってみましょう" />
             )}
             {rooms.map((room) => {
               const unread = getUnreadCount(room)
@@ -423,12 +419,7 @@ export default function ChatListPage() {
             {groupLoading && <SectionLoading />}
 
             {!groupLoading && groups.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>👥</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)', marginBottom: 8 }}>グループがまだありません</div>
-                <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7, marginBottom: 24 }}>フレンドとグループを<br/>作成しましょう</div>
-                <button onClick={openCreateModal} style={{ background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '12px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>+ グループを作成</button>
-              </div>
+              <EmptyState message="まだグループがありません" />
             )}
 
             {groups.map((g) => (

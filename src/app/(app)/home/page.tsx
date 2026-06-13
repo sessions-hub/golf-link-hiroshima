@@ -1,6 +1,7 @@
 'use client'
 import { Icons } from '@/components/icons'
 import { SectionLoading } from '@/components/LoadingDots'
+import { EmptyState } from '@/components/EmptyState'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import { Avatar } from '@/components/Avatar'
@@ -803,11 +804,7 @@ export default function HomePage() {
           {loading && <SectionLoading padding="16px 0" />}
 
           {!loading && posts.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{ marginBottom: 8, color: "var(--mute)" }}>{Icons.camera(32, "var(--mute)")}</div>
-              <div style={{ fontSize: 12, color: 'var(--mute)' }}>まだ投稿がありません</div>
-              <button onClick={() => { setActiveTab('timeline'); setShowPostModal(true) }} style={{ marginTop: 10, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 7, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>最初の投稿をする</button>
-            </div>
+            <EmptyState message="まだ投稿がありません" />
           )}
 
           {/* サムネイルグリッド */}
@@ -860,13 +857,9 @@ export default function HomePage() {
             {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ marginBottom: 10, color: "var(--mute)" }}>{Icons.camera(28, "var(--mute)")}</div>
-                <div style={{ fontSize: 13, color: 'var(--mute)' }}>{searchQuery ? '検索結果がありません' : 'まだ投稿がありません'}</div>
-                {!searchQuery && (
-                  <button onClick={() => setShowPostModal(true)} style={{ marginTop: 12, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 7, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>最初の投稿をする</button>
-                )}
-              </div>
+              searchQuery
+                ? <div style={{ textAlign: 'center', padding: '40px 20px', fontSize: 13, color: 'var(--mute)' }}>検索結果がありません</div>
+                : <EmptyState message="まだ投稿がありません" />
             )}
 
             {filteredPosts.map((post) => (
