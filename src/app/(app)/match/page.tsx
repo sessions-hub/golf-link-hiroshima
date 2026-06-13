@@ -321,11 +321,16 @@ export default function MatchPage() {
       const favKey = `ptsf_${myId}_${targetId}`
       if (!localStorage.getItem(favKey)) {
         addPoints(supabase, myId, 5)
+        localStorage.setItem(favKey, '1')
+      }
+      const mutualKey = `mutual_${myId}_${targetId}`
+      if (!localStorage.getItem(mutualKey)) {
         const { data: reverse } = await supabase.from('favorites')
           .select('id').eq('user_id', targetId).eq('target_id', myId).maybeSingle()
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, targetId, 20)
+          localStorage.setItem(mutualKey, '1')
           const partner = matches.find(m => m.user_id === targetId)
           if (partner) {
             setMatchModal({
@@ -334,9 +339,21 @@ export default function MatchPage() {
               partnerAvatarUrl: partner.avatar_url,
               partnerId: targetId,
             })
+          } else {
+            const { data: partnerProf } = await supabase.from('profiles')
+              .select('nickname, gender, avatar_url')
+              .eq('user_id', targetId)
+              .single()
+            if (partnerProf) {
+              setMatchModal({
+                partnerNickname: partnerProf.nickname,
+                partnerGender: partnerProf.gender ?? 'male',
+                partnerAvatarUrl: partnerProf.avatar_url,
+                partnerId: targetId,
+              })
+            }
           }
         }
-        localStorage.setItem(favKey, '1')
       }
     }
     setFavorites(newFavs)

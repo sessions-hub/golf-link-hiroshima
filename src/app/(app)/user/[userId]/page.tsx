@@ -233,14 +233,18 @@ export default function UserProfilePage() {
       const favKey = `ptsf_${myId}_${userId}`
       if (!localStorage.getItem(favKey)) {
         addPoints(supabase, myId, 5)
+        localStorage.setItem(favKey, '1')
+      }
+      const mutualKey = `mutual_${myId}_${userId}`
+      if (!localStorage.getItem(mutualKey)) {
         const { data: reverse } = await supabase.from('favorites')
           .select('id').eq('user_id', userId).eq('target_id', myId).maybeSingle()
         if (reverse) {
           addPoints(supabase, myId, 20)
           addPoints(supabase, userId, 20)
+          localStorage.setItem(mutualKey, '1')
           setShowMatchModal(true)
         }
-        localStorage.setItem(favKey, '1')
       }
     }
     setIsFav(!isFav)
