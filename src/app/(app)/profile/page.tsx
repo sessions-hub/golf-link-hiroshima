@@ -210,12 +210,14 @@ export default function ProfilePage() {
         .limit(20)
       if (notifData && notifData.length > 0) {
         // actorのプロフィールを別途取得
-        const actorIds = [...new Set(notifData.map((n: any) => n.actor_id))]
+        const actorIds = [...new Set(notifData.map((n: any) => n.actor_id).filter(Boolean))]
         const postIds = [...new Set(notifData.map((n: any) => n.post_id).filter(Boolean))]
-        const { data: actorData } = await supabase
-          .from('profiles')
-          .select('user_id, nickname, avatar_url, avatar_character_id, gender')
-          .in('user_id', actorIds)
+        const { data: actorData } = actorIds.length > 0
+          ? await supabase
+              .from('profiles')
+              .select('user_id, nickname, avatar_url, avatar_character_id, gender')
+              .in('user_id', actorIds)
+          : { data: [] }
         const { data: postData } = postIds.length > 0
           ? await supabase.from('posts').select('id, photo_url, caption').in('id', postIds)
           : { data: [] }
