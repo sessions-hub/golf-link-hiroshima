@@ -696,7 +696,7 @@ export default function HomePage() {
                 pointerEvents:'none', filter:'drop-shadow(0 6px 12px rgba(0,0,0,.3))' }} />
             <div style={{paddingTop:36, position:'relative', zIndex:3, maxWidth:'56%'}}>
             <div style={{fontSize:20,fontWeight:600,color:'#F5F3EE',marginBottom:6,lineHeight:1.2}}>フレンドを探す</div>
-            <div style={{fontSize:11,color:'rgba(245,243,238,.58)',marginBottom:18,lineHeight:1.6,fontWeight:300}}>独自アルゴリズムで相性の良いゴルファーと繋がる</div>
+            <div style={{fontSize:11,color:'rgba(245,243,238,.58)',marginBottom:18,lineHeight:1.7,fontWeight:300}}>独自アルゴリズムで<br />相性の良いゴルファーとつながる</div>
             <button style={{display:'inline-flex',alignItems:'center',gap:8,background:'linear-gradient(135deg,#D4AA6A,#C49A50)',border:'none',borderRadius:100,padding:'10px 20px',fontFamily:'Inter',fontSize:11,fontWeight:600,letterSpacing:'.12em',color:'#17372D',cursor:'pointer',boxShadow:'0 4px 14px rgba(196,154,80,.35)'}}>
               VIEW MATCHES
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#17372D" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
