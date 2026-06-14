@@ -156,7 +156,24 @@ export default function MatchPage() {
       const { data, error } = await supabase.rpc('get_matches_with_score', {
         p_user_id: user.id, p_limit: 20, p_offset: 0, p_min_score: 0,
       })
-      if (!error) setMatches((data ?? []).filter((m: any) => m.user_id !== OFFICIAL_USER_ID))
+      if (!error) {
+        const rawMatches = (data ?? []).filter((m: any) => m.user_id !== OFFICIAL_USER_ID)
+        // RPC が avatar_character_id を返さない場合に備えてプロファイルから補完
+        const matchIds = rawMatches.map((m: any) => m.user_id)
+        if (matchIds.length > 0) {
+          const { data: charData } = await supabase
+            .from('profiles')
+            .select('user_id, avatar_character_id')
+            .in('user_id', matchIds)
+          const charMap = new Map(charData?.map((p: any) => [p.user_id, p.avatar_character_id]) ?? [])
+          setMatches(rawMatches.map((m: any) => ({
+            ...m,
+            avatar_character_id: m.avatar_character_id ?? charMap.get(m.user_id) ?? null,
+          })))
+        } else {
+          setMatches(rawMatches)
+        }
+      }
 
       // お気に入り・ブロック一覧
       const [{ data: favData }, { data: favMeData }, { data: iBlockData }, { data: blockedByData }] = await Promise.all([

@@ -40,7 +40,7 @@ export async function GET(
 
   const { data: profileData, error: profileErr } = await adminSupabase
     .from('profiles')
-    .select('user_id, nickname, avatar_url')
+    .select('user_id, nickname, avatar_url, avatar_character_id, gender')
     .in('user_id', memberIds)
   if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 

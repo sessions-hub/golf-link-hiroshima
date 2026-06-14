@@ -277,7 +277,7 @@ export default function UserProfilePage() {
     setCommentsLoading(true)
     const { data } = await supabase
       .from('post_comments')
-      .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url)')
+      .select('*, profiles!post_comments_user_id_fkey(nickname, avatar_url, avatar_character_id, gender)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
     if (data) {
@@ -558,6 +558,7 @@ export default function UserProfilePage() {
                       avatarUrl={c.profiles?.avatar_url ?? null}
                       nickname={c.profiles?.nickname ?? ''}
                       gender={c.profiles?.gender}
+                      characterId={c.profiles?.avatar_character_id}
                       isFriend={!!c.user_id && friendIds.has(c.user_id)}
                       size={28}
                       border="1px solid var(--line)"
@@ -656,6 +657,7 @@ export default function UserProfilePage() {
                       avatarUrl={c.profiles?.avatar_url ?? null}
                       nickname={c.profiles?.nickname ?? ''}
                       gender={c.profiles?.gender}
+                      characterId={c.profiles?.avatar_character_id}
                       isFriend={!!c.user_id && friendIds.has(c.user_id)}
                       size={28}
                       border="1px solid var(--line)"

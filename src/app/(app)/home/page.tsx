@@ -37,9 +37,9 @@ interface HomeChatItem {
   lastMessage: string | null
   lastMessageAt: string | null
   unread: number
-  otherUser?: { user_id: string; nickname: string; avatar_url: string | null; gender: string | null }
+  otherUser?: { user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null; gender: string | null }
   isFriend?: boolean
-  memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null }>
+  memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null }>
 }
 
 interface CompEventItem {
@@ -55,7 +55,7 @@ interface Comment {
   user_id: string
   content: string
   created_at: string
-  profiles?: { nickname: string | null; avatar_url: string | null; gender: string | null }
+  profiles?: { nickname: string | null; avatar_url: string | null; avatar_character_id?: string | null; gender: string | null }
 }
 
 interface Post {
@@ -239,8 +239,8 @@ export default function HomePage() {
       if (chatData) {
         const dmItems = await Promise.all(chatData.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single()
-          const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, gender: null }
+          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').eq('user_id', otherUserId).single()
+          const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, avatar_character_id: null, gender: null }
           const unread = room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2
           return { type: 'dm' as const, id: room.id, name: otherUser.nickname, lastMessage: room.last_message, lastMessageAt: room.last_message_at, unread, otherUser, isFriend: myFavs && favMe ? (() => { const favMeSet = new Set(favMe.map((f: any) => f.user_id)); return myFavs.filter((f: any) => favMeSet.has(f.target_id)).some((f: any) => f.target_id === otherUserId) })() : false }
         }))
@@ -284,9 +284,9 @@ export default function HomePage() {
             const { count } = await supabase.from('friend_group_messages').select('*', { count: 'exact', head: true }).eq('group_id', g.id).gt('created_at', lastSeen).neq('user_id', user.id)
             unread = count ?? 0
           }
-          let memberProfiles: Array<{ user_id: string; nickname: string; avatar_url: string | null }> = []
+          let memberProfiles: Array<{ user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null }> = []
           if (memberRows && memberRows.length > 0) {
-            const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url').in('user_id', memberRows.map(m => m.user_id))
+            const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id').in('user_id', memberRows.map(m => m.user_id))
             memberProfiles = pData ?? []
           }
           return { type: 'friend' as const, id: g.id, name: g.name, lastMessage: lastMsg ? (lastMsg.image_url ? '📷 画像' : lastMsg.content) : null, lastMessageAt: lastMsg?.created_at ?? null, unread, memberProfiles }
@@ -339,7 +339,7 @@ export default function HomePage() {
   const fetchComments = async (postId: string) => {
     const { data } = await supabase
       .from('post_comments')
-      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url, gender)`)
+      .select(`*, profiles!post_comments_user_id_fkey(nickname, avatar_url, avatar_character_id, gender)`)
       .eq('post_id', postId)
       .order('created_at', { ascending: true })
     if (data) {
@@ -926,6 +926,7 @@ export default function HomePage() {
                             avatarUrl={c.profiles?.avatar_url ?? null}
                             nickname={c.profiles?.nickname ?? ''}
                             gender={c.profiles?.gender}
+                            characterId={c.profiles?.avatar_character_id}
                             isFriend={!!c.user_id && friendIds.has(c.user_id)}
                             size={28}
                             border="1px solid var(--line)"
