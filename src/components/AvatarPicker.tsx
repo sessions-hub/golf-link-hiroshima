@@ -1,6 +1,6 @@
 'use client'
 import { Avatar } from '@/components/Avatar'
-import { unlockedCharacters, lockedCharacters, defaultCharacterFor, type Gender } from '@/lib/avatars'
+import { unlockedForGender, lockedForGender, defaultCharacterFor, type Gender } from '@/lib/avatars'
 
 export function AvatarPicker({
   nickname, gender, avatarUrl, avatarCharacterId, level, onSelectCharacter, onSelectPhoto, onUpload,
@@ -11,8 +11,8 @@ export function AvatarPicker({
   onUpload: () => void;
 }) {
   const selectedKey = avatarCharacterId ?? (avatarUrl ? 'photo' : defaultCharacterFor(gender).id)
-  const unlocked = unlockedCharacters(level)
-  const locked = lockedCharacters(level)
+  const unlocked = unlockedForGender(gender, level)
+  const locked = lockedForGender(gender, level)
   const ring = (sel: boolean): React.CSSProperties => ({
     borderRadius: '50%',
     padding: 0,
@@ -43,7 +43,7 @@ export function AvatarPicker({
         {locked.map(c => (
           <div key={c.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, opacity:.5 }}>
             <span style={{ position:'relative', width:72, height:72, borderRadius:'50%', overflow:'hidden', filter:'grayscale(.6) brightness(.6)', display:'block' }}>
-              <Avatar size={72} nickname="?" gender={c.gender ?? 'male'} avatarUrl={null} characterId={c.id} />
+              <Avatar size={72} nickname="?" gender={c.gender} avatarUrl={null} characterId={c.id} />
               <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔒</span>
             </span>
             <span style={{ fontSize:9, color:'#c9a227' }}>Lv.{c.minLevel} で解放</span>
