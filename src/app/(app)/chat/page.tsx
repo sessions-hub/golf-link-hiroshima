@@ -26,10 +26,10 @@ interface ChatRoom {
   last_message_at: string
   unread_count_user1: number
   unread_count_user2: number
-  other_user: { user_id: string; nickname: string; avatar_url: string | null; gender: string | null }
+  other_user: { user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null; gender: string | null }
 }
 
-interface Profile { user_id: string; nickname: string; avatar_url: string | null; gender?: string | null }
+interface Profile { user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null; gender?: string | null }
 
 type GroupItem =
   | { type: 'comp'; id: string; name: string; lastMessage: string | null; lastMessageAt: string | null; unread: number; compType: string }
@@ -37,7 +37,7 @@ type GroupItem =
 
 const MiniAvatar = ({ p, size, style }: { p: Profile; size: number; style?: React.CSSProperties }) => (
   <div style={{ border: '1.5px solid white', borderRadius: '50%', overflow: 'hidden', lineHeight: 0, ...style }}>
-    <Avatar size={size} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} />
+    <Avatar size={size} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} characterId={p.avatar_character_id} />
   </div>
 )
 
@@ -126,7 +126,7 @@ export default function ChatListPage() {
       if (data) {
         const roomsWithProfiles = await Promise.all(data.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: profile } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single()
+          const { data: profile } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').eq('user_id', otherUserId).single()
           return { ...room, other_user: profile ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, gender: null } }
         }))
         roomsWithProfiles.sort((a: any, b: any) => {
@@ -219,7 +219,7 @@ export default function ChatListPage() {
       }
       let memberProfiles: Profile[] = []
       if (memberRows && memberRows.length > 0) {
-        const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url').in('user_id', memberRows.map(m => m.user_id))
+        const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').in('user_id', memberRows.map(m => m.user_id))
         memberProfiles = pData ?? []
       }
       return {
@@ -256,7 +256,7 @@ export default function ChatListPage() {
     const favMeSet = new Set(favMe.map(f => f.user_id))
     const mutualIds = myFavs.filter(f => favMeSet.has(f.target_id)).map(f => f.target_id)
     if (mutualIds.length === 0) return
-    const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').in('user_id', mutualIds)
+    const { data: pData } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').in('user_id', mutualIds)
     setModalFriends(pData ?? [])
   }
 
@@ -384,7 +384,7 @@ export default function ChatListPage() {
               return (
                 <div key={room.id} onClick={() => router.push(`/chat/${room.id}`)} style={{ background: unread > 0 ? '#fffbf5' : 'white', borderBottom: '1px solid var(--line)', padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', position: 'relative', borderLeft: unread > 0 ? '3px solid #e05070' : '3px solid transparent' }}>
                   <div style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); router.push(`/user/${room.other_user.user_id}`) }}>
-                    <FriendAvatar avatarUrl={room.other_user.avatar_url} nickname={room.other_user.nickname} gender={room.other_user.gender} isFriend={friendIds.has(room.other_user.user_id)} size={52} border="1px solid var(--line)" />
+                    <FriendAvatar avatarUrl={room.other_user.avatar_url} nickname={room.other_user.nickname} gender={room.other_user.gender} characterId={room.other_user.avatar_character_id} isFriend={friendIds.has(room.other_user.user_id)} size={52} border="1px solid var(--line)" />
                     {unread > 0 && (
                       <div style={{ position: 'absolute', top: -3, right: -3, minWidth: 20, height: 20, borderRadius: 10, background: '#e05070', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'white', border: '2px solid white', padding: '0 4px' }}>{unread > 99 ? '99+' : unread}</div>
                     )}

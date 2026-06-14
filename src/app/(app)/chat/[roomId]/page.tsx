@@ -25,6 +25,7 @@ interface Profile {
   user_id: string
   nickname: string
   avatar_url: string | null
+  avatar_character_id?: string | null
   gender: string | null
 }
 
@@ -70,7 +71,7 @@ export default function ChatRoomPage() {
       const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
 
       const [{ data: profile }, { data: myFav }, { data: theirFav }, { data: blockedByData }, { data: iBlockData }] = await Promise.all([
-        supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single(),
+        supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').eq('user_id', otherUserId).single(),
         supabase.from('favorites').select('id').eq('user_id', user.id).eq('target_id', otherUserId).maybeSingle(),
         supabase.from('favorites').select('id').eq('user_id', otherUserId).eq('target_id', user.id).maybeSingle(),
         supabase.from('blocks').select('id').eq('blocker_id', otherUserId).eq('blocked_id', user.id).maybeSingle(),
@@ -353,6 +354,7 @@ export default function ChatRoomPage() {
           avatarUrl={otherProfile?.avatar_url ?? null}
           nickname={otherProfile?.nickname ?? ''}
           gender={otherProfile?.gender}
+          characterId={otherProfile?.avatar_character_id}
           isFriend={isFriend}
           size={38}
           onClick={() => otherProfile && router.push(`/user/${otherProfile.user_id}`)}

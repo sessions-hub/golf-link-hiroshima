@@ -15,7 +15,7 @@ interface ChatNoticeItem {
   lastMessage: string | null
   sortAt: string | null
   unread: number
-  otherUser?: { user_id: string; nickname: string; avatar_url: string | null; gender: string | null }
+  otherUser?: { user_id: string; nickname: string; avatar_url: string | null; avatar_character_id?: string | null; gender: string | null }
   isFriend?: boolean
   memberProfiles?: Array<{ user_id: string; nickname: string; avatar_url: string | null }>
 }
@@ -64,7 +64,7 @@ export default function NotificationsPage() {
         })
         const dmItems = await Promise.all(unreadRooms.map(async (room) => {
           const otherUserId = room.user1_id === user.id ? room.user2_id : room.user1_id
-          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url, gender').eq('user_id', otherUserId).single()
+          const { data: prof } = await supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, gender').eq('user_id', otherUserId).single()
           const otherUser = prof ?? { user_id: otherUserId, nickname: '不明', avatar_url: null, gender: null }
           const unread = room.user1_id === user.id ? room.unread_count_user1 : room.unread_count_user2
           return {
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
         <div key={`chat-${item.chatType}-${item.id}`} onClick={() => router.push(href)} style={{ margin: '0 16px 8px', background: 'white', borderRadius: 12, border: `1px solid ${item.unread > 0 ? 'rgba(224,80,112,.25)' : 'var(--line)'}`, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
             {item.chatType === 'dm' && item.otherUser ? (
-              <FriendAvatar avatarUrl={item.otherUser.avatar_url} nickname={item.otherUser.nickname} gender={item.otherUser.gender} isFriend={item.isFriend ?? false} size={42} border="1px solid var(--line)" />
+              <FriendAvatar avatarUrl={item.otherUser.avatar_url} nickname={item.otherUser.nickname} gender={item.otherUser.gender} characterId={item.otherUser.avatar_character_id} isFriend={item.isFriend ?? false} size={42} border="1px solid var(--line)" />
             ) : item.chatType === 'comp' ? (
               <div style={{ width: 42, height: 42, borderRadius: 10, background: 'linear-gradient(135deg, var(--g1), var(--g2))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" width={20} height={20}><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>

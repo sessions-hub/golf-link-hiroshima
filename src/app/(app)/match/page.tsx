@@ -26,6 +26,7 @@ interface MatchProfile {
   preferred_days: string[]
   bio: string | null
   avatar_url: string | null
+  avatar_character_id?: string | null
   plan: string
   match_score: number
   gender?: string
@@ -110,7 +111,7 @@ export default function MatchPage() {
   const [userPlan, setUserPlan] = useState<Plan>('free')
   const [filters, setFilters] = useState<string[]>(['全員'])
   const [myProfile, setMyProfile] = useState<{ blood_type: string; birth_date: string; gender?: string; nickname?: string } | null>(null)
-  const [matchModal, setMatchModal] = useState<{ partnerNickname: string; partnerGender: string; partnerAvatarUrl: string | null; partnerId: string } | null>(null)
+  const [matchModal, setMatchModal] = useState<{ partnerNickname: string; partnerGender: string; partnerAvatarUrl: string | null; partnerCharacterId?: string | null; partnerId: string } | null>(null)
   const [myId, setMyId] = useState('')
   const [chatLoading, setChatLoading] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
@@ -143,7 +144,7 @@ export default function MatchPage() {
 
       const { data: me } = await supabase
         .from('profiles')
-        .select('blood_type, birth_date, avatar_url, gender, areas, handicap, nickname')
+        .select('blood_type, birth_date, avatar_url, avatar_character_id, gender, areas, handicap, nickname')
         .eq('user_id', user.id)
         .single()
       if (me) {
@@ -216,7 +217,7 @@ export default function MatchPage() {
           const top5Ids = sortedVisitors.map(([id]) => id)
           const { data: top5Profs } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
+            .select('user_id, nickname, avatar_url, avatar_character_id, gender, blood_type, birth_date, areas, show_age')
             .in('user_id', top5Ids)
           const pm5 = new Map(top5Profs?.map((p: any) => [p.user_id, p]) ?? [])
           setTop5Visitors(sortedVisitors.map(([userId, visitCount]) => ({ userId, visitCount, profile: pm5.get(userId) ?? null })))
@@ -228,7 +229,7 @@ export default function MatchPage() {
           const visitorIds = [...new Set(fpRaw30.map((f: any) => f.user_id))]
           const { data: fpProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
+            .select('user_id, nickname, avatar_url, avatar_character_id, gender, blood_type, birth_date, areas, show_age')
             .in('user_id', visitorIds)
           const pm = new Map(fpProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           setFootprints(fpRaw30.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null })))
@@ -247,7 +248,7 @@ export default function MatchPage() {
           const fbIds = fbRaw.map((f: any) => f.user_id)
           const { data: fbProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
+            .select('user_id, nickname, avatar_url, avatar_character_id, gender, blood_type, birth_date, areas, show_age')
             .in('user_id', fbIds)
           const pm = new Map(fbProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           const enriched = fbRaw.map((f: any) => ({ ...f, profiles: pm.get(f.user_id) ?? null }))
@@ -268,7 +269,7 @@ export default function MatchPage() {
           const ids = myFavIds.map((f: any) => f.target_id)
           const { data: favProfiles } = await supabase
             .from('profiles')
-            .select('user_id, nickname, avatar_url, gender, blood_type, birth_date, areas, show_age')
+            .select('user_id, nickname, avatar_url, avatar_character_id, gender, blood_type, birth_date, areas, show_age')
             .in('user_id', ids)
           const pm = new Map(favProfiles?.map((p: any) => [p.user_id, p]) ?? [])
           setFavoritingList(myFavIds.map((f: any) => ({ ...f, profiles: pm.get(f.target_id) ?? null })))
@@ -338,11 +339,12 @@ export default function MatchPage() {
               partnerNickname: partner.nickname,
               partnerGender: partner.gender ?? 'male',
               partnerAvatarUrl: partner.avatar_url,
+              partnerCharacterId: partner.avatar_character_id ?? null,
               partnerId: targetId,
             })
           } else {
             const { data: partnerProf } = await supabase.from('profiles')
-              .select('nickname, gender, avatar_url')
+              .select('nickname, gender, avatar_url, avatar_character_id')
               .eq('user_id', targetId)
               .single()
             if (partnerProf) {
@@ -350,6 +352,7 @@ export default function MatchPage() {
                 partnerNickname: partnerProf.nickname,
                 partnerGender: partnerProf.gender ?? 'male',
                 partnerAvatarUrl: partnerProf.avatar_url,
+                partnerCharacterId: (partnerProf as any).avatar_character_id ?? null,
                 partnerId: targetId,
               })
             }
@@ -634,6 +637,7 @@ export default function MatchPage() {
                       avatarUrl={m.avatar_url}
                       nickname={m.nickname}
                       gender={m.gender}
+                      characterId={m.avatar_character_id}
                       isFriend={friendIds.has(m.user_id)}
                       size={46}
                       borderRadius={10}
@@ -784,7 +788,7 @@ export default function MatchPage() {
                         return (
                           <div key={userId} onClick={() => router.push(`/user/${userId}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: '10px 14px', marginBottom: 8, display: 'flex', gap: 10, alignItems: 'center', boxShadow: '0 1px 4px rgba(13,61,43,.04)', cursor: 'pointer' }}>
                             <div style={{ width: 24, height: 24, borderRadius: '50%', background: rs.bg, color: rs.color, fontSize: 11, fontWeight: 700, fontFamily: 'Inter', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{rank + 1}</div>
-                            <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} isFriend={friendIds.has(userId)} size={40} borderRadius={8} />
+                            <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} characterId={p.avatar_character_id} isFriend={friendIds.has(userId)} size={40} borderRadius={8} />
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
@@ -821,7 +825,7 @@ export default function MatchPage() {
                             if (!p) return null
                             return (
                               <div key={`${fp.user_id}-${i}`} onClick={() => router.push(`/user/${p.user_id}?from=footprint`)} style={{ background: 'white', borderRadius: 12, border: '1px solid var(--line)', padding: 14, marginBottom: 8, display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 2px 8px rgba(13,61,43,.04)', cursor: 'pointer' }}>
-                                <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
+                                <FriendAvatar avatarUrl={p.avatar_url} nickname={p.nickname} gender={p.gender} characterId={p.avatar_character_id} isFriend={friendIds.has(p.user_id)} size={46} borderRadius={10} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                                     <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{p.nickname}</span>
@@ -942,6 +946,7 @@ export default function MatchPage() {
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
                           gender={p.gender}
+                          characterId={p.avatar_character_id}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
@@ -992,6 +997,7 @@ export default function MatchPage() {
                           avatarUrl={p.avatar_url}
                           nickname={p.nickname}
                           gender={p.gender}
+                          characterId={p.avatar_character_id}
                           isFriend={friendIds.has(p.user_id)}
                           size={46}
                           borderRadius={10}
@@ -1037,6 +1043,7 @@ export default function MatchPage() {
             nickname: matchModal.partnerNickname,
             gender: matchModal.partnerGender === 'female' ? 'female' : 'male',
             avatarUrl: matchModal.partnerAvatarUrl,
+            characterId: matchModal.partnerCharacterId,
           }}
           onMessage={() => { setMatchModal(null); handleChat(matchModal.partnerId) }}
           onClose={() => setMatchModal(null)}
