@@ -41,12 +41,18 @@ export function AvatarPicker({
           </button>
         ))}
         {locked.map(c => (
-          <div key={c.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, opacity:.5 }}>
-            <span style={{ position:'relative', width:72, height:72, borderRadius:'50%', overflow:'hidden', filter:'grayscale(.6) brightness(.6)', display:'block' }}>
-              <Avatar size={72} nickname="?" gender={c.gender} avatarUrl={null} characterId={c.id} />
-              <span style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🔒</span>
+          <div key={c.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+            <span style={{ display:'block', filter:'grayscale(0.1)', opacity:0.95 }}>
+              <Avatar size={72} nickname={c.name} gender={c.gender} avatarUrl={null} characterId={c.id} />
             </span>
-            <span style={{ fontSize:9, color:'#c9a227' }}>Lv.{c.minLevel} で解放</span>
+            <span style={{ fontSize:10, color:'#333' }}>{c.name}</span>
+            <div style={{ display:'inline-flex', alignItems:'center', gap:3, border:'1px solid rgba(176,140,60,.5)', color:'#9a8050', fontSize:9, fontWeight:500, padding:'2.5px 9px', borderRadius:100 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ width:10, height:10 }}>
+                <rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/>
+                <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>
+              </svg>
+              <span>Lv{c.minLevel}で解放</span>
+            </div>
           </div>
         ))}
       </div>
