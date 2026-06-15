@@ -356,7 +356,7 @@ export default function GpsPage() {
   // ─── コース選択画面 ───────────────────────────────────────
   if (!selected) {
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <Logo variant="screen" />
@@ -421,7 +421,7 @@ export default function GpsPage() {
   // ─── サブコース選択画面 ───────────────────────────────────
   if (selected && subCourseOptions.length > 0 && !selectedSubCourse && !pendingSubCourse && !gpsCombo) {
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div onClick={() => { setSelected(null); resetAllCourseState() }} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
@@ -457,7 +457,7 @@ export default function GpsPage() {
       ? () => setPendingSubCourse(null)
       : () => { setSelected(null); resetAllCourseState() }
     return (
-      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div onClick={backAction} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
@@ -669,7 +669,7 @@ export default function GpsPage() {
         </div>
 
         {/* BottomNav分の余白 */}
-        <div style={{ height: 90 }} />
+        <div style={{ height: 'calc(64px + env(safe-area-inset-bottom))' }} />
       </div>
       <BottomNav />
     </div>

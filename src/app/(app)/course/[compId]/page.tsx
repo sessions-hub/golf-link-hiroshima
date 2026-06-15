@@ -330,7 +330,7 @@ export default function CompDetailPage() {
         </div>
       </div>
 
-      <div style={{ paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
 
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>

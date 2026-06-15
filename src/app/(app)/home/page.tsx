@@ -638,7 +638,7 @@ export default function HomePage() {
 
       {/* ホームタブ */}
       {activeTab === 'home' && (
-        <div style={{ paddingBottom: 90 }}>
+        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
 
           {/* レベルカード */}
           {(() => {
@@ -858,7 +858,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ paddingBottom: 90 }} onScroll={() => setCommentReactionPaletteId(null)}>
+          <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }} onScroll={() => setCommentReactionPaletteId(null)}>
             {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (

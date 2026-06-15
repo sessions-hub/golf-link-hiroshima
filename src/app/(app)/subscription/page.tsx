@@ -151,7 +151,7 @@ export default function SubscriptionPage() {
         <Logo variant="screen" height={40} />
       </div>
 
-      <div style={{ flex: 1, padding: '24px 16px 100px' }}>
+      <div style={{ flex: 1, padding: '24px 16px', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--txt)', marginBottom: 6 }}>プランを選択</div>
           <div style={{ fontSize: 13, color: 'var(--mute)', lineHeight: 1.7 }}>ゴルフライフをもっと充実させましょう</div>

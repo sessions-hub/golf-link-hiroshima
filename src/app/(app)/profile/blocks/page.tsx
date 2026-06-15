@@ -68,7 +68,7 @@ export default function BlockListPage() {
         </div>
       </div>
 
-      <div style={{ paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         {blockList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>🚫</div>

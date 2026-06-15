@@ -370,7 +370,7 @@ export default function ChatListPage() {
       </div>
       </div>
 
-      <div style={{ paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
 
         {/* 個人タブ */}
         {activeTab === 'dm' && (

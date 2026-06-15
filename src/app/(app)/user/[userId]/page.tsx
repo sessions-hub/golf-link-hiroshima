@@ -511,7 +511,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ paddingBottom: 90 }}>
+      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (

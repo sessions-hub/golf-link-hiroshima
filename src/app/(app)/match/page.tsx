@@ -622,7 +622,7 @@ export default function MatchPage() {
             </div>
           )}
 
-          <div style={{ paddingBottom: 90 }}>
+          <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
             <div style={{ height: 8 }} />
             {loading && <SectionLoading text="マッチングを検索中" />}
             {!loading && filteredMatches.length === 0 && (

@@ -148,8 +148,13 @@ export default function BottomNav() {
       position: 'fixed', bottom: 0, left: 0, right: 0,
       background: 'rgba(255,255,255,0.97)',
       borderTop: '1px solid var(--line)',
-      display: 'flex', padding: '8px 0 calc(env(safe-area-inset-bottom) + 12px)', zIndex: 50,
+      display: 'flex',
+      paddingTop: 8,
+      paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+      zIndex: 50,
       boxShadow: '0 -2px 16px rgba(13,61,43,.07)',
+      WebkitTransform: 'translateZ(0)',
+      transform: 'translateZ(0)',
     }}>
       {NAV_ITEMS.map((item) => {
         const isActive = activeKey ? activeKey === item.key : pathname.startsWith(item.path)

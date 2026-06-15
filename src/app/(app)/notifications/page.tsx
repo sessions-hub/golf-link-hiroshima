@@ -268,7 +268,7 @@ export default function NotificationsPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>新着情報</div>
       </div>
 
-      <div style={{ flex: 1, paddingTop: 10, paddingBottom: 90 }}>
+      <div style={{ flex: 1, paddingTop: 10, paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
         {loading && <SectionLoading />}
         {!loading && items.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>

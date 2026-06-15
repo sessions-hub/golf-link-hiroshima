@@ -487,7 +487,7 @@ export default function ProfilePage() {
 
       {/* プロフィールタブ */}
       {activeTab === 'profile' && (
-        <div style={{ paddingBottom: 100 }}>
+        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
           {/* プロフィールバナー */}
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
@@ -622,7 +622,7 @@ export default function ProfilePage() {
 
       {/* 設定タブ */}
       {activeTab === 'settings' && (
-        <div style={{ paddingBottom: 90 }}>
+        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
 
           {/* レベルバナー */}
           {(() => {
