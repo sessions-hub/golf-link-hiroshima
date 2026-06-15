@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PageLoading } from '@/components/LoadingDots'
-import BottomNav from '@/components/layout/BottomNav'
 
 const FORMAT_OPTIONS = ['ストロークプレー', 'ダブルペリア', 'ステーブルフォード', 'マッチプレー']
 
@@ -193,7 +192,7 @@ export default function EditCompPage() {
   const label = isRound ? 'ラウンド募集' : 'コンペ'
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
 
       {/* ヘッダー */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 14px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
@@ -424,7 +423,6 @@ export default function EditCompPage() {
         </>
       )}
 
-      <BottomNav />
     </div>
   )
 }

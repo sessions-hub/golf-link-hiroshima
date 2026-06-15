@@ -2,7 +2,6 @@
 import { FriendAvatar } from '@/components/FriendAvatar'
 import GenderBadge from '@/components/GenderBadge'
 import { SectionLoading } from '@/components/LoadingDots'
-import BottomNav from '@/components/layout/BottomNav'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -268,7 +267,7 @@ export default function NotificationsPage() {
         <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>新着情報</div>
       </div>
 
-      <div style={{ flex: 1, paddingTop: 10, paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <div style={{ flex: 1, paddingTop: 10 }}>
         {loading && <SectionLoading />}
         {!loading && items.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -280,7 +279,6 @@ export default function NotificationsPage() {
         {!loading && items.map(renderCard)}
       </div>
 
-      <BottomNav />
     </div>
   )
 }

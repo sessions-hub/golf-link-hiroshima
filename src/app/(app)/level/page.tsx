@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getLevelInfo, LEVELS } from '@/lib/level'
 import { PageLoading } from '@/components/LoadingDots'
-import BottomNav from '@/components/layout/BottomNav'
 
 const POINT_ACTIONS = [
   {
@@ -212,7 +211,7 @@ export default function LevelPage() {
   const lv = getLevelInfo(totalPts)
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--line)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button
@@ -304,7 +303,6 @@ export default function LevelPage() {
         ))}
       </details>
 
-      <BottomNav />
     </div>
   )
 }

@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
-import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import { Avatar } from '@/components/Avatar'
@@ -370,7 +369,7 @@ export default function ChatListPage() {
       </div>
       </div>
 
-      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <div style={{ }}>
 
         {/* 個人タブ */}
         {activeTab === 'dm' && (
@@ -455,7 +454,6 @@ export default function ChatListPage() {
         )}
       </div>
 
-      <BottomNav />
 
       {/* グループ作成モーダル */}
       {showCreateModal && (

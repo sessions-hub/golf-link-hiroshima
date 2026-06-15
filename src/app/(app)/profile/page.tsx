@@ -10,7 +10,6 @@ import { getUserPlan, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
 import { getFontScale, setFontScale } from '@/lib/fontScale'
 import { addPoints } from '@/lib/points'
-import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { getZodiacSign, ZODIAC_NAMES_JP } from '@/lib/zodiac'
 import { FriendAvatar } from '@/components/FriendAvatar'
@@ -487,7 +486,7 @@ export default function ProfilePage() {
 
       {/* プロフィールタブ */}
       {activeTab === 'profile' && (
-        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+        <div style={{ }}>
           {/* プロフィールバナー */}
           <div style={{ background: 'white', borderBottom: '1px solid var(--line)', padding: '16px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
@@ -622,7 +621,7 @@ export default function ProfilePage() {
 
       {/* 設定タブ */}
       {activeTab === 'settings' && (
-        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+        <div style={{ }}>
 
           {/* レベルバナー */}
           {(() => {
@@ -894,7 +893,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      <BottomNav />
     </div>
   )
 }

@@ -8,7 +8,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, canSeeInterest, type Plan } from '@/lib/plan'
 import { addPoints } from '@/lib/points'
 import { getZodiacSign, getZodiacCompat, ZODIAC_NAMES_JP } from '@/lib/zodiac'
-import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import GenderBadge from '@/components/GenderBadge'
@@ -622,7 +621,7 @@ export default function MatchPage() {
             </div>
           )}
 
-          <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+          <div style={{ }}>
             <div style={{ height: 8 }} />
             {loading && <SectionLoading text="マッチングを検索中" />}
             {!loading && filteredMatches.length === 0 && (
@@ -1066,7 +1065,6 @@ export default function MatchPage() {
           onClose={() => setMatchModal(null)}
         />
       )}
-      <BottomNav />
     </div>
   )
 }

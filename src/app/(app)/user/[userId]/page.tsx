@@ -9,7 +9,6 @@ import { Icons } from '@/components/icons'
 import { PageLoading, InlineLoading } from '@/components/LoadingDots'
 import { MatchSuccessModal } from '@/components/MatchSuccessModal'
 import { EmptyState } from '@/components/EmptyState'
-import BottomNav from '@/components/layout/BottomNav'
 import { ReactionPalette, ReactionBar } from '@/components/ReactionPalette'
 import { FriendAvatar } from '@/components/FriendAvatar'
 import { Avatar } from '@/components/Avatar'
@@ -511,7 +510,7 @@ export default function UserProfilePage() {
       </div>
 
       {/* コンテンツ */}
-      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <div style={{ }}>
 
         {/* メイン投稿（HOMEからクリック時） */}
         {featuredPost && (
@@ -766,7 +765,6 @@ export default function UserProfilePage() {
           onClose={() => setShowMatchModal(false)}
         />
       )}
-      <BottomNav />
     </div>
   )
 }

@@ -4,7 +4,6 @@ import { useRouter, useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { PageLoading } from '@/components/LoadingDots'
-import BottomNav from '@/components/layout/BottomNav'
 import GenderBadge from '@/components/GenderBadge'
 import { Avatar } from '@/components/Avatar'
 
@@ -330,7 +329,7 @@ export default function CompDetailPage() {
         </div>
       </div>
 
-      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <div style={{ }}>
 
         {/* ヒーローバナー */}
         <div style={{ background: 'linear-gradient(135deg, var(--g1), var(--g2))', padding: '24px 20px 20px' }}>
@@ -667,7 +666,6 @@ export default function CompDetailPage() {
         </>
       )}
 
-      <BottomNav />
     </div>
   )
 }

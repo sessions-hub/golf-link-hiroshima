@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { PageLoading } from '@/components/LoadingDots'
-import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 
 interface BlockEntry {
@@ -68,7 +67,7 @@ export default function BlockListPage() {
         </div>
       </div>
 
-      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+      <div style={{ }}>
         {blockList.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>🚫</div>
@@ -110,7 +109,6 @@ export default function BlockListPage() {
         )}
       </div>
 
-      <BottomNav />
     </div>
   )
 }

@@ -12,7 +12,6 @@ import { createClient } from '@/lib/supabase/client'
 import { getUserPlan, type Plan } from '@/lib/plan'
 import { getLevelInfo } from '@/lib/level'
 import { addPoints } from '@/lib/points'
-import BottomNav from '@/components/layout/BottomNav'
 import Logo from '@/components/layout/Logo'
 import GenderBadge from '@/components/GenderBadge'
 import { OFFICIAL_USER_ID, OFFICIAL_AVATAR } from '@/lib/official'
@@ -638,7 +637,7 @@ export default function HomePage() {
 
       {/* ホームタブ */}
       {activeTab === 'home' && (
-        <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+        <div style={{ }}>
 
           {/* レベルカード */}
           {(() => {
@@ -858,7 +857,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }} onScroll={() => setCommentReactionPaletteId(null)}>
+          <div style={{ }} onScroll={() => setCommentReactionPaletteId(null)}>
             {loading && <SectionLoading padding="20px 0" />}
 
             {!loading && filteredPosts.length === 0 && (
@@ -1089,7 +1088,6 @@ export default function HomePage() {
         </div>
       )}
 
-      <BottomNav />
     </div>
   )
 }
