@@ -43,7 +43,7 @@ export function AvatarPicker({
         {locked.map(c => (
           <div key={c.id} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
             <span style={{ display:'block', filter:'grayscale(0.1)', opacity:0.95 }}>
-              <Avatar size={72} nickname={c.name} gender={c.gender} avatarUrl={null} characterId={c.id} />
+              <Avatar size={72} nickname={nickname} gender={c.gender} avatarUrl={null} characterId={c.id} />
             </span>
             <span style={{ fontSize:10, color:'#333' }}>{c.name}</span>
             <div style={{ display:'inline-flex', alignItems:'center', gap:3, border:'1px solid rgba(176,140,60,.5)', color:'#9a8050', fontSize:9, fontWeight:500, padding:'2.5px 9px', borderRadius:100 }}>

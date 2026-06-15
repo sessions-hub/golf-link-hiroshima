@@ -22,13 +22,32 @@ export function styleFor(g: string | null | undefined) {
 }
 
 export const AVATAR_CHARACTERS: AvatarCharacter[] = [
-  { id: 'bear-black',      gender: 'male',   minLevel: 1, name: 'PUBLIC', src: '/avatars/bear-black.png' },
-  { id: 'bear-cream',      gender: 'female', minLevel: 1, name: 'PUBLIC', src: '/avatars/bear-cream.png' },
-  { id: 'bear-black-golf', gender: 'male',   minLevel: 2, name: 'MEMBER', src: '/avatars/bear-black-golf.png' },
-  { id: 'bear-ivory-golf', gender: 'female', minLevel: 2, name: 'MEMBER', src: '/avatars/bear-ivory-golf.png' },
-  // 今後の解放キャラ（Lv3 CLASSIC / Lv4 CHAMPION / Lv5 LEGEND）
-  // 同レベル複数の場合は 'MEMBER 01', 'MEMBER 02' のように連番
+  // PUBLIC (Lv1)
+  { id: 'black-public',       gender: 'male',   minLevel: 1, name: 'PUBLIC',      src: '/avatars/bear-black.png' },
+  { id: 'cream-public',       gender: 'female', minLevel: 1, name: 'PUBLIC',      src: '/avatars/bear-cream.png' },
+  // MEMBER (Lv2)
+  { id: 'black-member',       gender: 'male',   minLevel: 2, name: 'MEMBER',      src: '/avatars/bear-black-golf.png' },
+  { id: 'ivory-member',       gender: 'female', minLevel: 2, name: 'MEMBER',      src: '/avatars/bear-ivory-golf.png' },
+  // CLASSIC (Lv3)
+  { id: 'black-classic',      gender: 'male',   minLevel: 3, name: 'CLASSIC',     src: '/avatars/classic-golf-black.png' },
+  { id: 'ivory-classic',      gender: 'female', minLevel: 3, name: 'CLASSIC',     src: '/avatars/classic-golf-ivory.png' },
+  // CHAMPION (Lv4 · 各2種)
+  { id: 'black-champion-01',  gender: 'male',   minLevel: 4, name: 'CHAMPION 01', src: '/avatars/champion-hoodie-black.png' },
+  { id: 'black-champion-02',  gender: 'male',   minLevel: 4, name: 'CHAMPION 02', src: '/avatars/champion-pop-black.png' },
+  { id: 'ivory-champion-01',  gender: 'female', minLevel: 4, name: 'CHAMPION 01', src: '/avatars/champion-hoodie-ivory.png' },
+  { id: 'ivory-champion-02',  gender: 'female', minLevel: 4, name: 'CHAMPION 02', src: '/avatars/champion-pop-ivory.png' },
+  // LEGEND (Lv5 · 男女共通画像)
+  { id: 'black-legend',       gender: 'male',   minLevel: 5, name: 'LEGEND',      src: '/avatars/legend-gold.png' },
+  { id: 'ivory-legend',       gender: 'female', minLevel: 5, name: 'LEGEND',      src: '/avatars/legend-gold.png' },
 ]
+
+// 旧IDが DB に保存されている場合のフォールバック
+const LEGACY_ID_MAP: Record<string, string> = {
+  'bear-black':      'black-public',
+  'bear-cream':      'cream-public',
+  'bear-black-golf': 'black-member',
+  'bear-ivory-golf': 'ivory-member',
+}
 
 export function charactersForGender(g: string | null | undefined): AvatarCharacter[] {
   return AVATAR_CHARACTERS.filter(c => c.gender === genderKey(g))
@@ -48,5 +67,7 @@ export function defaultCharacterFor(g: string | null | undefined): AvatarCharact
 }
 
 export function getCharacter(id?: string | null): AvatarCharacter | null {
-  return id ? (AVATAR_CHARACTERS.find(c => c.id === id) ?? null) : null
+  if (!id) return null
+  const resolvedId = LEGACY_ID_MAP[id] ?? id
+  return AVATAR_CHARACTERS.find(c => c.id === resolvedId) ?? null
 }
