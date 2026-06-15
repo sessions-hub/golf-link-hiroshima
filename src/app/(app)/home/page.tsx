@@ -690,9 +690,9 @@ export default function HomePage() {
             </svg>
             <div style={{position:'absolute',top:0,right:0,width:'55%',height:'100%',background:'radial-gradient(ellipse 80% 60% at 100% 0%, rgba(255,255,255,.06), transparent 60%)',pointerEvents:'none'}}/>
             <div style={{position:'absolute',top:-8,left:-4,fontFamily:'Inter',fontSize:58,fontWeight:900,color:'white',opacity:.08,letterSpacing:'-.02em',lineHeight:1,pointerEvents:'none',userSelect:'none',whiteSpace:'nowrap'}}>DISCOVER</div>
-            {/* ゴルファー（右下） */}
-            <img src="/avatars/bear-ivory-golf.png" alt="" aria-hidden="true"
-              style={{ position:'absolute', bottom:0, right:4, height:116, zIndex:1,
+            {/* フレンドベア2体（右下・腰下は意図的に見切れ） */}
+            <img src="/avatars/friend-pair.png" alt="" aria-hidden="true"
+              style={{ position:'absolute', bottom:-46, right:2, height:120, zIndex:1,
                 pointerEvents:'none', filter:'drop-shadow(0 6px 12px rgba(0,0,0,.3))' }} />
             <div style={{paddingTop:36, position:'relative', zIndex:3, maxWidth:'56%'}}>
             <div style={{fontSize:20,fontWeight:600,color:'#F5F3EE',marginBottom:6,lineHeight:1.2}}>フレンドを探す</div>
