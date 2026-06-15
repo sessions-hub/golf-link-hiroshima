@@ -49,6 +49,7 @@ interface Profile {
   user_id: string
   nickname: string
   avatar_url: string | null
+  avatar_character_id?: string | null
   handicap: number
   gender: string | null
 }
@@ -99,9 +100,9 @@ export default function CompDetailPage() {
       if (!compData) { router.push('/course'); return }
 
       const [{ data: orgData }, { data: entriesData }, { data: myEntry }] = await Promise.all([
-        supabase.from('profiles').select('user_id, nickname, avatar_url, handicap, gender')
+        supabase.from('profiles').select('user_id, nickname, avatar_url, avatar_character_id, handicap, gender')
           .eq('user_id', compData.organizer_id).single(),
-        supabase.from('comp_entries').select('user_id, attendees_count, profiles(user_id, nickname, avatar_url, gender)')
+        supabase.from('comp_entries').select('user_id, attendees_count, profiles(user_id, nickname, avatar_url, avatar_character_id, gender)')
           .eq('comp_id', compId),
         supabase.from('comp_entries').select('comp_id')
           .eq('comp_id', compId).eq('user_id', user.id).maybeSingle(),
@@ -404,7 +405,7 @@ export default function CompDetailPage() {
           <div style={{ background: 'white', margin: '0 16px 10px', borderRadius: 12, border: '1px solid var(--line)', padding: '16px' }}>
             <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 12 }}>主催者</div>
             <div onClick={() => router.push(`/user/${organizer.user_id}`)} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-              <Avatar size={48} nickname={organizer.nickname} gender={organizer.gender} avatarUrl={organizer.avatar_url} />
+              <Avatar size={48} nickname={organizer.nickname} gender={organizer.gender} avatarUrl={organizer.avatar_url} characterId={organizer.avatar_character_id ?? null} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', display: 'flex', alignItems: 'center', gap: 4 }}>{organizer.nickname}<GenderBadge gender={organizer.gender} size={13} /></div>
                 <div style={{ fontSize: 12, color: 'var(--mute)' }}>{getHdcpLabel(organizer.handicap)}</div>
@@ -466,7 +467,7 @@ export default function CompDetailPage() {
                 return (
                 <div key={p.user_id} onClick={() => router.push(`/user/${p.user_id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer', flexShrink: 0 }}>
                   <div style={{ position: 'relative', width: 44, height: 44 }}>
-                    <Avatar size={44} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} />
+                    <Avatar size={44} nickname={p.nickname} gender={p.gender} avatarUrl={p.avatar_url} characterId={p.avatar_character_id ?? null} />
                     {count > 1 && (
                       <div style={{ position: 'absolute', bottom: 0, right: -2, minWidth: 18, height: 18, borderRadius: 9, background: 'var(--g1)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'white', padding: '0 3px' }}>+{count - 1}</div>
                     )}
