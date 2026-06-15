@@ -4,43 +4,31 @@ export interface AvatarCharacter {
   id: string
   name: string
   src: string
-  bg: string
-  ink: string
   minLevel: number
   gender: Gender
 }
 
-export const AVATAR_CHARACTERS: AvatarCharacter[] = [
-  { id: 'bear-black', name: 'クラシック（ブラック）', src: '/avatars/bear-black.png',
-    gender: 'male', minLevel: 1,
-    bg: 'radial-gradient(circle at 50% 32%,#fcfbf7,#ece7d8)', ink: 'rgba(150,124,46,.26)' },
-  { id: 'bear-cream', name: 'クラシック（アイボリー）', src: '/avatars/bear-cream.png',
-    gender: 'female', minLevel: 1,
-    bg: 'radial-gradient(circle at 50% 32%,#fdf1f6,#f8dbe7)', ink: 'rgba(196,120,150,.26)' },
-  { id: 'bear-black-golf', name: 'ゴルファー（ブラック）', src: '/avatars/bear-black-golf.png',
-    gender: 'male', minLevel: 2,
-    bg: 'radial-gradient(circle at 50% 32%,#f4eed7,#d9c79a)', ink: 'rgba(150,118,36,.36)' },
-  { id: 'bear-ivory-golf', name: 'ゴルファー（アイボリー）', src: '/avatars/bear-ivory-golf.png',
-    gender: 'female', minLevel: 2,
-    bg: 'radial-gradient(circle at 50% 32%,#fbd2e0,#f0a6c0)', ink: 'rgba(190,76,118,.36)' },
-  // 今後の解放キャラ用雛形（Lv3=セージ/モーヴ、Lv4=ユーカリ/ラベンダー、Lv5=シャンパンゴールド共通）
-  // { id:'bear-black-lv3', gender:'male', minLevel:3, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 32%,#e2ecdc,#b8cfa6)', ink:'rgba(82,114,66,.36)' },
-  // { id:'bear-cream-lv3', gender:'female', minLevel:3, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 32%,#efd5ef,#d2a4d8)', ink:'rgba(150,86,165,.36)' },
-  // { id:'bear-black-lv4', gender:'male', minLevel:4, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 32%,#dde9e6,#b2c8c0)', ink:'rgba(56,102,92,.36)' },
-  // { id:'bear-cream-lv4', gender:'female', minLevel:4, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 32%,#ece6f6,#d3c9ec)', ink:'rgba(118,104,170,.36)' },
-  // { id:'bear-black-lv5', gender:'male', minLevel:5, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 30%,#fbf1cf,#e4cd83)', ink:'rgba(140,108,30,.42)' },
-  // { id:'bear-cream-lv5', gender:'female', minLevel:5, name:'…', src:'/avatars/….png',
-  //   bg:'radial-gradient(circle at 50% 30%,#fbf1cf,#e4cd83)', ink:'rgba(140,108,30,.42)' },
-]
+const GENDER_STYLE: Record<Gender, { bg: string; ink: string }> = {
+  male:   { bg: 'radial-gradient(circle at 50% 32%,#f6f2e8,#dcd5c2)', ink: 'rgba(150,124,46,.30)' },
+  female: { bg: 'radial-gradient(circle at 50% 32%,#fce4ee,#f6c9da)', ink: 'rgba(196,108,140,.30)' },
+}
 
 export function genderKey(g: string | null | undefined): Gender {
   return g === 'female' ? 'female' : 'male'
 }
+
+export function styleFor(g: string | null | undefined) {
+  return GENDER_STYLE[genderKey(g)]
+}
+
+export const AVATAR_CHARACTERS: AvatarCharacter[] = [
+  { id: 'bear-black',      gender: 'male',   minLevel: 1, name: 'PUBLIC', src: '/avatars/bear-black.png' },
+  { id: 'bear-cream',      gender: 'female', minLevel: 1, name: 'PUBLIC', src: '/avatars/bear-cream.png' },
+  { id: 'bear-black-golf', gender: 'male',   minLevel: 2, name: 'MEMBER', src: '/avatars/bear-black-golf.png' },
+  { id: 'bear-ivory-golf', gender: 'female', minLevel: 2, name: 'MEMBER', src: '/avatars/bear-ivory-golf.png' },
+  // 今後の解放キャラ（Lv3 CLASSIC / Lv4 CHAMPION / Lv5 LEGEND）
+  // 同レベル複数の場合は 'MEMBER 01', 'MEMBER 02' のように連番
+]
 
 export function charactersForGender(g: string | null | undefined): AvatarCharacter[] {
   return AVATAR_CHARACTERS.filter(c => c.gender === genderKey(g))

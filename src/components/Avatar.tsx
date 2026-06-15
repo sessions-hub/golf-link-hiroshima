@@ -1,5 +1,5 @@
 'use client'
-import { defaultCharacterFor, getCharacter, type Gender } from '@/lib/avatars'
+import { defaultCharacterFor, getCharacter, styleFor, type Gender } from '@/lib/avatars'
 
 export function Avatar({
   size = 48, nickname = '', gender = 'male', avatarUrl = null, characterId = null,
@@ -17,13 +17,14 @@ export function Avatar({
     )
   }
   const char = chosen ?? defaultCharacterFor(safeGender)
+  const { bg, ink } = styleFor(safeGender)
   const initial = ([...nickname][0] ?? '?').toUpperCase()
   return (
     <div style={{ position:'relative', width:size, height:size, borderRadius:'50%',
-      overflow:'hidden', background:char.bg, flex:'none' }}>
+      overflow:'hidden', background:bg, flex:'none' }}>
       <span style={{ position:'absolute', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
         fontFamily:'"Noto Sans JP",sans-serif', fontWeight:900, lineHeight:.8,
-        fontSize:size*1.25, color:char.ink, zIndex:1, whiteSpace:'nowrap', userSelect:'none',
+        fontSize:size*1.25, color:ink, zIndex:1, whiteSpace:'nowrap', userSelect:'none',
         WebkitUserSelect:'none' }}>{initial}</span>
       <img src={char.src} alt="" style={{ position:'absolute', left:'50%', top:'50%',
         transform:'translate(-50%,-50%)', height:'90%', objectFit:'contain', zIndex:2 }} />
