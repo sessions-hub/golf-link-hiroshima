@@ -312,9 +312,14 @@ export default function ScorePage() {
     ctx.fillStyle = bottomGrad
     ctx.fillRect(0, canvas.height - 680, canvas.width, 680)
 
-    ctx.font = 'bold 68px Inter, sans-serif'
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.fillText('GLH.', 60, 130)
+    const logoImg = new window.Image()
+    logoImg.src = '/glh-logo-white.png'
+    await new Promise((res) => { logoImg.onload = res })
+
+    const logoMargin = Math.round(canvas.width * 0.05)
+    const logoW = Math.round(canvas.width * 0.26)
+    const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth)
+    ctx.drawImage(logoImg, logoMargin, logoMargin, logoW, logoH)
 
     ctx.font = '28px Inter, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
