@@ -285,19 +285,27 @@ export default function ScorePage() {
   }
 
   const handleShareDownload = async () => {
+    const loadImage = (src: string) =>
+      new Promise<HTMLImageElement | null>((resolve) => {
+        const im = new window.Image()
+        im.onload = () => resolve(im)
+        im.onerror = () => resolve(null)
+        im.src = src
+      })
+
     const canvas = document.createElement('canvas')
     canvas.width = 1080
     canvas.height = 1920
     const ctx = canvas.getContext('2d')!
 
     if (sharePhoto) {
-      const img = new window.Image()
-      img.src = sharePhoto
-      await new Promise(r => { img.onload = r })
-      const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
-      const w = img.width * scale
-      const h = img.height * scale
-      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h)
+      const img = await loadImage(sharePhoto)
+      if (img) {
+        const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
+        const w = img.width * scale
+        const h = img.height * scale
+        ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h)
+      }
     } else {
       const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
       grad.addColorStop(0, '#2a3a2a')
@@ -312,14 +320,13 @@ export default function ScorePage() {
     ctx.fillStyle = bottomGrad
     ctx.fillRect(0, canvas.height - 680, canvas.width, 680)
 
-    const logoImg = new window.Image()
-    logoImg.src = '/glh-logo-white.png'
-    await new Promise((res) => { logoImg.onload = res })
-
-    const logoMargin = Math.round(canvas.width * 0.05)
-    const logoW = Math.round(canvas.width * 0.26)
-    const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth)
-    ctx.drawImage(logoImg, logoMargin, logoMargin, logoW, logoH)
+    const logoImg = await loadImage('/glh-logo-white.png')
+    if (logoImg) {
+      const logoMargin = Math.round(canvas.width * 0.05)
+      const logoW = Math.round(canvas.width * 0.26)
+      const logoH = Math.round(logoW * logoImg.naturalHeight / logoImg.naturalWidth)
+      ctx.drawImage(logoImg, logoMargin, logoMargin, logoW, logoH)
+    }
 
     ctx.font = '28px Inter, sans-serif'
     ctx.fillStyle = 'rgba(255,255,255,0.5)'
@@ -813,8 +820,9 @@ export default function ScorePage() {
               )}
               {/* グラデーションオーバーレイ */}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.88) 100%)' }} />
-              {/* GLH.ロゴ */}
-              <div style={{ position: 'absolute', top: 14, left: 16, fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.9)' }}>GLH.</div>
+              {/* ロゴ */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/glh-logo-white.png" alt="" style={{ position: 'absolute', top: '5%', left: '5%', width: '26%', objectFit: 'contain', zIndex: 2 }} />
               {/* スコア情報 */}
               <div style={{ position: 'relative', zIndex: 1, padding: '0 14px 16px' }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
