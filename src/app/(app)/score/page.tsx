@@ -40,6 +40,10 @@ export default function ScorePage() {
   const [roundCount, setRoundCount] = useState(0)
   const [scoreBreakdown, setScoreBreakdown] = useState<{ birdie: number; par: number; bogey: number; dbl: number } | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [shareTarget, setShareTarget] = useState<any>(null)
+  const [sharePhoto, setSharePhoto] = useState<string | null>(null)
+  const sharePhotoRef = useRef<HTMLInputElement>(null)
+  const shareCanvasRef = useRef<HTMLCanvasElement>(null)
   // コース検索
   const [courseSearch, setCourseSearch] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -278,6 +282,91 @@ export default function ScorePage() {
     } else {
       alert('削除に失敗しました')
     }
+  }
+
+  const handleShareDownload = async () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1080
+    canvas.height = 1920
+    const ctx = canvas.getContext('2d')!
+
+    if (sharePhoto) {
+      const img = new window.Image()
+      img.src = sharePhoto
+      await new Promise(r => { img.onload = r })
+      const scale = Math.max(canvas.width / img.width, canvas.height / img.height)
+      const w = img.width * scale
+      const h = img.height * scale
+      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h)
+    } else {
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+      grad.addColorStop(0, '#2a3a2a')
+      grad.addColorStop(1, '#1a2a1a')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    }
+
+    const bottomGrad = ctx.createLinearGradient(0, canvas.height - 680, 0, canvas.height)
+    bottomGrad.addColorStop(0, 'rgba(0,0,0,0)')
+    bottomGrad.addColorStop(1, 'rgba(0,0,0,0.92)')
+    ctx.fillStyle = bottomGrad
+    ctx.fillRect(0, canvas.height - 680, canvas.width, 680)
+
+    ctx.font = 'bold 68px Inter, sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.fillText('GLH.', 60, 130)
+
+    ctx.font = '28px Inter, sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    const dateStr = shareTarget.played_at
+      ? new Date(shareTarget.played_at).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
+      : ''
+    ctx.fillText(dateStr, 60, canvas.height - 360)
+
+    ctx.font = 'bold 36px Noto Sans JP, sans-serif'
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    ctx.fillText(shareTarget.course_name ?? 'コース名', 60, canvas.height - 305)
+
+    const bx = 60, by = canvas.height - 265, bw = canvas.width - 120, bh = 120
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'
+    ctx.beginPath()
+    ctx.roundRect(bx, by, bw, bh, 24)
+    ctx.fill()
+
+    const col = bw / 3
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(bx + col, by + 18)
+    ctx.lineTo(bx + col, by + bh - 18)
+    ctx.moveTo(bx + col * 2, by + 18)
+    ctx.lineTo(bx + col * 2, by + bh - 18)
+    ctx.stroke()
+
+    const scores2 = shareTarget.hole_scores ?? []
+    const out = scores2.slice(0, 9).reduce((a: number, b: number) => a + (b || 0), 0)
+    const inn = scores2.slice(9, 18).reduce((a: number, b: number) => a + (b || 0), 0)
+    const gross = shareTarget.total_score ?? (out + inn)
+
+    const drawScore = (label: string, score: number | string, cx: number, color: string) => {
+      ctx.font = '22px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(255,255,255,0.4)'
+      ctx.textAlign = 'center'
+      ctx.fillText(label, cx, by + 38)
+      ctx.font = `bold 52px Inter, sans-serif`
+      ctx.fillStyle = color
+      ctx.fillText(String(score), cx, by + 100)
+      ctx.textAlign = 'left'
+    }
+
+    drawScore('OUT', out || '—', bx + col * 0.5, 'rgba(255,255,255,0.8)')
+    drawScore('IN',  inn || '—', bx + col * 1.5, 'rgba(255,255,255,0.8)')
+    drawScore('GROSS', gross || '—', bx + col * 2.5, '#4ade80')
+
+    const link = document.createElement('a')
+    link.download = `GLH_score_${dateStr}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
   }
 
   const StatsBanner = () => (
@@ -657,14 +746,25 @@ export default function ScorePage() {
                         </div>
                       )
                     })}
-                    {/* 削除ボタン */}
-                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--surf)' }}>
+                    {/* シェア・削除ボタン */}
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--surf)', display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShareTarget(h) }}
+                        style={{ flex: 1, background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 8px', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+                          <polyline points="16,6 12,2 8,6"/>
+                          <line x1="12" y1="2" x2="12" y2="15"/>
+                        </svg>
+                        シェア用画像を作成
+                      </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(h.id) }}
-                        style={{ width: '100%', background: 'none', border: '1px solid #ef4444', borderRadius: 8, padding: '8px', fontSize: 12, fontWeight: 600, color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
+                        style={{ flex: '0 0 auto', background: 'none', border: '1px solid #ef4444', borderRadius: 8, padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"/><path d="M10,11v6"/><path d="M14,11v6"/><path d="M9,6V4a1,1,0,0,1,1-1h4a1,1,0,0,1,1,1v2"/></svg>
-                        このスコアを削除
+                        削除
                       </button>
                     </div>
                   </div>
@@ -675,6 +775,101 @@ export default function ScorePage() {
         </div>
       )}
 
+      {/* シェアモーダル */}
+      {shareTarget && (
+        <div
+          onClick={() => { setShareTarget(null); setSharePhoto(null) }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', background: 'white', borderRadius: '20px 20px 0 0', padding: '20px 16px 40px', maxHeight: '90dvh', overflowY: 'auto' }}
+          >
+            {/* ヘッダー */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>シェア用画像を作成</div>
+                <div style={{ fontSize: 11, color: 'var(--mute)', marginTop: 3 }}>写真と合成してInstagramなどにシェア</div>
+              </div>
+              <button
+                onClick={() => { setShareTarget(null); setSharePhoto(null) }}
+                style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--mute)', cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+              >×</button>
+            </div>
+
+            {/* プレビュー（9:16縦長カード） */}
+            <div style={{ margin: '14px auto', width: '100%', maxWidth: 270, aspectRatio: '9/16', borderRadius: 16, overflow: 'hidden', background: 'linear-gradient(145deg, #2a3a2a, #3a5a3a)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              {sharePhoto && (
+                <img
+                  src={sharePhoto}
+                  alt=""
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+              {/* グラデーションオーバーレイ */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.88) 100%)' }} />
+              {/* GLH.ロゴ */}
+              <div style={{ position: 'absolute', top: 14, left: 16, fontFamily: 'Inter', fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,0.9)' }}>GLH.</div>
+              {/* スコア情報 */}
+              <div style={{ position: 'relative', zIndex: 1, padding: '0 14px 16px' }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+                  {shareTarget.played_at
+                    ? new Date(shareTarget.played_at).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.')
+                    : ''}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>{shareTarget.course_name ?? 'コース名'}</div>
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.45)', borderRadius: 10, overflow: 'hidden' }}>
+                  {(() => {
+                    const sc = shareTarget.hole_scores ?? []
+                    const out = sc.slice(0, 9).reduce((a: number, b: number) => a + (b || 0), 0)
+                    const inn = sc.slice(9, 18).reduce((a: number, b: number) => a + (b || 0), 0)
+                    const gross = shareTarget.total_score ?? (out + inn)
+                    return [
+                      { label: 'OUT', val: out || '—', color: 'rgba(255,255,255,0.8)' },
+                      { label: 'IN', val: inn || '—', color: 'rgba(255,255,255,0.8)' },
+                      { label: 'GROSS', val: gross || '—', color: '#4ade80' },
+                    ].map((item, i) => (
+                      <div key={item.label} style={{ flex: 1, textAlign: 'center', padding: '6px 0', borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
+                        <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>{item.label}</div>
+                        <div style={{ fontFamily: 'Inter', fontSize: 18, fontWeight: 700, color: item.color }}>{item.val}</div>
+                      </div>
+                    ))
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* 写真選択ボタン */}
+            <button
+              onClick={() => sharePhotoRef.current?.click()}
+              style={{ width: '100%', background: 'var(--surf)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px', fontSize: 13, fontWeight: 600, color: 'var(--txt)', cursor: 'pointer', marginBottom: 10 }}
+            >
+              {sharePhoto ? '写真を変更する' : '写真を選択して合成する'}
+            </button>
+            <input
+              ref={sharePhotoRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                const reader = new FileReader()
+                reader.onload = ev => setSharePhoto(ev.target?.result as string)
+                reader.readAsDataURL(file)
+              }}
+            />
+
+            {/* 保存ボタン */}
+            <button
+              onClick={handleShareDownload}
+              style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 10, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+            >
+              画像を保存する
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
