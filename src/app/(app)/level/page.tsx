@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getLevelInfo, LEVELS } from '@/lib/level'
+import { AVATAR_CHARACTERS } from '@/lib/avatars'
 import { PageLoading } from '@/components/LoadingDots'
 
 const POINT_ACTIONS = [
@@ -251,26 +252,43 @@ export default function LevelPage() {
           const rangeStr = nextLvl
             ? `${lvl.minPt.toLocaleString()} 〜 ${(nextLvl.minPt - 1).toLocaleString()} pt`
             : `${lvl.minPt.toLocaleString()} pt 〜`
+          const seen = new Set<string>()
+          const levelAvatars = AVATAR_CHARACTERS.filter(
+            c => c.minLevel === lvl.level && !seen.has(c.src) && (seen.add(c.src), true)
+          )
           return (
             <div
               key={lvl.level}
               style={{
-                display: 'flex', alignItems: 'center', gap: 14,
                 padding: '12px 16px',
                 borderBottom: i < LEVELS.length - 1 ? '1px solid var(--surf)' : 'none',
                 background: isCurrent ? `${lvl.color}08` : 'transparent',
               }}
             >
-              <div style={{ border: `1.5px solid ${lvl.color}4d`, borderRadius: 9, padding: '5px 9px', background: `${lvl.color}0a`, textAlign: 'center', minWidth: 54, flexShrink: 0 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: lvl.color, fontFamily: 'Inter' }}>Lv.{lvl.level}</div>
-                <div style={{ fontSize: 7, fontWeight: 700, color: lvl.color, fontFamily: 'Inter', letterSpacing: '.06em', marginTop: 2 }}>{lvl.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ border: `1.5px solid ${lvl.color}4d`, borderRadius: 9, padding: '5px 9px', background: `${lvl.color}0a`, textAlign: 'center', minWidth: 54, flexShrink: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: lvl.color, fontFamily: 'Inter' }}>Lv.{lvl.level}</div>
+                  <div style={{ fontSize: 7, fontWeight: 700, color: lvl.color, fontFamily: 'Inter', letterSpacing: '.06em', marginTop: 2 }}>{lvl.name}</div>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: 'var(--txt)', fontFamily: 'Inter' }}>{rangeStr}</div>
+                </div>
+                {isCurrent && (
+                  <div style={{ fontSize: 9, fontWeight: 700, color: lvl.color, background: `${lvl.color}15`, borderRadius: 4, padding: '3px 8px', border: `1px solid ${lvl.color}4d`, flexShrink: 0 }}>
+                    現在
+                  </div>
+                )}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: 'var(--txt)', fontFamily: 'Inter' }}>{rangeStr}</div>
-              </div>
-              {isCurrent && (
-                <div style={{ fontSize: 9, fontWeight: 700, color: lvl.color, background: `${lvl.color}15`, borderRadius: 4, padding: '3px 8px', border: `1px solid ${lvl.color}4d`, flexShrink: 0 }}>
-                  現在
+              {levelAvatars.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 10, overflowX: 'auto', paddingBottom: 2 }}>
+                  {levelAvatars.map(c => (
+                    <img
+                      key={c.id}
+                      src={c.src}
+                      alt={c.name}
+                      style={{ width: 64, height: 64, objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,.12))' }}
+                    />
+                  ))}
                 </div>
               )}
             </div>
