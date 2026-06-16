@@ -822,7 +822,7 @@ export default function ScorePage() {
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.88) 100%)' }} />
               {/* ロゴ */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/glh-logo-white.png" alt="" style={{ position: 'absolute', top: '5%', left: '5%', width: '26%', objectFit: 'contain', zIndex: 2 }} />
+              <img src="/glh-logo-white.png" alt="" style={{ position: 'absolute', top: '5%', left: '5%', width: '20.8%', height: 'auto', zIndex: 2 }} />
               {/* スコア情報 */}
               <div style={{ position: 'relative', zIndex: 1, padding: '0 14px 16px' }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
