@@ -36,9 +36,11 @@ export const AVATAR_CHARACTERS: AvatarCharacter[] = [
   { id: 'black-champion-02',  gender: 'male',   minLevel: 4, name: 'CHAMPION 02', src: '/avatars/champion-pop-black.png' },
   { id: 'ivory-champion-01',  gender: 'female', minLevel: 4, name: 'CHAMPION 01', src: '/avatars/champion-hoodie-ivory.png' },
   { id: 'ivory-champion-02',  gender: 'female', minLevel: 4, name: 'CHAMPION 02', src: '/avatars/champion-pop-ivory.png' },
-  // LEGEND (Lv5 · 男女共通画像)
-  { id: 'black-legend',       gender: 'male',   minLevel: 5, name: 'LEGEND',      src: '/avatars/legend-gold.png' },
-  { id: 'ivory-legend',       gender: 'female', minLevel: 5, name: 'LEGEND',      src: '/avatars/legend-gold.png' },
+  // LEGEND (Lv5) — 01: 性別別スイング / 02: ゴールド素体(男女共通)
+  { id: 'male-legend-01',   gender: 'male',   minLevel: 5, name: 'LEGEND 01', src: '/avatars/legend-male-01.png' },
+  { id: 'female-legend-01', gender: 'female', minLevel: 5, name: 'LEGEND 01', src: '/avatars/legend-female-01.png' },
+  { id: 'male-legend-02',   gender: 'male',   minLevel: 5, name: 'LEGEND 02', src: '/avatars/legend-gold.png' },
+  { id: 'female-legend-02', gender: 'female', minLevel: 5, name: 'LEGEND 02', src: '/avatars/legend-gold.png' },
 ]
 
 // 旧IDが DB に保存されている場合のフォールバック
@@ -47,6 +49,8 @@ const LEGACY_ID_MAP: Record<string, string> = {
   'bear-cream':      'cream-public',
   'bear-black-golf': 'black-member',
   'bear-ivory-golf': 'ivory-member',
+  'black-legend':    'male-legend-02',
+  'ivory-legend':    'female-legend-02',
 }
 
 export function charactersForGender(g: string | null | undefined): AvatarCharacter[] {
