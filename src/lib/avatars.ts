@@ -29,10 +29,10 @@ export const AVATAR_CHARACTERS: AvatarCharacter[] = [
   { id: 'black-member',       gender: 'male',   minLevel: 2, name: 'MEMBER',      src: '/avatars/bear-black-golf.png' },
   { id: 'ivory-member',       gender: 'female', minLevel: 2, name: 'MEMBER',      src: '/avatars/bear-ivory-golf.png' },
   // CLASSIC (Lv3 · 各2種)
-  { id: 'black-classic-01',   gender: 'male',   minLevel: 3, name: 'CLASSIC 01',  src: '/avatars/classic-camo-black.png' },
-  { id: 'black-classic-02',   gender: 'male',   minLevel: 3, name: 'CLASSIC 02',  src: '/avatars/classic-golf-black.png' },
-  { id: 'ivory-classic-01',   gender: 'female', minLevel: 3, name: 'CLASSIC 01',  src: '/avatars/classic-camo-ivory.png' },
-  { id: 'ivory-classic-02',   gender: 'female', minLevel: 3, name: 'CLASSIC 02',  src: '/avatars/classic-golf-ivory.png' },
+  { id: 'black-classic',      gender: 'male',   minLevel: 3, name: 'CLASSIC 01',  src: '/avatars/classic-golf-black.png' },
+  { id: 'black-classic-02',   gender: 'male',   minLevel: 3, name: 'CLASSIC 02',  src: '/avatars/classic-camo-black.png' },
+  { id: 'ivory-classic',      gender: 'female', minLevel: 3, name: 'CLASSIC 01',  src: '/avatars/classic-golf-ivory.png' },
+  { id: 'ivory-classic-02',   gender: 'female', minLevel: 3, name: 'CLASSIC 02',  src: '/avatars/classic-camo-ivory.png' },
   // CHAMPION (Lv4 · 各2種)
   { id: 'black-champion-01',  gender: 'male',   minLevel: 4, name: 'CHAMPION 01', src: '/avatars/champion-hoodie-black.png' },
   { id: 'black-champion-02',  gender: 'male',   minLevel: 4, name: 'CHAMPION 02', src: '/avatars/champion-pop-black.png' },
@@ -51,8 +51,8 @@ const LEGACY_ID_MAP: Record<string, string> = {
   'bear-cream':      'cream-public',
   'bear-black-golf': 'black-member',
   'bear-ivory-golf': 'ivory-member',
-  'black-classic':   'black-classic-02',
-  'ivory-classic':   'ivory-classic-02',
+  'black-classic-01': 'black-classic',
+  'ivory-classic-01': 'ivory-classic',
   'black-legend':    'male-legend-02',
   'ivory-legend':    'female-legend-02',
 }
