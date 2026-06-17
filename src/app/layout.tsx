@@ -2,22 +2,24 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Golf Link Hiroshima | Connected Golfers',
-  description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。ラウンド仲間を見つけよう。',
+  title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
+  description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
   manifest: '/manifest.json',
   metadataBase: new URL('https://golflink-hiroshima.com'),
   openGraph: {
-    title: 'Golf Link Hiroshima | Connected Golfers',
-    description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。',
+    title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
+    description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
     url: 'https://golflink-hiroshima.com',
     siteName: 'Golf Link Hiroshima',
     locale: 'ja_JP',
     type: 'website',
+    images: [{ url: '/glh-ogp.png', width: 1200, height: 628, alt: 'Golf Link Hiroshima' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Golf Link Hiroshima | Connected Golfers',
-    description: '広島のゴルファーをつなぐコミュニティアプリ。血液型・星座相性でマッチング。',
+    title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
+    description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
+    images: ['/glh-ogp.png'],
   },
   appleWebApp: {
     capable: true,
