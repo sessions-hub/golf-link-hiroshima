@@ -116,8 +116,18 @@ export default function ReferralPage() {
 
           {/* 無料月バナー */}
           {freeMonths > 0 && (
-            <div style={{ background: 'rgba(74,222,128,.15)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 13, fontWeight: 700, color: '#4ade80', textAlign: 'center' }}>
-              🎁 プレミアム{freeMonths}ヶ月分の無料特典あり
+            <div style={{ background: 'rgba(74,222,128,.15)', border: '1px solid rgba(74,222,128,.3)', borderRadius: 10, padding: '10px 14px', marginBottom: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', textAlign: 'center', marginBottom: 4 }}>
+                🎁 プレミアム{freeMonths}ヶ月分の無料特典あり
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(74,222,128,.8)', lineHeight: 1.5, textAlign: 'center' }}>
+                プレミアムプランに申し込むと、プール分をまとめて無料トライアル期間として自動適用されます。（例：3ヶ月プール → 90日間無料）
+              </div>
+            </div>
+          )}
+          {freeMonths > 0 && (
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', lineHeight: 1.5, marginBottom: 14, paddingLeft: 2 }}>
+              ※ トライアル期間終了後は自動的に通常料金（¥490/月）が課金されます。解約はいつでも可能です。
             </div>
           )}
 
@@ -161,7 +171,7 @@ export default function ReferralPage() {
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', marginBottom: 2 }}>招待した方</div>
-                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.5 }}>1人が登録するごとにプレミアム1ヶ月分をプール。次回更新時に無料適用されます。</div>
+                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.5 }}>友達が登録するたびに1ヶ月分をプール。プレミアムプランに申し込む際に、プール分をまとめて無料トライアル期間として自動適用されます。</div>
               </div>
             </div>
             <div style={{ borderTop: '1px solid var(--surf)', paddingTop: 10, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -170,7 +180,7 @@ export default function ReferralPage() {
               </div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', marginBottom: 2 }}>招待された方</div>
-                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.5 }}>招待コードを使って登録すると、プレミアム1ヶ月無料で利用できます。</div>
+                <div style={{ fontSize: 12, color: 'var(--mute)', lineHeight: 1.5 }}>招待コードで登録すると1ヶ月分をプール。プレミアムプランに申し込む際に1ヶ月間の無料トライアルが自動適用されます。</div>
               </div>
             </div>
           </div>

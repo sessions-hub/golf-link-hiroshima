@@ -93,12 +93,15 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // trial → active 移行時に free_months_earned を -1
+        // trial → active 移行時に free_months_earned をまとめて0に
         if (event.type === 'customer.subscription.updated') {
           const prevSub = event.data.previous_attributes as any
           if (prevSub?.status === 'trialing' && sub.status === 'active') {
-            await supabase.rpc('decrement_free_months', { p_user_id: user.id })
-            console.log(`Decremented free months for user ${user.id} after trial ended`)
+            await supabase
+              .from('profiles')
+              .update({ free_months_earned: 0 })
+              .eq('user_id', user.id)
+            console.log(`Reset free months to 0 for user ${user.id} after trial ended`)
           }
         }
 

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (profile && profile.free_months_earned > 0) {
-        trialDays = 30
+        trialDays = profile.free_months_earned * 30
       }
     }
 
