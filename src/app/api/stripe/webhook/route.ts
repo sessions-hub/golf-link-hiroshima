@@ -93,32 +93,12 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 新規サブスクリプション時のみ無料月クーポンを適用
-        if (event.type === 'customer.subscription.created' && (plan === 'premium' || plan === 'executive')) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('free_months_earned')
-            .eq('user_id', user.id)
-            .single()
-
-          if (profileData && profileData.free_months_earned > 0) {
-            try {
-              const coupon = await stripe.coupons.create({
-                duration: 'once',
-                percent_off: 100,
-                name: '友達招待特典 1ヶ月無料',
-              })
-              await stripe.subscriptions.update(sub.id, {
-                discounts: [{ coupon: coupon.id }],
-              })
-              await supabase
-                .from('profiles')
-                .update({ free_months_earned: profileData.free_months_earned - 1 })
-                .eq('user_id', user.id)
-              console.log(`Applied referral coupon for user ${user.id}`)
-            } catch (couponErr) {
-              console.error('Coupon apply error:', couponErr)
-            }
+        // trial → active 移行時に free_months_earned を -1
+        if (event.type === 'customer.subscription.updated') {
+          const prevSub = event.data.previous_attributes as any
+          if (prevSub?.status === 'trialing' && sub.status === 'active') {
+            await supabase.rpc('decrement_free_months', { p_user_id: user.id })
+            console.log(`Decremented free months for user ${user.id} after trial ended`)
           }
         }
 
