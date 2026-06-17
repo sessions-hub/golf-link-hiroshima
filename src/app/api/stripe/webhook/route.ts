@@ -108,7 +108,9 @@ export async function POST(request: NextRequest) {
                 percent_off: 100,
                 name: '友達招待特典 1ヶ月無料',
               })
-              await stripe.subscriptions.update(sub.id, { coupon: coupon.id })
+              await stripe.subscriptions.update(sub.id, {
+                discounts: [{ coupon: coupon.id }],
+              })
               await supabase
                 .from('profiles')
                 .update({ free_months_earned: profileData.free_months_earned - 1 })
