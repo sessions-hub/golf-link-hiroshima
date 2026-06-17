@@ -30,8 +30,11 @@ export default function RegisterPage() {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get('ref')
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
     if (ref) sessionStorage.setItem('ref_source', ref)
+    const invite = params.get('invite')
+    if (invite) setInviteCode(invite.toUpperCase())
   }, [])
 
   useEffect(() => {
@@ -78,6 +81,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [birthDate, setBirthDate] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
 
   // Step 2
   const [gender, setGender] = useState('male')
@@ -197,6 +201,25 @@ export default function RegisterPage() {
           target_id: data.user.id,
         })
       }
+
+      // 招待コード処理
+      const code = inviteCode.trim().toUpperCase()
+      if (code) {
+        const { data: referrer } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('invite_code', code)
+          .single()
+        if (referrer) {
+          await supabase.from('referrals').insert({
+            referrer_id: referrer.user_id,
+            referred_id: data.user.id,
+          })
+          await supabase.rpc('increment_free_months', { p_user_id: referrer.user_id })
+          await supabase.rpc('increment_free_months', { p_user_id: data.user.id })
+        }
+      }
+
       setRegisteredUserId(data.user.id)
       setLoading(false)
       setShowOnboarding(true)
@@ -278,6 +301,9 @@ export default function RegisterPage() {
 
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>生年月日</div>
           <input value={birthDate} onChange={e => setBirthDate(e.target.value)} type="date" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
+
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>招待コード（お持ちの方のみ）</div>
+          <input value={inviteCode} onChange={e => setInviteCode(e.target.value.toUpperCase())} placeholder="例: GLH-ABCDE" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, letterSpacing: '.06em', fontFamily: 'Inter' }} />
 
           <button onClick={() => setStep(1)} style={{ width: '100%', background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 'auto' }}>次へ →</button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--mute)', marginTop: 14 }}>

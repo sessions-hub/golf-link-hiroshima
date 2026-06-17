@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/EmptyState'
 
 const SVG_ICONS: Record<string, React.ReactNode> = {
   user: <><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></>,
+  users: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></>,
   calendar: <><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
   trophy: <><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/><path d="M7 4h10l-1 7a5 5 0 01-10 0z"/><path d="M5 4H2v2a4 4 0 004 4M19 4h3v2a4 4 0 01-4 4"/></>,
   star: <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>,
@@ -34,6 +35,7 @@ const MENU_ITEMS = [
   { icon: 'block', label: 'ブロックリスト', path: '/profile/blocks' },
   { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
   { icon: 'bell', label: 'プッシュ通知を設定', path: '/settings' },
+  { icon: 'users', label: '友達を招待する', path: '/profile/referral' },
 ]
 
 const LEGAL_ITEMS = [

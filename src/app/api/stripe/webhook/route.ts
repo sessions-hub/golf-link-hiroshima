@@ -92,6 +92,34 @@ export async function POST(request: NextRequest) {
             await supabase.rpc('add_user_points', { p_user_id: user.id, p_amount: 100 })
           }
         }
+
+        // 新規サブスクリプション時のみ無料月クーポンを適用
+        if (event.type === 'customer.subscription.created' && (plan === 'premium' || plan === 'executive')) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('free_months_earned')
+            .eq('user_id', user.id)
+            .single()
+
+          if (profileData && profileData.free_months_earned > 0) {
+            try {
+              const coupon = await stripe.coupons.create({
+                duration: 'once',
+                percent_off: 100,
+                name: '友達招待特典 1ヶ月無料',
+              })
+              await stripe.subscriptions.update(sub.id, { coupon: coupon.id })
+              await supabase
+                .from('profiles')
+                .update({ free_months_earned: profileData.free_months_earned - 1 })
+                .eq('user_id', user.id)
+              console.log(`Applied referral coupon for user ${user.id}`)
+            } catch (couponErr) {
+              console.error('Coupon apply error:', couponErr)
+            }
+          }
+        }
+
         break
       }
 
