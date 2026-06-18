@@ -166,12 +166,12 @@ export default function ReferralPage() {
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 12 }}>招待特典について</div>
           <div style={{ textAlign: 'center', marginBottom: 14 }}>
             <span style={{
-              fontSize: 16, fontWeight: 800, color: 'var(--txt)', whiteSpace: 'nowrap',
+              fontSize: 'clamp(13px, 4.3vw, 16px)', fontWeight: 800, color: 'var(--txt)', whiteSpace: 'nowrap',
               background: 'linear-gradient(transparent 55%, #ffe14d 55%)',
               boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
               padding: '0 2px',
             }}>
-              プレミアム30日無料×招待人数
+              プレミアムプラン30日無料×招待人数
             </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
