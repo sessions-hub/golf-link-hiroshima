@@ -281,6 +281,18 @@ export default function RegisterPage() {
         </div>
       )}
 
+      {step > 0 && !showOnboarding && (
+        <button
+          onClick={() => setStep(step - 1)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--g2)', fontSize: 13, fontWeight: 600, padding: '10px 22px 0', alignSelf: 'flex-start' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15,18 9,12 15,6"/>
+          </svg>
+          戻る
+        </button>
+      )}
+
       {/* Step 1: 基本情報 */}
       {step === 0 && (
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
