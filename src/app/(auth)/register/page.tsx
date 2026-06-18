@@ -240,7 +240,7 @@ export default function RegisterPage() {
       {/* ヘッダー（loginと同デザイン＋右上ステップドット） */}
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '22px', paddingLeft: '22px', paddingRight: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/グリーン.png" alt="GLH." style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src="/logo-green.png" alt="GLH." style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
           <div style={{ borderLeft: '1px solid #111814', paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>GOLF LINK</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#111814', letterSpacing: '.2em', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>HIROSHIMA</div>

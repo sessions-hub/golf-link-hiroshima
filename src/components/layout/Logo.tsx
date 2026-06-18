@@ -14,7 +14,7 @@ export default function Logo({ height = 64, variant = 'screen' }: LogoProps) {
       gap: 12,
     }}>
       <img
-        src={isWhite ? '/GL白抜きロゴ.png' : '/グリーン.png'}
+        src={isWhite ? '/logo-white.png' : '/logo-green.png'}
         alt="GLH."
         style={{
           height: height,
