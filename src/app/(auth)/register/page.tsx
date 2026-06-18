@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar } from '@/components/Avatar'
 import { OFFICIAL_USER_ID } from '@/lib/official'
+import BrandIntro from '@/components/BrandIntro'
 
 const HDCP_OPTIONS = [
   { label: '初心者', value: 36 },
@@ -28,6 +29,18 @@ const STEP_LABELS = ['基本情報', 'ゴルフ情報', 'エリア設定']
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
+  const [introDone, setIntroDone] = useState(true)
+
+  useEffect(() => {
+    const force = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('intro') === '1'
+    const seen  = typeof window !== 'undefined' && localStorage.getItem('glh_intro_seen') === '1'
+    setIntroDone(force ? false : seen)
+  }, [])
+
+  const handleIntroFinish = () => {
+    localStorage.setItem('glh_intro_seen', '1')
+    setIntroDone(true)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -228,6 +241,8 @@ export default function RegisterPage() {
 
     router.push('/home')
   }
+
+  if (!introDone) return <BrandIntro onFinish={handleIntroFinish} />
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
