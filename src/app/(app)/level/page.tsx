@@ -239,7 +239,27 @@ export default function LevelPage() {
           コミュニティの活性化を目的にアプリ内でのアクティビティをレベル別に表示しています。
         </p>
         <div style={{ background: 'var(--surf)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--mute)', lineHeight: 1.7 }}>
-          レベルに応じて参加できる限定コンテンツや情報、プレゼント抽選など様々な企画をご用意しています。
+          レベルに応じて開放されるアバターや限定コンテンツ、プレゼント抽選など様々な企画をご用意。
+        </div>
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--surf)' }}>
+          <div style={{ fontSize: 11, color: 'var(--mute)', letterSpacing: '.08em', marginBottom: 12 }}>GLHキャラクター</div>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+            {[
+              { src: '/avatars/bear-black.png', name: 'Divo', read: 'ディボ' },
+              { src: '/avatars/bear-cream.png', name: 'Rory', read: 'ローリー' },
+            ].map((c) => (
+              <div key={c.name} style={{ flex: 1, textAlign: 'center' }}>
+                <img src={c.src} alt={c.name} style={{ height: 96, objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,.12))' }} />
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', fontFamily: 'Inter, sans-serif', marginTop: 6 }}>{c.name}</div>
+                <div style={{ fontSize: 10, color: 'var(--mute)' }}>
+                  {[...c.read].map((ch, i) => ch === 'ー'
+                    ? <span key={i} style={{ display: 'inline-block', transform: 'scaleX(0.72)' }}>ー</span>
+                    : <span key={i}>{ch}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
