@@ -164,11 +164,15 @@ export default function ReferralPage() {
         {/* ② 特典説明カード */}
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid var(--line)', padding: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 12 }}>招待特典について</div>
-          <div style={{ background: 'linear-gradient(135deg, #0d3d2b, #1a4a2a)', borderRadius: 12, padding: '14px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 22, flexShrink: 0 }}>🎁</span>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', lineHeight: 1.4 }}>
-              プレミアムプラン<span style={{ color: '#fbbf24' }}>30日無料</span><span style={{ color: '#4ade80' }}> × 招待人数</span>
-            </div>
+          <div style={{ textAlign: 'center', marginBottom: 14 }}>
+            <span style={{
+              fontSize: 16, fontWeight: 800, color: 'var(--txt)', whiteSpace: 'nowrap',
+              background: 'linear-gradient(transparent 55%, #ffe14d 55%)',
+              boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
+              padding: '0 2px',
+            }}>
+              プレミアム30日無料×招待人数
+            </span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
