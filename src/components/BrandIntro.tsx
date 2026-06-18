@@ -33,10 +33,8 @@ export default function BrandIntro({ onFinish }: { onFinish: () => void }) {
         opacity:0.14, filter:'blur(3px)',
         animation:'glhEmerge 1.5s ease .3s forwards' }}>
         <img src="/glh-logo-dark.png" alt="GLH" style={{ width:200, maxWidth:'62vw' }} />
-        <div style={{ display:'flex', alignItems:'center', gap:13 }}>
-          <span style={{ width:34, height:1.5, background:'#c9a25a' }} />
+        <div style={{ display:'flex', justifyContent:'center' }}>
           <span style={{ color:'#173d2c', fontSize:11, letterSpacing:'.3em', fontWeight:600 }}>GOLF LINK HIROSHIMA</span>
-          <span style={{ width:34, height:1.5, background:'#c9a25a' }} />
         </div>
       </div>
     </div>
