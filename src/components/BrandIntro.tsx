@@ -25,7 +25,7 @@ export default function BrandIntro({ onFinish }: { onFinish: () => void }) {
       `}</style>
 
       {/* フレンドベア：最初から表示（静止） */}
-      <img src="/friend-pair.png" alt=""
+      <img src="/avatars/friend-pair.png" alt=""
         style={{ height:160, filter:'drop-shadow(0 10px 18px rgba(0,0,0,.16))' }} />
 
       {/* ロゴ：固定位置で薄い→くっきりにゆっくり浮き出る（移動なし） */}
