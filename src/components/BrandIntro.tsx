@@ -26,15 +26,15 @@ export default function BrandIntro({ onFinish }: { onFinish: () => void }) {
 
       {/* フレンドベア：最初から表示（静止） */}
       <img src="/avatars/friend-pair.png" alt=""
-        style={{ height:160, filter:'drop-shadow(0 10px 18px rgba(0,0,0,.16))' }} />
+        style={{ width:190, filter:'drop-shadow(0 8px 16px rgba(0,0,0,.16))' }} />
 
       {/* ロゴ：固定位置で薄い→くっきりにゆっくり浮き出る（移動なし） */}
-      <div className="glh-logowrap" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14,
+      <div className="glh-logowrap" style={{ width:190, display:'flex', flexDirection:'column', alignItems:'center', gap:9,
         opacity:0.14, filter:'blur(3px)',
         animation:'glhEmerge 1.5s ease .3s forwards' }}>
-        <img src="/glh-logo-dark.png" alt="GLH" style={{ width:200, maxWidth:'62vw' }} />
+        <img src="/glh-logo-dark.png" alt="GLH" style={{ width:'100%' }} />
         <div style={{ display:'flex', justifyContent:'center' }}>
-          <span style={{ color:'#173d2c', fontSize:11, letterSpacing:'.3em', fontWeight:600 }}>GOLF LINK HIROSHIMA</span>
+          <span style={{ color:'#173d2c', fontSize:9, letterSpacing:'.16em', fontWeight:600 }}>GOLF LINK HIROSHIMA</span>
         </div>
       </div>
     </div>
