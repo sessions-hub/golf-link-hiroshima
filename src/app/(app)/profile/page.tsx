@@ -31,11 +31,11 @@ const SVG_ICONS: Record<string, React.ReactNode> = {
 }
 
 const MENU_ITEMS = [
+  { icon: 'users', label: '友達を招待する', path: '/profile/referral' },
+  { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
   { icon: 'trophy', label: '参加コンペ・ラウンド一覧', path: '/profile/comps' },
   { icon: 'block', label: 'ブロックリスト', path: '/profile/blocks' },
-  { icon: 'star', label: 'サブスクリプション管理', path: '/subscription' },
   { icon: 'bell', label: 'プッシュ通知を設定', path: '/settings' },
-  { icon: 'users', label: '友達を招待する', path: '/profile/referral' },
 ]
 
 const LEGAL_ITEMS = [
@@ -671,15 +671,24 @@ export default function ProfilePage() {
           {/* メニュー */}
           <div style={{ background: 'white', marginBottom: 8 }}>
             <div style={{ padding: '10px 20px 4px', fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase' }}>メニュー</div>
-            {MENU_ITEMS.map((item) => (
-              <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
-                <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+            {MENU_ITEMS.map((item) => {
+              const isReferral = item.path === '/profile/referral'
+              return (
+                <div key={item.label} onClick={() => item.path === '/settings' ? registerPush() : router.push(item.path)}
+                  style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer', background: isReferral ? 'rgba(46,125,85,.06)' : 'transparent' }}>
+                  <div style={{ width: 30, height: 30, background: isReferral ? 'var(--g2)' : 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: isReferral ? 'none' : '1px solid var(--line)', flexShrink: 0 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isReferral ? '#fff' : 'var(--g2)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{SVG_ICONS[item.icon]}</svg>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1, fontWeight: isReferral ? 700 : 400, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {item.label}
+                    {isReferral && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#0d3d2b', background: '#ffe14d', borderRadius: 999, padding: '2px 8px' }}>30日無料</span>
+                    )}
+                  </div>
+                  <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>{item.label}</div>
-                <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
-              </div>
-            ))}
+              )
+            })}
 
             {/* 文字サイズ */}
             <div style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)' }}>
