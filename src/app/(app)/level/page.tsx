@@ -245,8 +245,8 @@ export default function LevelPage() {
           <div style={{ fontSize: 11, color: 'var(--mute)', letterSpacing: '.08em', marginBottom: 12 }}>GLHキャラクター</div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             {[
-              { src: '/avatars/bear-black.png', name: 'Divo', read: 'ディボ' },
-              { src: '/avatars/bear-cream.png', name: 'Rory', read: 'ローリー' },
+              { src: '/avatars/bear-black-main.png', name: 'Divo', read: 'ディボ' },
+              { src: '/avatars/bear-cream-main.png', name: 'Rory', read: 'ローリー' },
             ].map((c) => (
               <div key={c.name} style={{ flex: 1, textAlign: 'center' }}>
                 <img src={c.src} alt={c.name} style={{ height: 96, objectFit: 'contain', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,.12))' }} />
