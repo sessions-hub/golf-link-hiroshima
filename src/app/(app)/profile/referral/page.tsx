@@ -11,6 +11,7 @@ export default function ReferralPage() {
   const [freeMonths, setFreeMonths] = useState(0)
   const [referrals, setReferrals] = useState<any[]>([])
   const [copied, setCopied] = useState(false)
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -58,17 +59,15 @@ export default function ReferralPage() {
   }
 
   const handleShare = async () => {
-    const shareData = {
-      title: 'GLH. ゴルフコミュニティ',
-      text: `招待コード【${inviteCode}】を使って登録すると1ヶ月無料！`,
-      url: `https://golflink-hiroshima.com/register?invite=${inviteCode}`,
-    }
+    const inviteUrl = `https://golflink-hiroshima.com/register?invite=${inviteCode}`
+    const shareText = `Golf Link Hiroshima\n招待コード【${inviteCode}】を使って登録するとプレミアムプラン30日無料！\n${inviteUrl}`
     if (navigator.share) {
-      try { await navigator.share(shareData) } catch { /* user cancelled */ }
+      try { await navigator.share({ title: 'Golf Link Hiroshima', text: shareText }) } catch { /* user cancelled */ }
     } else {
-      await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      try { await navigator.clipboard.writeText(shareText) } catch { /* ignore */ }
+      window.location.href = `mailto:?subject=${encodeURIComponent('Golf Link Hiroshima')}&body=${encodeURIComponent(shareText)}`
+      setShareFeedback('メールアプリを開きました。開かない場合は、コピー済みの内容を貼り付けてください')
+      setTimeout(() => setShareFeedback(null), 5000)
     }
   }
 
@@ -159,6 +158,9 @@ export default function ReferralPage() {
             </svg>
             友達に招待リンクを送る
           </button>
+          {shareFeedback && (
+            <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,.75)', lineHeight: 1.5 }}>{shareFeedback}</div>
+          )}
         </div>
 
         {/* ② 特典説明カード */}
