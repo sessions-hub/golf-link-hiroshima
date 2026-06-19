@@ -79,8 +79,7 @@ export default function RegisterPage() {
   const [showSafariBanner, setShowSafariBanner] = useState(false)
 
   // Step 1
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [nicknameError, setNicknameError] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -158,7 +157,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: {
-          nickname: nickname || `${lastName}${firstName}`,
+          nickname: nickname.trim(),
           birth_date: birthDate || '1990-01-01',
           blood_type: bloodType,
         }
@@ -185,7 +184,7 @@ export default function RegisterPage() {
       }
       const refSource = sessionStorage.getItem('ref_source')
       await supabase.from('profiles').update({
-        nickname: nickname || `${lastName}${firstName}`,
+        nickname: nickname.trim(),
         birth_date: birthDate || '1990-01-01',
         blood_type: bloodType,
         handicap: hdcp,
@@ -298,17 +297,19 @@ export default function RegisterPage() {
         <div style={{ flex: 1, padding: '16px 22px 24px', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>アカウント作成</div>
           <div style={{ fontSize: 11, color: 'var(--mute)', marginBottom: 16, background: 'var(--surf)', borderRadius: 8, padding: '8px 12px', border: '1px solid var(--line)' }}>
-            ※ 氏名・メールアドレス・生年月日は外部に公開されません
+            ※ メールアドレス・生年月日は外部に公開されません
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-            {[['姓', lastName, setLastName], ['名', firstName, setFirstName]].map(([label, val, setter]) => (
-              <div key={label as string} style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>{label as string}</div>
-                <input value={val as string} onChange={e => (setter as any)(e.target.value)} placeholder={label as string} style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none' }} />
-              </div>
-            ))}
-          </div>
+          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ニックネーム</div>
+          <input
+            value={nickname}
+            onChange={e => { setNickname(e.target.value); if (nicknameError) setNicknameError('') }}
+            placeholder="ニックネーム"
+            style={{ width: '100%', background: 'white', border: `1.5px solid ${nicknameError ? '#c05050' : 'var(--line)'}`, borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: nicknameError ? 6 : 14 }}
+          />
+          {nicknameError && (
+            <div style={{ fontSize: 12, color: '#c05050', marginBottom: 14 }}>{nicknameError}</div>
+          )}
 
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>メールアドレス</div>
           <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="メールアドレス" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14 }} />
@@ -322,7 +323,13 @@ export default function RegisterPage() {
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>招待コード（お持ちの方のみ）</div>
           <input value={inviteCode} onChange={e => setInviteCode(e.target.value.toUpperCase())} placeholder="例: GLH-ABCDE" style={{ width: '100%', background: 'white', border: '1.5px solid var(--line)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, letterSpacing: '.06em', fontFamily: 'Inter' }} />
 
-          <button onClick={() => setStep(1)} style={{ width: '100%', background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 'auto' }}>次へ →</button>
+          <button
+            onClick={() => {
+              if (!nickname.trim()) { setNicknameError('ニックネームを入力してください'); return }
+              setStep(1)
+            }}
+            style={{ width: '100%', background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 'auto' }}
+          >次へ →</button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--mute)', marginTop: 14 }}>
             すでにアカウントをお持ちの方は<span onClick={() => router.push('/login')} style={{ color: 'var(--g2)', fontWeight: 600, cursor: 'pointer' }}>　ログイン</span>
           </div>
@@ -340,9 +347,6 @@ export default function RegisterPage() {
             <div style={{ fontSize: 10, color: 'var(--mute)', marginTop: 6 }}>タップして写真を登録（任意）</div>
           </div>
           <input ref={avatarRef} type="file" accept="image/*" onChange={handleAvatarSelect} style={{ display: 'none' }} />
-
-          <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>ニックネーム</div>
-          <input value={nickname} onChange={e => setNickname(e.target.value)} placeholder="ニックネーム" style={{ width: '100%', background: 'white', border: '1.5px solid var(--g3)', borderRadius: 8, padding: '12px 14px', fontSize: 14, color: 'var(--txt)', outline: 'none', marginBottom: 14, boxShadow: '0 0 0 3px rgba(46,125,85,.08)' }} />
 
           {/* 性別（step 1から移動） */}
           <div style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 6 }}>性別</div>
