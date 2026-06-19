@@ -113,6 +113,7 @@ export default function HomePage() {
   const [totalPts, setTotalPts] = useState(0)
   const [todayPts, setTodayPts] = useState(0)
   const [showPushBanner, setShowPushBanner] = useState(false)
+  const [pushFeedback, setPushFeedback] = useState<{ msg: string; type: 'error' | 'info' } | null>(null)
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -579,11 +580,26 @@ export default function HomePage() {
   }
 
   const subscribePush = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    if (typeof Notification === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushFeedback({ msg: 'ホーム画面に追加すると通知を利用できます', type: 'info' })
+      return
+    }
+    if (!process.env.NEXT_PUBLIC_VAPID_KEY) {
+      setPushFeedback({ msg: '通知の設定情報が取得できませんでした。アプリを最新に更新してください', type: 'error' })
+      return
+    }
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.register('/sw.js')
+      const reg = await navigator.serviceWorker.ready
       const permission = await Notification.requestPermission()
-      if (permission !== 'granted') return
+      if (permission === 'denied') {
+        setPushFeedback({ msg: '端末・ブラウザの設定から通知を許可してください', type: 'info' })
+        return
+      }
+      if (permission !== 'granted') {
+        setPushFeedback({ msg: '通知の許可が必要です', type: 'info' })
+        return
+      }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_KEY,
@@ -596,7 +612,9 @@ export default function HomePage() {
         body: JSON.stringify({ subscription: sub, userId: user.id }),
       })
       setShowPushBanner(false)
-    } catch {}
+    } catch {
+      setPushFeedback({ msg: '設定に失敗しました。再度お試しください', type: 'error' })
+    }
   }
 
   const filteredPosts = posts.filter(p =>
@@ -744,13 +762,20 @@ export default function HomePage() {
 
           {/* プッシュ通知バナー */}
           {showPushBanner && (
-            <div style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>🔔 通知をONにする</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>チャットやコンペの最新情報をお届けします</div>
+            <div style={{ margin: '0 16px 10px', background: 'var(--g1)', borderRadius: 14, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>🔔 通知をONにする</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.7)', marginTop: 2 }}>チャットやコンペの最新情報をお届けします</div>
+                </div>
+                <button onClick={subscribePush} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>設定する</button>
+                <button onClick={() => { setShowPushBanner(false); setPushFeedback(null); localStorage.setItem('push_banner_dismissed', '1') }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontSize: 18, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>×</button>
               </div>
-              <button onClick={subscribePush} style={{ background: 'var(--lime)', color: 'var(--g1)', border: 'none', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>設定する</button>
-              <button onClick={() => { setShowPushBanner(false); localStorage.setItem('push_banner_dismissed', '1') }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.7)', cursor: 'pointer', fontSize: 18, padding: '2px 4px', lineHeight: 1, flexShrink: 0 }}>×</button>
+              {pushFeedback && (
+                <div style={{ marginTop: 8, fontSize: 11, color: pushFeedback.type === 'error' ? '#fca5a5' : 'rgba(255,255,255,.85)', background: 'rgba(0,0,0,.25)', borderRadius: 6, padding: '6px 10px' }}>
+                  {pushFeedback.msg}
+                </div>
+              )}
             </div>
           )}
 
