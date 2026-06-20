@@ -231,6 +231,20 @@ export default function SubscriptionPage() {
                 </div>
               </div>
 
+              {/* メンバーズカード画像（エグゼクティブのみ） */}
+              {isExec && (
+                <div style={{ margin: '6px 0 18px' }}>
+                  <img
+                    src="/member-id-cards.png"
+                    alt="限定メンバーズカード"
+                    style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }}
+                  />
+                  <div style={{ textAlign: 'center', fontSize: 11, color: '#f0c060', letterSpacing: '.08em', marginTop: 8 }}>
+                    Members ID -Image-
+                  </div>
+                </div>
+              )}
+
               {/* 機能リスト */}
               <div style={{ marginBottom: 16 }}>
                 {plan.features.map((f) => (
