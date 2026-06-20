@@ -222,6 +222,16 @@ export default function RegisterPage() {
         }
       }
 
+      // 管理者通知（失敗しても登録フローを止めない）
+      fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/notify-new-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ nickname: nickname.trim(), email }),
+      }).catch(() => {})
+
       setRegisteredUserId(data.user.id)
       setLoading(false)
       setShowOnboarding(true)
