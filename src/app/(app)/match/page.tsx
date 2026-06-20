@@ -465,7 +465,9 @@ export default function MatchPage() {
 
     if (myProfile?.gender && m.gender && myProfile.gender !== m.gender &&
         m.gender !== 'other' && myProfile.gender !== 'other') {
-      score += 12
+      score += 6
+    } else {
+      score += 2
     }
 
     const seed = m.user_id.charCodeAt(0) + m.user_id.charCodeAt(1)
@@ -493,7 +495,9 @@ export default function MatchPage() {
 
     if (myProfile?.gender && m.gender && myProfile.gender !== m.gender &&
         m.gender !== 'other' && myProfile.gender !== 'other') {
-      score += 10
+      score += 6
+    } else {
+      score += 2
     }
 
     const myAreas = (myProfile as any)?.areas ?? []

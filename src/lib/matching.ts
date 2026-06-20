@@ -1,5 +1,5 @@
 // calc_match_score (Supabase) の TypeScript 実装
-// 各項目の配点: 血液型25 + 干支20 + 年代20 + 性別10 + エリア15 + ハンデ10 + 頻度5 + 目的10 = max 115 → LEAST(100)
+// 各項目の配点: 血液型25 + 干支20 + 年代20 + 性別6 + エリア15 + ハンデ10 + 頻度5 + 目的10 = max 111 → LEAST(100)
 
 export const MATCH_PURPOSES = ['ラウンド仲間', 'コンペ仲間', 'SNS', 'チャット'] as const
 
@@ -46,10 +46,10 @@ function calcAgeScore(birth1: string, birth2: string): number {
   return 2
 }
 
-// ④ 性別（異性+10、同性+5）(max 10)
+// ④ 性別（異性+6、同性・other・null は +2）(max 6)
 function calcGenderScore(g1?: string | null, g2?: string | null): number {
-  if (!g1 || !g2) return 5
-  return g1 !== g2 ? 10 : 5
+  if (!g1 || !g2) return 2
+  return (g1 !== g2 && g1 !== 'other' && g2 !== 'other') ? 6 : 2
 }
 
 // ⑤ エリア (max 15)
@@ -95,7 +95,7 @@ export function calcMatchScore(me: MatchInput, other: MatchInput): number {
     calcBloodScore(me.blood_type, other.blood_type) +     // max 25
     calcZodiacScore(me.birth_date, other.birth_date) +    // max 20
     calcAgeScore(me.birth_date, other.birth_date) +       // max 20
-    calcGenderScore(me.gender, other.gender) +            // max 10
+    calcGenderScore(me.gender, other.gender) +            // max  6
     calcAreaScore(me.areas, other.areas) +                // max 15
     calcHandicapScore(me.handicap, other.handicap) +      // max 10
     calcFreqScore(me.round_freq, other.round_freq) +      // max  5
