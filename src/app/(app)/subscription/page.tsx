@@ -237,10 +237,10 @@ export default function SubscriptionPage() {
                   <img
                     src="/member-id-cards.png"
                     alt="限定メンバーズカード"
-                    style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }}
+                    style={{ width: '100%', maxWidth: 260, height: 'auto', display: 'block', margin: '0 auto' }}
                   />
                   <div style={{ textAlign: 'center', fontSize: 11, color: '#f0c060', letterSpacing: '.08em', marginTop: 8 }}>
-                    Members ID -Image-
+                    Members ID
                   </div>
                 </div>
               )}
