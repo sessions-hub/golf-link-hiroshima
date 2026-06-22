@@ -718,6 +718,17 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* 不具合の報告 */}
+            <div onClick={() => router.push('/profile/report')} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--surf)', cursor: 'pointer' }}>
+              <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--g2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--txt)', flex: 1 }}>不具合の報告</div>
+              <div style={{ color: 'var(--mute)', fontSize: 18 }}>›</div>
+            </div>
+
             {/* 法的情報アコーディオン */}
             <div onClick={() => setLegalOpen(o => !o)} style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', borderBottom: legalOpen ? '1px solid var(--surf)' : 'none' }}>
               <div style={{ width: 30, height: 30, background: 'var(--surf)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', flexShrink: 0 }}>
