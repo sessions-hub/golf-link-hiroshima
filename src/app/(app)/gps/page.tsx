@@ -77,6 +77,7 @@ export default function GpsPage() {
   const [greenSide, setGreenSide] = useState<'left' | 'right'>('left')
   const [searchText, setSearchText] = useState('')
   const [scores, setScores] = useState<number[]>(Array(27).fill(0))
+  const scoresRef = useRef<number[]>(Array(27).fill(0))
   const [saving, setSaving] = useState(false)
   // サブコース・コンボ選択
   const [subCourseOptions, setSubCourseOptions] = useState<CourseEntry[]>([])
@@ -128,6 +129,7 @@ export default function GpsPage() {
 
       // 復元によるstate変化でauto-saveが誤発火しないようフラグを立てる
       restoringRef.current = true
+      scoresRef.current = restoredScores
       setSelected(venueItem)
       setScores(restoredScores)
       setHole(ar.current_hole ?? 1)
@@ -171,12 +173,13 @@ export default function GpsPage() {
     setSelectedSubCourse(null)
     setPendingSubCourse(null)
     setGpsCombo(null)
+    scoresRef.current = Array(27).fill(0)
     setScores(Array(27).fill(0))
     setGreenDist(null)
   }
 
   const handleBackButton = async () => {
-    const totalScore = scores.slice(0, gpsHoleCount).reduce((a, b) => a + b, 0)
+    const totalScore = scoresRef.current.slice(0, gpsHoleCount).reduce((a, b) => a + b, 0)
     if (totalScore === 0) {
       if (myId) await discardActiveRound(supabase, myId)
       setSelected(null)
@@ -213,6 +216,7 @@ export default function GpsPage() {
       setPendingSubCourse(null)
     }
     setGpsCombo(null)
+    scoresRef.current = Array(27).fill(0)
     setScores(Array(27).fill(0))
   }
 
@@ -221,6 +225,7 @@ export default function GpsPage() {
     setSelectedSubCourse(pendingSubCourse)
     setPendingSubCourse(null)
     setGpsCombo(null)
+    scoresRef.current = Array(27).fill(0)
     setScores(Array(27).fill(0))
     setHole(1)
   }
@@ -230,6 +235,7 @@ export default function GpsPage() {
     setGpsCombo({ label: combo.label, courses: entries })
     setSelectedSubCourse(null)
     setPendingSubCourse(null)
+    scoresRef.current = Array(27).fill(0)
     setScores(Array(27).fill(0))
     setHole(1)
   }
@@ -316,7 +322,10 @@ export default function GpsPage() {
 
   const updateScore = (holeIdx: number, val: number) => {
     if (val < 1 || val > 15) return
-    setScores(prev => { const n = [...prev]; n[holeIdx] = val; return n })
+    const newScores = [...scoresRef.current]
+    newScores[holeIdx] = val
+    scoresRef.current = newScores
+    setScores(newScores)
   }
 
   // アクティブpar・ホール数
