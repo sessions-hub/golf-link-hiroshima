@@ -2,14 +2,14 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
-  description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
+  title: 'ゴルフリンク広島（Golf Link Hiroshima）| アプリで広島のゴルフ仲間とつながろう',
+  description: 'ゴルフリンク広島（Golf Link Hiroshima / GLH）は、広島でゴルフ仲間とつながるコミュニティアプリ。フレンド検索・チャット・ラウンド募集・スコア管理・GPS距離計測まで基本機能は無料。広島のゴルファー同士でつながろう。',
   manifest: '/manifest.json',
-  metadataBase: new URL('https://golflink-hiroshima.com'),
+  metadataBase: new URL('https://www.golflink-hiroshima.com'),
   openGraph: {
-    title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
-    description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
-    url: 'https://golflink-hiroshima.com',
+    title: 'ゴルフリンク広島（Golf Link Hiroshima）| アプリで広島のゴルフ仲間とつながろう',
+    description: 'ゴルフリンク広島（Golf Link Hiroshima / GLH）は、広島でゴルフ仲間とつながるコミュニティアプリ。フレンド検索・チャット・ラウンド募集・スコア管理・GPS距離計測まで基本機能は無料。広島のゴルファー同士でつながろう。',
+    url: 'https://www.golflink-hiroshima.com/home',
     siteName: 'Golf Link Hiroshima',
     locale: 'ja_JP',
     type: 'website',
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Golf Link Hiroshima｜広島のゴルファーをつなぐコミュニティアプリ',
-    description: '地元のゴルファーが集まり、繋がり、盛り上がる！星座や血液型など独自アルゴリズムで相性診断もある【ゴルファー検索】をはじめ、【ゴルフ場予約】【コンペ・ラウンド募集】【メッセージ】【SNS】【スコア記録】【GPS距離計測】などほぼ無料で利用可能！',
+    title: 'ゴルフリンク広島（Golf Link Hiroshima）| アプリで広島のゴルフ仲間とつながろう',
+    description: 'ゴルフリンク広島（Golf Link Hiroshima / GLH）は、広島でゴルフ仲間とつながるコミュニティアプリ。フレンド検索・チャット・ラウンド募集・スコア管理・GPS距離計測まで基本機能は無料。広島のゴルファー同士でつながろう。',
     images: ['/glh-ogp.png'],
   },
   appleWebApp: {
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
       { url: '/icon-512.png', sizes: '512x512' },
     ],
   },
-  keywords: ['ゴルフ', '広島', 'マッチング', 'ゴルファー', 'ラウンド', 'Golf Link Hiroshima', 'GLH'],
+  keywords: ['ゴルフリンク広島', 'Golf Link Hiroshima', 'GLH', '広島 ゴルフ', '広島 ゴルフ 仲間', 'ゴルフ コミュニティ', 'ゴルフ マッチング', '広島 ラウンド 募集', 'ゴルフ アプリ', 'ゴルフ 仲間 探す'],
 }
 
 export const viewport: Viewport = {
