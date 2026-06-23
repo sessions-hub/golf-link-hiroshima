@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import Logo from '@/components/layout/Logo'
 import { type CourseEntry, type CourseCombo, searchVenues, getVenueCourses, getGroupCombos, getCourseById, COURSES, COURSE_COMBOS } from '@/lib/courses'
+import { upsertActiveRound, loadActiveRound, finalizeRound, discardActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
 
 // コース名からpar配列を取得（実際のpar基準で集計するため）
 function getScoreCardPars(courseName: string, holeCount: number): number[] {
@@ -30,7 +31,11 @@ type ActiveCombo = { label: string; courses: CourseEntry[] }
 export default function ScorePage() {
   const router = useRouter()
   const supabase = createClient()
+  const [myId, setMyId] = useState<string | null>(null)
   const [scores, setScores] = useState<number[]>(Array(27).fill(0))
+  const scoresRef = useRef<number[]>(Array(27).fill(0))
+  const restoringRef = useRef(false)
+  const [showNewRoundModal, setShowNewRoundModal] = useState(false)
   const [roundDate, setRoundDate] = useState(new Date().toISOString().split('T')[0])
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
@@ -97,6 +102,7 @@ export default function ScorePage() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setMyId(user.id)
       const { data } = await supabase
         .from('scorecards')
         .select('*')
@@ -104,6 +110,34 @@ export default function ScorePage() {
         .order('created_at', { ascending: false })
         .limit(20)
       if (data) { setHistory(data); calcStats(data) }
+
+      const ar = await loadActiveRound(supabase, user.id, 'manual')
+      if (!ar) return
+      const restoredScores = Array(27).fill(0)
+      ar.hole_scores.forEach((s, i) => { restoredScores[i] = s })
+      if (ar.combo_label && ar.combo_course_ids) {
+        const entries = ar.combo_course_ids.map(id => getCourseById(id)).filter(Boolean) as CourseEntry[]
+        if (entries.length === 0) return
+        restoringRef.current = true
+        scoresRef.current = restoredScores
+        setSelectedVenueName(ar.venue_name)
+        setCourseSearch(ar.venue_name)
+        setSelectedCombo({ label: ar.combo_label, courses: entries })
+        setSelectedCourse(null)
+        setRoundDate(ar.round_date)
+        setScores(restoredScores)
+      } else if (ar.course_id) {
+        const course = getCourseById(ar.course_id)
+        if (!course) return
+        restoringRef.current = true
+        scoresRef.current = restoredScores
+        setSelectedVenueName(ar.venue_name)
+        setCourseSearch(ar.venue_name)
+        setSelectedCourse(course)
+        setSelectedCombo(null)
+        setRoundDate(ar.round_date)
+        setScores(restoredScores)
+      }
     }
     init()
   }, [])
@@ -118,7 +152,10 @@ export default function ScorePage() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const resetScores = () => setScores(Array(27).fill(0))
+  const resetScores = () => {
+    scoresRef.current = Array(27).fill(0)
+    setScores(Array(27).fill(0))
+  }
 
   const handleSearchChange = (val: string) => {
     setCourseSearch(val)
@@ -195,8 +232,34 @@ export default function ScorePage() {
 
   const updateScore = (hole: number, val: number) => {
     if (val < 1 || val > 15) return
-    setScores(prev => { const n = [...prev]; n[hole] = val; return n })
+    const newScores = [...scoresRef.current]
+    newScores[hole] = val
+    scoresRef.current = newScores
+    setScores(newScores)
   }
+
+  useEffect(() => {
+    if (restoringRef.current) { restoringRef.current = false; return }
+    if (!myId || (!selectedCourse && !selectedCombo)) return
+    const courseName = selectedCombo
+      ? `${selectedVenueName ?? ''} ${selectedCombo.label}`.trim()
+      : selectedCourse!.name
+    const payload: ActiveRoundPayload = {
+      user_id: myId,
+      source: 'manual',
+      venue_name: selectedVenueName ?? selectedCourse?.venueName ?? '',
+      course_name: courseName,
+      course_id: selectedCourse?.id ?? null,
+      combo_label: selectedCombo?.label ?? null,
+      combo_course_ids: selectedCombo?.courses.map(c => c.id) ?? null,
+      hole_scores: scores.slice(0, holeCount),
+      hole_count: holeCount,
+      current_hole: null,
+      round_date: roundDate,
+    }
+    upsertActiveRound(supabase, payload)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scores, roundDate])
 
   const outTotal = scores.slice(0, 9).reduce((a, b) => a + b, 0)
   const inTotal = holeCount >= 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : 0
@@ -233,32 +296,28 @@ export default function ScorePage() {
 
   const handleSave = async () => {
     if (!selectedCourse && !selectedCombo) { alert('コースを選択してください'); return }
+    if (!myId) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
     const courseName = selectedCombo
       ? `${selectedVenueName ?? ''} ${selectedCombo.label}`.trim()
       : selectedCourse!.name
     const holeScores = scores.slice(0, holeCount)
-    const totalScore = holeScores.reduce((a, b) => a + b, 0)
-    const outScore = holeScores.slice(0, 9).reduce((a, b) => a + b, 0)
-    const inScore = holeCount >= 18 ? holeScores.slice(9, 18).reduce((a, b) => a + b, 0) : null
-    const { error } = await supabase.from('scorecards').insert({
-      user_id: user.id,
+    const ok = await finalizeRound(supabase, {
+      user_id: myId,
       course_name: courseName,
       round_date: roundDate,
       played_at: roundDate,
-      total_score: totalScore,
-      out_score: outScore,
-      in_score: inScore,
+      total_score: holeScores.reduce((a, b) => a + b, 0),
+      out_score: holeScores.slice(0, 9).reduce((a, b) => a + b, 0),
+      in_score: holeCount >= 18 ? holeScores.slice(9, 18).reduce((a, b) => a + b, 0) : null,
       hole_scores: holeScores,
     })
-    if (!error) {
-      addPoints(supabase, user.id, 50)
+    if (ok) {
+      addPoints(supabase, myId, 50)
       const { data: newHistory } = await supabase
         .from('scorecards')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', myId)
         .order('created_at', { ascending: false })
         .limit(20)
       if (newHistory) { setHistory(newHistory); calcStats(newHistory) }
@@ -269,6 +328,20 @@ export default function ScorePage() {
       alert('保存に失敗しました')
     }
     setSaving(false)
+  }
+
+  const handleBackButton = async () => {
+    if (!selectedCourse && !selectedCombo) {
+      router.push('/home')
+      return
+    }
+    const totalScore = scoresRef.current.slice(0, holeCount).reduce((a, b) => a + b, 0)
+    if (totalScore === 0) {
+      if (myId) await discardActiveRound(supabase, myId)
+      router.push('/home')
+      return
+    }
+    setShowNewRoundModal(true)
   }
 
   const handleDelete = async (id: string) => {
@@ -517,7 +590,7 @@ export default function ScorePage() {
     <div style={{ minHeight: '100dvh', background: 'var(--off)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: 'white', borderBottom: '1px solid var(--line)', paddingTop: 'calc(env(safe-area-inset-top) + 22px)', paddingBottom: '14px', paddingLeft: '20px', paddingRight: '20px', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div onClick={() => router.push('/home')} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
+          <div onClick={handleBackButton} style={{ cursor: 'pointer', color: 'var(--g2)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             スコア記録
           </div>
@@ -880,6 +953,47 @@ export default function ScorePage() {
             >
               画像を保存する
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 新規ラウンド開始確認モーダル */}
+      {showNewRoundModal && (
+        <div
+          onClick={() => setShowNewRoundModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: 18, padding: '28px 20px 24px', width: '100%', maxWidth: 340 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111', textAlign: 'center', marginBottom: 6 }}>
+              進行中のラウンドがあります
+            </div>
+            <div style={{ fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 24 }}>
+              どうしますか？
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => setShowNewRoundModal(false)}
+                style={{ width: '100%', background: 'var(--g1)', color: 'white', border: 'none', borderRadius: 11, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                このまま続ける
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('入力したスコアは削除されます。よろしいですか？')) return
+                  if (!myId) return
+                  const ok = await discardActiveRound(supabase, myId)
+                  if (ok) {
+                    setShowNewRoundModal(false)
+                    handleClearCourse()
+                  } else {
+                    alert('削除に失敗しました。もう一度お試しください。')
+                  }
+                }}
+                style={{ width: '100%', background: 'none', color: '#dc2626', border: '1px solid #dc2626', borderRadius: 11, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                破棄して新規ラウンドを始める
+              </button>
+            </div>
           </div>
         </div>
       )}

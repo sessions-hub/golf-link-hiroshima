@@ -765,7 +765,7 @@ export default function GpsPage() {
                 onClick={() => setShowNewRoundModal(false)}
                 style={{ width: '100%', background: '#2d6a1f', color: 'white', border: 'none', borderRadius: 11, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
-                続きから再開
+                このまま続ける
               </button>
               <button
                 onClick={async () => {
