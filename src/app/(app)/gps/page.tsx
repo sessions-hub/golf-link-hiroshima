@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
-import { upsertActiveRound, loadActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
+import { upsertActiveRound, loadActiveRound, finalizeRound, type ActiveRoundPayload } from '@/lib/activeRound'
 
 // greenCoordsに登録されている全会場リスト（venueName重複排除）
 type VenueItem = { venueName: string; address: string; lat: number; lng: number }
@@ -321,32 +321,30 @@ export default function GpsPage() {
     : selectedSubCourse ? selectedSubCourse.name : (selected?.venueName ?? '')
 
   const handleSaveRound = async () => {
+    if (!myId) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { setSaving(false); return }
-    const total = scores.slice(0, gpsHoleCount).reduce((a, b) => a + b, 0)
-    const outScore = scores.slice(0, 9).reduce((a, b) => a + b, 0)
-    const inScore = gpsHoleCount >= 18 ? scores.slice(9, 18).reduce((a, b) => a + b, 0) : null
     const today = new Date().toISOString().split('T')[0]
-    const { error } = await supabase.from('scorecards').insert({
-      user_id: user.id,
+    const holeScores = scores.slice(0, gpsHoleCount)
+    const ok = await finalizeRound(supabase, {
+      user_id: myId,
       course_name: activeCourseName,
-      hole_scores: scores.slice(0, gpsHoleCount),
-      total_score: total,
-      out_score: outScore,
-      in_score: inScore,
-      played_at: new Date().toISOString(),
       round_date: today,
+      played_at: new Date().toISOString(),
+      total_score: holeScores.reduce((a, b) => a + b, 0),
+      out_score: holeScores.slice(0, 9).reduce((a, b) => a + b, 0),
+      in_score: gpsHoleCount >= 18 ? holeScores.slice(9, 18).reduce((a, b) => a + b, 0) : null,
+      hole_scores: holeScores,
     })
-    if (!error) {
-      const gpsToday = new Date().toISOString().split('T')[0]
+    if (ok) {
       const lastGpsDate = localStorage.getItem('gps_points_date')
-      if (lastGpsDate !== gpsToday) {
-        addPoints(supabase, user.id, 50)
-        localStorage.setItem('gps_points_date', gpsToday)
+      if (lastGpsDate !== today) {
+        addPoints(supabase, myId, 50)
+        localStorage.setItem('gps_points_date', today)
       }
       alert('スコアを保存しました！')
-      router.push('/score')
+      // active_rounds は finalizeRound 内で削除済み。コース選択画面に戻す
+      resetAllCourseState()
+      setSelected(null)
     } else {
       alert('保存に失敗しました')
     }
@@ -396,7 +394,7 @@ export default function GpsPage() {
   // scores・hole のいずれかが変わった時だけ実行し、コース未確定時はスキップ
   useEffect(() => {
     // 復元直後の1回はスキップ（復元データをそのまま上書きするだけなので不要）
-    if (restoringRef.current) { restoringRef.current = false; console.log('[restore] auto-save skipped once'); return }
+    if (restoringRef.current) { restoringRef.current = false; return }
     if (!myId || !selected || (!selectedSubCourse && !gpsCombo)) return
     const payload: ActiveRoundPayload = {
       user_id: myId,
