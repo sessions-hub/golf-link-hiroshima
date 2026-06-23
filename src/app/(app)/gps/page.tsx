@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
-import { upsertActiveRound, loadActiveRound, finalizeRound, type ActiveRoundPayload } from '@/lib/activeRound'
+import { upsertActiveRound, loadActiveRound, finalizeRound, discardActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
 
 // greenCoordsに登録されている全会場リスト（venueName重複排除）
 type VenueItem = { venueName: string; address: string; lat: number; lng: number }
@@ -83,6 +83,7 @@ export default function GpsPage() {
   const [selectedSubCourse, setSelectedSubCourse] = useState<CourseEntry | null>(null)
   const [pendingSubCourse, setPendingSubCourse] = useState<CourseEntry | null>(null)
   const [gpsCombo, setGpsCombo] = useState<ActiveCombo | null>(null)
+  const [showNewRoundModal, setShowNewRoundModal] = useState(false)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
   // 復元直後の自動保存を1回スキップするフラグ
@@ -172,6 +173,17 @@ export default function GpsPage() {
     setGpsCombo(null)
     setScores(Array(27).fill(0))
     setGreenDist(null)
+  }
+
+  const handleBackButton = async () => {
+    const totalScore = scores.slice(0, gpsHoleCount).reduce((a, b) => a + b, 0)
+    if (totalScore === 0) {
+      if (myId) await discardActiveRound(supabase, myId)
+      setSelected(null)
+      resetAllCourseState()
+      return
+    }
+    setShowNewRoundModal(true)
   }
 
   const selectVenue = (venue: VenueItem) => {
@@ -557,7 +569,7 @@ export default function GpsPage() {
 
   // ─── GPS計測画面 ─────────────────────────────────────────
   return (
-    <div style={{ height: '100dvh', background: '#070f07', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', background: '#070f07', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* マップエリア（固定高さ） */}
       <div style={{ height: '32vh', position: 'relative', flexShrink: 0 }}>
         <svg width="100%" height="100%" viewBox="0 0 390 240" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="xMidYMid slice">
@@ -577,7 +589,7 @@ export default function GpsPage() {
         {/* ヘッダー */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: 'calc(env(safe-area-inset-top) + 8px) 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(180deg,rgba(0,0,0,.72) 0%,transparent 100%)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div onClick={() => { setSelected(null); resetAllCourseState() }} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
+            <div onClick={handleBackButton} style={{ background: 'rgba(255,255,255,.12)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid rgba(255,255,255,.18)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><polyline points="15,18 9,12 15,6"/></svg>
             </div>
             <div>
@@ -728,6 +740,45 @@ export default function GpsPage() {
 
         <div style={{ height: 24 }} />
       </div>
+
+      {/* 新規ラウンド開始確認モーダル */}
+      {showNewRoundModal && (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
+          <div style={{ background: 'white', borderRadius: 18, padding: '28px 20px 24px', width: '100%', maxWidth: 340 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111', textAlign: 'center', marginBottom: 6 }}>
+              進行中のラウンドがあります
+            </div>
+            <div style={{ fontSize: 13, color: '#666', textAlign: 'center', marginBottom: 24 }}>
+              どうしますか？
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => setShowNewRoundModal(false)}
+                style={{ width: '100%', background: '#2d6a1f', color: 'white', border: 'none', borderRadius: 11, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                続きから再開
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('入力したスコアは削除されます。よろしいですか？')) return
+                  if (!myId) return
+                  const ok = await discardActiveRound(supabase, myId)
+                  if (ok) {
+                    setShowNewRoundModal(false)
+                    setSelected(null)
+                    resetAllCourseState()
+                  } else {
+                    alert('削除に失敗しました。もう一度お試しください。')
+                  }
+                }}
+                style={{ width: '100%', background: 'none', color: '#dc2626', border: '1px solid #dc2626', borderRadius: 11, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              >
+                破棄して新規ラウンドを始める
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
