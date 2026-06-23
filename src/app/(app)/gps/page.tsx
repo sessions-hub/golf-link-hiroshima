@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
+import { upsertActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
 
 // greenCoordsに登録されている全会場リスト（venueName重複排除）
 type VenueItem = { venueName: string; address: string; lat: number; lng: number }
@@ -351,6 +352,28 @@ export default function GpsPage() {
           { label: 'IN（10〜18H）', startHole: 9, pars: gpsActivePars.slice(9, 18) },
         ]
       : [{ label: 'OUT（1〜9H）', startHole: 0, pars: gpsActivePars.slice(0, 9) }]
+
+  // スコアまたはホール変更時に active_rounds へ自動保存
+  // scores・hole のいずれかが変わった時だけ実行し、コース未確定時はスキップ
+  useEffect(() => {
+    if (!myId || !selected || (!selectedSubCourse && !gpsCombo)) return
+    const payload: ActiveRoundPayload = {
+      user_id: myId,
+      source: 'gps',
+      venue_name: selected.venueName,
+      course_name: activeCourseName,
+      course_id: selectedSubCourse?.id ?? null,
+      combo_label: gpsCombo?.label ?? null,
+      combo_course_ids: gpsCombo?.courses.map(c => c.id) ?? null,
+      hole_scores: scores.slice(0, gpsHoleCount),
+      hole_count: gpsHoleCount,
+      current_hole: hole,
+      round_date: new Date().toISOString().split('T')[0],
+    }
+    upsertActiveRound(supabase, payload)
+    // scores と hole の変化だけをトリガーにする（コース情報はセッション中に変わらない）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scores, hole])
 
   // ─── コース選択画面 ───────────────────────────────────────
   if (!selected) {
