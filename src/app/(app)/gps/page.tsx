@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { addPoints } from '@/lib/points'
 import { getVenueCourses, getGroupCombos, getCourseById, type CourseEntry, type CourseCombo } from '@/lib/courses'
 import { GREEN_COORDS, COURSE_ID_TO_GREEN_KEY } from '@/lib/greenCoords'
-import { upsertActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
+import { upsertActiveRound, loadActiveRound, type ActiveRoundPayload } from '@/lib/activeRound'
 
 // greenCoordsに登録されている全会場リスト（venueName重複排除）
 type VenueItem = { venueName: string; address: string; lat: number; lng: number }
@@ -85,12 +85,51 @@ export default function GpsPage() {
   const [gpsCombo, setGpsCombo] = useState<ActiveCombo | null>(null)
   const watchRef = useRef<number | null>(null)
   const lastPositionRef = useRef<GPSPosition | null>(null)
+  // 復元直後の自動保存を1回スキップするフラグ
+  const restoringRef = useRef(false)
 
   useEffect(() => {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setMyId(user.id)
+
+      // 進行中ラウンドがあればstateを復元してスコア入力画面を直接表示する
+      const ar = await loadActiveRound(supabase, user.id, 'gps')
+      if (!ar) return
+
+      // venue_name から VenueItem を再構築（lat/lng も含む）
+      const venueItem = VENUES_WITH_COORDS.find(v => v.venueName === ar.venue_name) ?? null
+      if (!venueItem) return // コースデータが見つからない場合はスキップ
+
+      // コース選択stateを再構築
+      if (ar.combo_label && ar.combo_course_ids) {
+        // コンボラウンド：combo_course_ids から CourseEntry[] を復元
+        const entries = ar.combo_course_ids.map(id => getCourseById(id)).filter(Boolean) as CourseEntry[]
+        if (entries.length === 0) return
+        setGpsCombo({ label: ar.combo_label, courses: entries })
+        setSelectedSubCourse(null)
+        setPendingSubCourse(null)
+      } else if (ar.course_id) {
+        // 単独コース：course_id から CourseEntry を復元
+        const course = getCourseById(ar.course_id)
+        if (!course) return
+        setSelectedSubCourse(course)
+        setGpsCombo(null)
+        setPendingSubCourse(null)
+      } else {
+        return // コース情報が不完全な場合はスキップ
+      }
+
+      // hole_scores を 27要素配列に戻す
+      const restoredScores = Array(27).fill(0)
+      ar.hole_scores.forEach((s, i) => { restoredScores[i] = s })
+
+      // 復元によるstate変化でauto-saveが誤発火しないようフラグを立てる
+      restoringRef.current = true
+      setSelected(venueItem)
+      setScores(restoredScores)
+      setHole(ar.current_hole ?? 1)
     }
     init()
   }, [])
@@ -356,6 +395,8 @@ export default function GpsPage() {
   // スコアまたはホール変更時に active_rounds へ自動保存
   // scores・hole のいずれかが変わった時だけ実行し、コース未確定時はスキップ
   useEffect(() => {
+    // 復元直後の1回はスキップ（復元データをそのまま上書きするだけなので不要）
+    if (restoringRef.current) { restoringRef.current = false; console.log('[restore] auto-save skipped once'); return }
     if (!myId || !selected || (!selectedSubCourse && !gpsCombo)) return
     const payload: ActiveRoundPayload = {
       user_id: myId,
